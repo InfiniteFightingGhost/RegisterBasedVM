@@ -1,0 +1,15 @@
+/home/andy/Projects/RegisterBasedVM/RegisterBasedVM/bin/Release/net10.0/RegisterBasedVM
+/home/andy/Projects/RegisterBasedVM/RegisterBasedVM/bin/Release/net10.0/RegisterBasedVM.deps.json
+/home/andy/Projects/RegisterBasedVM/RegisterBasedVM/bin/Release/net10.0/RegisterBasedVM.runtimeconfig.json
+/home/andy/Projects/RegisterBasedVM/RegisterBasedVM/bin/Release/net10.0/RegisterBasedVM.dll
+/home/andy/Projects/RegisterBasedVM/RegisterBasedVM/bin/Release/net10.0/RegisterBasedVM.pdb
+/home/andy/Projects/RegisterBasedVM/RegisterBasedVM/obj/Release/net10.0/RegisterBasedVM.GeneratedMSBuildEditorConfig.editorconfig
+/home/andy/Projects/RegisterBasedVM/RegisterBasedVM/obj/Release/net10.0/RegisterBasedVM.AssemblyInfoInputs.cache
+/home/andy/Projects/RegisterBasedVM/RegisterBasedVM/obj/Release/net10.0/RegisterBasedVM.AssemblyInfo.cs
+/home/andy/Projects/RegisterBasedVM/RegisterBasedVM/obj/Release/net10.0/RegisterBasedVM.csproj.CoreCompileInputs.cache
+/home/andy/Projects/RegisterBasedVM/RegisterBasedVM/obj/Release/net10.0/RegisterBasedVM.sourcelink.json
+/home/andy/Projects/RegisterBasedVM/RegisterBasedVM/obj/Release/net10.0/RegisterBasedVM.dll
+/home/andy/Projects/RegisterBasedVM/RegisterBasedVM/obj/Release/net10.0/refint/RegisterBasedVM.dll
+/home/andy/Projects/RegisterBasedVM/RegisterBasedVM/obj/Release/net10.0/RegisterBasedVM.pdb
+/home/andy/Projects/RegisterBasedVM/RegisterBasedVM/obj/Release/net10.0/RegisterBasedVM.genruntimeconfig.cache
+/home/andy/Projects/RegisterBasedVM/RegisterBasedVM/obj/Release/net10.0/ref/RegisterBasedVM.dll

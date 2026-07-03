@@ -18,4 +18,5 @@ public enum OpCode
     HALT,
     PRINT,
     PRINTA,
+    RAND,
 }

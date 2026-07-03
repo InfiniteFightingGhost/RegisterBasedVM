@@ -11,7 +11,6 @@ public class Assembler
 
     public void Parse(string[] lines)
     {
-        UInt32 lastUsedConstantIndex = 0;
         List<UInt32> instructions = new List<UInt32>();
         for (int i = 0; i < lines.Length; i++)
         {
@@ -28,15 +27,13 @@ public class Assembler
                     uint destA1 = uint.Parse(words[1]);
                     float constant = float.Parse(words[2]);
 
-                    _chunk.SetConstant(constant, lastUsedConstantIndex);
-                    uint bx = lastUsedConstantIndex;
+                    uint bx = _chunk.SetConstant(constant);
 
                     destA1 = destA1 & 0xFF;
                     bx = bx & 0x3FFFF;
 
                     // Smash them together! Hehehehaw
                     instruction = opcode | (destA1 << 6) | (bx << 14);
-                    lastUsedConstantIndex++;
                     break;
                 case "MOVE":
                     opcode = (uint)OpCode.MOVE;
@@ -66,14 +63,39 @@ public class Assembler
                 case "LT":
                 case "LE":
                     opcode = GetOpCode(words[0]);
-                    uint destA3 = uint.Parse(words[1]);
+                    uint destA3;
+                    if (words[1].StartsWith("r"))
+                    {
+                        destA3 = uint.Parse(string.Join("", words[1].Skip(1)));
+                    }
+                    else
+                    {
+                        destA3 = _chunk.SetConstant(float.Parse(words[1])) + 256;
+                    }
                     destA3 = destA3 & 0xFF;
 
-                    uint destB3 = uint.Parse(words[2]);
+                    uint destB3;
+                    if (words[2].StartsWith("r"))
+                    {
+                        destB3 = uint.Parse(string.Join("", words[2].Skip(1)));
+                    }
+                    else
+                    {
+                        destB3 = _chunk.SetConstant(float.Parse(words[2])) + 256;
+                    }
                     destB3 = destB3 & 0x1FF;
 
-                    uint destC3 = uint.Parse(words[3]);
+                    uint destC3;
+                    if (words[3].StartsWith("r"))
+                    {
+                        destC3 = uint.Parse(string.Join("", words[3].Skip(1)));
+                    }
+                    else
+                    {
+                        destC3 = _chunk.SetConstant(float.Parse(words[3])) + 256;
+                    }
                     destC3 = destC3 & 0x1FF;
+
                     instruction = opcode | (destA3 << 6) | (destB3 << 14) | (destC3 << 23);
                     break;
                 case "UNM":
@@ -81,7 +103,15 @@ public class Assembler
                     uint destA4 = uint.Parse(words[1]);
                     destA4 = destA4 & 0xFF;
 
-                    uint destB4 = uint.Parse(words[2]);
+                    uint destB4;
+                    if (words[1].StartsWith("r"))
+                    {
+                        destB4 = uint.Parse(string.Join("", words[1].Skip(1)));
+                    }
+                    else
+                    {
+                        destB4 = _chunk.SetConstant(float.Parse(words[1])) + 256;
+                    }
                     destB4 = destB4 & 0x1FF;
                     instruction = opcode | (destA4 << 6) | (destB4 << 14);
                     break;
@@ -97,16 +127,32 @@ public class Assembler
                 case "PRINT":
                     opcode = (uint)OpCode.PRINT;
 
-                    uint printA = uint.Parse(words[1]);
-                    printA = printA & 0xFF;
+                    uint printA;
+                    if (words[1].StartsWith("r"))
+                    {
+                        printA = uint.Parse(string.Join("", words[1].Skip(1)));
+                    }
+                    else
+                    {
+                        printA = _chunk.SetConstant(float.Parse(words[1])) + 256;
+                    }
+                    printA = printA & 0x1FF;
 
                     instruction = opcode | (printA << 6);
                     break;
                 case "PRINTA":
                     opcode = (uint)OpCode.PRINTA;
 
-                    uint printA1 = uint.Parse(words[1]);
-                    printA1 = printA1 & 0xFF;
+                    uint printA1;
+                    if (words[1].StartsWith("r"))
+                    {
+                        printA1 = uint.Parse(string.Join("", words[1].Skip(1)));
+                    }
+                    else
+                    {
+                        printA1 = _chunk.SetConstant(float.Parse(words[1])) + 256;
+                    }
+                    printA1 = printA1 & 0x1FF;
 
                     instruction = opcode | (printA1 << 6);
                     break;

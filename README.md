@@ -31,13 +31,13 @@ Opcode is always 6 bits long
 | POW | A | B | C | R(A) := RC(B) ^ RC(C) |
 | UNM | A | B | | R(A) := -RC(B) |
 | JUMP | sBx | | | PC += sBx |
-| EQ | A | B | C | if ((RC(B) == RC(C)) ~= A) then PC++ |
-| LT | A | B | C | if ((RC(B) < RC(C)) ~= A) then PC++ |
-| LE | A | B | C | if ((RC(B) <= RC(C)) ~= A) then PC++ |
+| EQ | A | B | C | if ((RC(B) == RC(C)) != A) then PC++ |
+| LT | A | B | C | if ((RC(B) < RC(C)) != A) then PC++ |
+| LE | A | B | C | if ((RC(B) <= RC(C)) != A) then PC++ |
 | HALT | | | | |
 | PRINT | A | | | Console.WriteLine(R(A)) |
 | PRINTA | A | | | Console.WriteLine((char)R(A)) |
-
+| RAND | A | | | | R(A) = Random.NextSingle()
 ## Example programs:
 
 ### Fibonacci:
