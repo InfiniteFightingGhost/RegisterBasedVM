@@ -27,7 +27,6 @@ public class VirtualMachine
             uint instruction = _instructions[_pc];
             byte opcode = (byte)(instruction & 0x3F);
             byte a = (byte)((instruction >> 6) & 0xFF);
-            // Console.WriteLine($"OpCode: {opcode}, destination: {a}");
             switch (opcode)
             {
                 case (byte)OpCode.LOADC:
@@ -50,7 +49,6 @@ public class VirtualMachine
                     const int sBxBias = 33554431;
                     uint unsignedBx = (uint)(instruction >> 6);
                     int sBx = (int)(unsignedBx - sBxBias);
-                    // Console.WriteLine(sBx);
                     _pc += sBx - 1;
                     break;
                 case (byte)OpCode.ADD:
@@ -132,7 +130,7 @@ public class VirtualMachine
         var dispatchTable = new delegate* <uint, float*, float*, ref int, bool>[64];
         dispatchTable[(int)OpCode.LOADC] = &ExecuteLoadC;
         dispatchTable[(int)OpCode.MOVE] = &ExecuteMove;
-        // dispatchTable[(int)OpCode.SWP] = &ExecuteSwp;
+        dispatchTable[(int)OpCode.SWP] = &ExecuteSwp;
         dispatchTable[(int)OpCode.ADD] = &ExecuteAdd;
         dispatchTable[(int)OpCode.SUB] = &ExecuteSub;
         dispatchTable[(int)OpCode.MUL] = &ExecuteMul;
@@ -188,8 +186,21 @@ public class VirtualMachine
     {
         byte a = (byte)((instruction >> 6) & 0xFF);
         byte b = (byte)((instruction >> 14) & 0xFF);
-        Console.WriteLine($"A: {a}, B: {b}");
         regPtr[a] = regPtr[b];
+        return true;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static unsafe bool ExecuteSwp(
+        uint instruction,
+        float* regPtr,
+        float* constPtr,
+        ref int pc
+    )
+    {
+        byte a = (byte)((instruction >> 6) & 0xFF);
+        byte b = (byte)((instruction >> 14) & 0xFF);
+        (regPtr[a], regPtr[b]) = (regPtr[b], regPtr[a]);
         return true;
     }
 
@@ -219,7 +230,6 @@ public class VirtualMachine
         const int sBxBias = 33554431;
         uint unsignedBx = (uint)(instruction >> 6);
         int sBx = (int)(unsignedBx - sBxBias);
-        Console.WriteLine($"PC: {pc}, sbx: {sBx}");
         pc += sBx - 1;
         return true;
     }
@@ -344,7 +354,6 @@ public class VirtualMachine
         float valB = b < 256 ? regPtr[b] : constPtr[b - 256];
         uint c = (uint)(instruction >> 23) & 0x1FF;
         float valC = c < 256 ? regPtr[c] : constPtr[c - 256];
-        Console.WriteLine($"A:{a}, B: {valB} {b}, C: {valC}, {c}");
         bool comparison = valB < valC;
         bool expected = (a != 0);
         if (comparison != expected)
