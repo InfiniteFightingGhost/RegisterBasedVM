@@ -34,6 +34,10 @@ public class VirtualMachine
                     byte b1 = (byte)((_instructions[_pc] >> 14) & 0xFF);
                     _registers[a] = _registers[b1];
                     break;
+                case (byte)OpCode.SWP:
+                    byte bSwap = (byte)((_instructions[_pc] >> 14) & 0xFF);
+                    (_registers[a], _registers[bSwap]) = (_registers[bSwap], _registers[a]);
+                    break;
                 case (byte)OpCode.UNM:
                     byte b2 = (byte)((_instructions[_pc] >> 14) & 0xFF);
                     _registers[a] = -_registers[b2];
@@ -103,6 +107,9 @@ public class VirtualMachine
                     break;
                 case (byte)OpCode.PRINT:
                     Console.WriteLine(_registers[a]);
+                    break;
+                case (byte)OpCode.PRINTA:
+                    Console.Write((char)_registers[a]);
                     break;
                 case (byte)OpCode.HALT:
                     isRunning = false;

@@ -4,6 +4,7 @@ public enum OpCode
 {
     LOADC,
     MOVE,
+    SWP,
     ADD,
     SUB,
     MUL,
@@ -16,4 +17,5 @@ public enum OpCode
     LE,
     HALT,
     PRINT,
+    PRINTA,
 }

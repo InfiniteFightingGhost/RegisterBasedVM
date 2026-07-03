@@ -47,6 +47,15 @@ public class Assembler
                     destB2 = destB2 & 0x1FF;
                     instruction = opcode | (destA2 << 6) | (destB2 << 14);
                     break;
+                case "SWP":
+                    opcode = (uint)OpCode.SWP;
+                    uint destA5 = uint.Parse(words[1]);
+                    destA5 = destA5 & 0xFF;
+
+                    uint destB5 = uint.Parse(words[2]);
+                    destB5 = destB5 & 0x1FF;
+                    instruction = opcode | (destA5 << 6) | (destB5 << 14);
+                    break;
 
                 case "ADD":
                 case "SUB":
@@ -92,6 +101,14 @@ public class Assembler
                     printA = printA & 0xFF;
 
                     instruction = opcode | (printA << 6);
+                    break;
+                case "PRINTA":
+                    opcode = (uint)OpCode.PRINTA;
+
+                    uint printA1 = uint.Parse(words[1]);
+                    printA1 = printA1 & 0xFF;
+
+                    instruction = opcode | (printA1 << 6);
                     break;
 
                 case "HALT":

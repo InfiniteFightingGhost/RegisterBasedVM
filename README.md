@@ -23,6 +23,7 @@ Opcode is always 6 bits long
 | --------------- | --------------- | --------------- | --------------- | --------------- |
 | LOADC | A | Bx | | R(A) := C(Bx) |
 | MOVE | A | B | | R(A) := R(B) |
+| SWP | A | B | | R(A) <=> R(B)
 | ADD | A | B | C | R(A) := RC(B) + RC(C) |
 | SUB | A | B | C | R(A) := RC(B) - RC(C) |
 | MUL | A | B | C | R(A) := RC(B) * RC(C) |
@@ -35,6 +36,7 @@ Opcode is always 6 bits long
 | LE | A | B | C | if ((RC(B) <= RC(C)) ~= A) then PC++ |
 | HALT | | | | |
 | PRINT | A | | | Console.WriteLine(R(A)) |
+| PRINTA | A | | | Console.WriteLine((char)R(A)) |
 
 ## Example programs:
 
