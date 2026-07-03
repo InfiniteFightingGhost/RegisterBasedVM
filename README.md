@@ -38,24 +38,34 @@ Opcode is always 6 bits long
 | PRINT | A | | | Console.WriteLine(R(A)) |
 | PRINTA | A | | | Console.WriteLine((char)R(A)) |
 | RAND | A | | | | R(A) = Random.NextSingle()
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## Example programs:
 
 ### Fibonacci:
 | Instruction Number   | Instruction    | Description |
 |--------------- | --------------- | --- |
-| 1   | LOADC 0 1    | Load 1 into R(0)|
-| 2   | LOADC 3 50   | Load 50 into R(3). This tells the program how many numbers of Fibonacci it needs to compute |
-| 3   | LOADC 4 1    | Load 1 into R(4). This is used to track on what Fibonacci we are currently|
-| 4   | LOADC 5 1    | Load 1 into R(5). This is used in order to increment the index we hold in R(4)|
-| 5   | PRINT 4      | Print the current Fibonacci number index we are on|
-| 6   | PRINT 0      | Print the current Fibonacci number|
-| 7   | MOVE 2 1     | Shift the value from R(1) to R(2)|
-| 8   | MOVE 1 0     | Shift the value from R(0) to R(1)|
-| 9   | ADD 0 1 2    | Add the values from R(1) and R(2) in order to get the current Fibonacci value|
-| 10   | ADD 4 4 5    | Increment the index|
-| 11   | LE 1 4 3     | Check if the index has reached the desired Fibonacci number. If it has it increments the PC by two, directly halting. If not, it increments only by one, which hits the jump instruction|
-| 12   | JUMP -7      | Go back 7 instructions|
-| 13   | HALT         | Stop the program|
+| 1   | LOADC 0 1     | Load 1 into R(0)|
+| 2   | LOADC 4 1     | Load 1 in R(4) for the counter|
+| 3   | MOVE 2 1      | Shift the value from R(1) to R(2)|
+| 4   | MOVE 1 0      | Shift the value from R(0) to R(1)|
+| 5   | ADD r0 r1 r2  | Add the values from R(1) and R(2) in order to get the current Fibonacci value|
+| 6   | ADD r4 r4 1   | Increment the index|
+| 7   | LT 0 r4 10    | Check if the index has reached the desired Fibonacci number. If it has it increments the PC by two, directly halting. If not, it increments only by one, which hits the jump instruction|
+| 8   | JUMP -6       | Jump the PC 6 places backward|
+| 9   | PRINT r0       | Print the result|
+| 10   | HALT           | Halt the program|
 
 
 
