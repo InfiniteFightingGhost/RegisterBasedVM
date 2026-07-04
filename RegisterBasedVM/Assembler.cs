@@ -173,6 +173,28 @@ public class Assembler
                         uint unsignedBx = (uint)(rawSbx & 0x3FFFFFF);
                         instruction = opcode | (uint)((unsignedBx << 6)); // |(((sBx >> 25) << 31)));
                         break;
+                    case "CALL":
+                        opcode = (uint)OpCode.CALL;
+                        try
+                        {
+                            labelIndex = labels[words[1]];
+                        }
+                        catch
+                        {
+                            Console.WriteLine("There isnt a label with name " + words[1]);
+                            return;
+                        }
+                        labelIndex -= i;
+
+                        rawSbx = labelIndex + sBxBias;
+                        unsignedBx = (uint)(rawSbx & 0x3FFFFFF);
+                        instruction = opcode | (uint)((unsignedBx << 6)); // |(((sBx >> 25) << 31)));
+                        break;
+                    case "RET":
+                        opcode = (uint)OpCode.CALL;
+
+                        instruction = opcode;
+                        break;
                     case "PRINT":
                         opcode = (uint)OpCode.PRINT;
 

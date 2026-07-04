@@ -11,6 +11,7 @@ Here is the notation I am using for ease of understanding:
  - C(n) -> nth value in the constants array
  - RC(n) -> either R(n) or C(n - k), depending on the value of n - it is R(n) for values smaller than k(default is 256)
  - PC -> program counter
+ - CS -> Call stack
 
 Each instruction is 32 bits long. The break down is:
 Opcode is always 6 bits long
@@ -37,13 +38,14 @@ Opcode is always 6 bits long
 | EQ | A | B | C | if ((RC(B) == RC(C)) != A) then PC++ |
 | LT | A | B | C | if ((RC(B) < RC(C)) != A) then PC++ |
 | LE | A | B | C | if ((RC(B) <= RC(C)) != A) then PC++ |
-| HALT | | | | |
+| HALT | | | | | 
 | PRINT | A | | | Console.WriteLine(R(A)) |
 | PRINTA | A | | | Console.WriteLine((char)R(A)) |
 | RAND | A | | | | R(A) = Random.NextSingle()
 | SQRT | A | B | | R(A) := Math.Sqrt(RC(B)) |
 | FISR | A | B | | R(A) := FISR algorithm (RC(B)) |
-
+| CALL | sBx|  | | CS.Push(PC); PC += sBx,
+| RET| | | | PC = CS.Pop() + 1 |
 ## Example programs:
 
 ### Fibonacci:

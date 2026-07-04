@@ -2,7 +2,7 @@ using System.Runtime.CompilerServices;
 
 namespace RegisterBasedVM;
 
-public class VirtualMachine
+public unsafe class VirtualMachine
 {
     private uint[] _instructions = null!;
     private float[] _constants = null!;
@@ -10,6 +10,7 @@ public class VirtualMachine
     private float[] _registers = new float[256];
     private static readonly Random random = new Random();
     private int[] _breakpoints = null!;
+    private int[] _callStack = new int[16];
 
     public void LoadProgram(uint[] instructions, float[] constants, int[] breakpoints)
     {
@@ -34,7 +35,7 @@ public class VirtualMachine
 
     public unsafe void RunFast()
     {
-        var dispatchTable = new delegate* <uint, float*, float*, ref int, bool>[64];
+        var dispatchTable = new delegate* <uint, float*, float*, ref int, int*, bool>[64];
         dispatchTable[(int)OpCode.LOADC] = &ExecuteLoadC;
         dispatchTable[(int)OpCode.MOVE] = &ExecuteMove;
         dispatchTable[(int)OpCode.SWP] = &ExecuteSwp;
@@ -54,9 +55,12 @@ public class VirtualMachine
         dispatchTable[(int)OpCode.RAND] = &ExecuteRand;
         dispatchTable[(int)OpCode.FISR] = &ExecuteFisr;
         dispatchTable[(int)OpCode.SQRT] = &ExecuteSqrt;
+        dispatchTable[(int)OpCode.CALL] = &ExecuteFisr;
+        dispatchTable[(int)OpCode.RET] = &ExecuteSqrt;
         fixed (uint* instPtr = _instructions)
         fixed (float* regPtr = _registers)
         fixed (float* constPtr = _constants)
+        fixed (int* callStackPtr = _callStack)
         {
             bool isRunning = true;
             Console.WriteLine("Starting VM...");
@@ -70,7 +74,8 @@ public class VirtualMachine
                 }
                 uint instruction = instPtr[_pc];
                 byte opcode = (byte)(instruction & 0x3F);
-                isRunning = dispatchTable[opcode](instruction, regPtr, constPtr, ref _pc);
+                isRunning = dispatchTable[opcode]
+                    (instruction, regPtr, constPtr, ref _pc, callStackPtr);
                 _pc++;
             }
             stopwatch.Stop();
@@ -83,7 +88,8 @@ public class VirtualMachine
         uint instruction,
         float* regPtr,
         float* constPtr,
-        ref int pc
+        ref int pc,
+        int* callStackPtr
     )
     {
         byte a = (byte)((instruction >> 6) & 0xFF);
@@ -97,7 +103,8 @@ public class VirtualMachine
         uint instruction,
         float* regPtr,
         float* constPtr,
-        ref int pc
+        ref int pc,
+        int* callStackPtr
     )
     {
         byte a = (byte)((instruction >> 6) & 0xFF);
@@ -111,7 +118,8 @@ public class VirtualMachine
         uint instruction,
         float* regPtr,
         float* constPtr,
-        ref int pc
+        ref int pc,
+        int* callStackPtr
     )
     {
         byte a = (byte)((instruction >> 6) & 0xFF);
@@ -125,7 +133,8 @@ public class VirtualMachine
         uint instruction,
         float* regPtr,
         float* constPtr,
-        ref int pc
+        ref int pc,
+        int* callStackPtr
     )
     {
         byte a = (byte)((instruction >> 6) & 0xFF);
@@ -140,7 +149,8 @@ public class VirtualMachine
         uint instruction,
         float* regPtr,
         float* constPtr,
-        ref int pc
+        ref int pc,
+        int* callStackPtr
     )
     {
         const int sBxBias = 33554431;
@@ -150,12 +160,42 @@ public class VirtualMachine
         return true;
     }
 
+    public static unsafe bool ExecuteCall(
+        uint instruction,
+        float* regPtr,
+        float* constPtr,
+        ref int pc,
+        int* callStackPtr
+    )
+    {
+        const int sBxBias = 33554431;
+        uint unsignedBx = (uint)(instruction >> 6);
+        int sBx = (int)(unsignedBx - sBxBias);
+        *(callStackPtr++) = pc;
+        pc += sBx - 1;
+        return true;
+    }
+
+    public static unsafe bool ExecuteRet(
+        uint instruction,
+        float* regPtr,
+        float* constPtr,
+        ref int pc,
+        int* callStackPtr
+    )
+    {
+        int target = *(callStackPtr--);
+        pc = target;
+        return true;
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe bool ExecuteAdd(
         uint instruction,
         float* regPtr,
         float* constPtr,
-        ref int pc
+        ref int pc,
+        int* callStackPtr
     )
     {
         byte a = (byte)((instruction >> 6) & 0xFF);
@@ -172,7 +212,8 @@ public class VirtualMachine
         uint instruction,
         float* regPtr,
         float* constPtr,
-        ref int pc
+        ref int pc,
+        int* callStackPtr
     )
     {
         byte a = (byte)((instruction >> 6) & 0xFF);
@@ -189,7 +230,8 @@ public class VirtualMachine
         uint instruction,
         float* regPtr,
         float* constPtr,
-        ref int pc
+        ref int pc,
+        int* callStackPtr
     )
     {
         byte a = (byte)((instruction >> 6) & 0xFF);
@@ -206,7 +248,8 @@ public class VirtualMachine
         uint instruction,
         float* regPtr,
         float* constPtr,
-        ref int pc
+        ref int pc,
+        int* callStackPtr
     )
     {
         byte a = (byte)((instruction >> 6) & 0xFF);
@@ -223,7 +266,8 @@ public class VirtualMachine
         uint instruction,
         float* regPtr,
         float* constPtr,
-        ref int pc
+        ref int pc,
+        int* callStackPtr
     )
     {
         byte a = (byte)((instruction >> 6) & 0xFF);
@@ -240,7 +284,8 @@ public class VirtualMachine
         uint instruction,
         float* regPtr,
         float* constPtr,
-        ref int pc
+        ref int pc,
+        int* callStackPtr
     )
     {
         byte a = (byte)((instruction >> 6) & 0xFF);
@@ -262,7 +307,8 @@ public class VirtualMachine
         uint instruction,
         float* regPtr,
         float* constPtr,
-        ref int pc
+        ref int pc,
+        int* callStackPtr
     )
     {
         byte a = (byte)((instruction >> 6) & 0xFF);
@@ -284,7 +330,8 @@ public class VirtualMachine
         uint instruction,
         float* regPtr,
         float* constPtr,
-        ref int pc
+        ref int pc,
+        int* callStackPtr
     )
     {
         byte a = (byte)((instruction >> 6) & 0xFF);
@@ -306,7 +353,8 @@ public class VirtualMachine
         uint instruction,
         float* regPtr,
         float* constPtr,
-        ref int pc
+        ref int pc,
+        int* callStackPtr
     )
     {
         uint a = (uint)((instruction >> 6) & 0xFF);
@@ -320,7 +368,8 @@ public class VirtualMachine
         uint instruction,
         float* regPtr,
         float* constPtr,
-        ref int pc
+        ref int pc,
+        int* callStackPtr
     )
     {
         uint a = (uint)((instruction >> 6) & 0xFF);
@@ -334,7 +383,8 @@ public class VirtualMachine
         uint instruction,
         float* regPtr,
         float* constPtr,
-        ref int pc
+        ref int pc,
+        int* callStackPtr
     )
     {
         return false;
@@ -345,7 +395,8 @@ public class VirtualMachine
         uint instruction,
         float* regPtr,
         float* constPtr,
-        ref int pc
+        ref int pc,
+        int* callStackPtr
     )
     {
         byte a = (byte)((instruction >> 6) & 0xFF);
@@ -358,7 +409,8 @@ public class VirtualMachine
         uint instruction,
         float* regPtr,
         float* constPtr,
-        ref int pc
+        ref int pc,
+        int* callStackPtr
     )
     {
         byte a = (byte)((instruction >> 6) & 0xFF);
@@ -373,7 +425,8 @@ public class VirtualMachine
         uint instruction,
         float* regPtr,
         float* constPtr,
-        ref int pc
+        ref int pc,
+        int* callStackPtr
     )
     {
         byte a = (byte)((instruction >> 6) & 0xFF);

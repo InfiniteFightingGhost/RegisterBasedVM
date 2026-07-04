@@ -21,4 +21,6 @@ public enum OpCode
     RAND,
     SQRT,
     FISR,
+    CALL,
+    RET,
 }
