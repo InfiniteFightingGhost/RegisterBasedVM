@@ -9,63 +9,43 @@ public class Assembler
         _chunk = chunk;
     }
 
-    public IEnumerable<string> CleanFirstPass(string[] rawLines)
-    {
-        foreach (string rawLine in rawLines)
-        {
-            string line = rawLine.Trim();
-
-            if (string.IsNullOrWhiteSpace(line))
-                continue;
-
-            if (line.StartsWith("DEFINE "))
-                continue;
-            yield return line;
-        }
-    }
-
-    public IEnumerable<string> CleanLines(string[] rawLines)
-    {
-        foreach (string rawLine in rawLines)
-        {
-            string line = rawLine.Trim();
-            if (string.IsNullOrWhiteSpace(line))
-                continue;
-
-            if (line.StartsWith("DEFINE "))
-                continue;
-
-            if (line.EndsWith(":"))
-                if (!line.StartsWith("JUMP"))
-                    continue;
-
-            if (line.EndsWith("()"))
-                if (!line.StartsWith("JUMP"))
-                    continue;
-            yield return line;
-        }
-    }
-
-    public void Parse(string[] lines)
+    public void Parse(List<string> lines)
     {
         Dictionary<string, string> definitions = new();
 
         //Having a 3 pass system will make it easier for future me to implement multi line definitions if I want to
-        for (int i = 0; i < lines.Length; i++)
+        for (int i = 0; i < lines.Count; i++)
         {
-            string[] words = lines[i].Split(" ");
-            if (lines[i].StartsWith("DEFINE"))
+            if (string.IsNullOrWhiteSpace(lines[i]))
+            {
+                lines.RemoveAt(i--);
+                continue;
+            }
+            lines[i] = lines[i].TrimStart();
+            string[] words = lines[i].Split();
+            if (lines[i].StartsWith("DEFINE "))
             {
                 if (!definitions.TryAdd(words[1], words[2]))
                     throw new Exception(
                         $"Definition for {words[1]} already exists on line {definitions[words[1]]}"
                     );
+                else
+                {
+                    lines.RemoveAt(i--);
+                    continue;
+                }
             }
             else
             {
                 if (lines[i].Contains(";"))
                 {
-                    lines[i] = lines[i].Split(";")[0].Trim();
+                    if (lines[i].StartsWith(';'))
+                    {
+                        lines.RemoveAt(i--);
+                        continue;
+                    }
+                    else
+                        lines[i] = lines[i].Split(";")[0].Trim();
                 }
 
                 for (int j = 0; j < words.Length; j++)
@@ -83,50 +63,52 @@ public class Assembler
         Dictionary<string, uint> methods = new();
         uint memoryAddress = 0;
         uint methodAddress = 0;
-#if DEBUG
-        Console.WriteLine("After first pass");
-#endif
-        foreach (var item in CleanFirstPass(lines))
+        for (int i = 0; i < lines.Count; i++)
         {
-#if DEBUG
-            Console.WriteLine(item);
-#endif
-            if (item.EndsWith(":"))
+            if (lines[i].EndsWith(":"))
             {
-                if (!item.StartsWith("JUMP "))
+                if (!lines[i].StartsWith("JUMP "))
                 {
-                    if (!labels.TryAdd(item.TrimEnd(':'), memoryAddress))
-                        throw new Exception("Label name already exists on line " + labels[item]);
+                    if (!labels.TryAdd(lines[i].TrimEnd(':'), memoryAddress))
+                        throw new Exception(
+                            "Label name already exists on line " + labels[lines[i]]
+                        );
+                    else
+                    {
+                        lines.RemoveAt(i--);
+                        continue;
+                    }
                 }
             }
-            else if (item.EndsWith("()"))
+            else if (lines[i].EndsWith("()"))
             {
-                if (!lines.StartsWith("CALL"))
+                if (!lines[i].StartsWith("CALL"))
                 {
-                    if (!methods.TryAdd(item, memoryAddress))
+                    if (!methods.TryAdd(lines[i], methodAddress))
                         throw new Exception(
                             "Method name already exists on line "
-                                + _chunk.MethodTable[methods[item]]
+                                + _chunk.MethodTable[methods[lines[i]]]
                         );
                     else
                     {
                         _chunk.MethodTable[methodAddress++] = memoryAddress;
+                        lines.RemoveAt(i--);
+                        continue;
                     }
                 }
             }
             else
                 memoryAddress++;
         }
+        foreach (var item in methods)
+        {
+            Console.WriteLine($"Name: {item.Key}, place: {_chunk.MethodTable[item.Value]}");
+        }
         List<UInt32> instructions = new List<UInt32>();
         int pc = 0;
-#if DEBUG
-        Console.WriteLine("After second pass");
-#endif
-        foreach (var item in CleanLines(lines))
+        foreach (var item in lines)
         {
-#if DEBUG
-            Console.WriteLine(item);
-#endif
+            Console.WriteLine($"{pc}: {item}");
             var words = item.Split();
             uint instruction = 0;
             uint opcode = 0;
@@ -259,7 +241,6 @@ public class Assembler
                         try
                         {
                             labelIndex = (int)(labels[words[1]] - pc);
-                            Console.WriteLine(labelIndex);
                         }
                         catch
                         {
@@ -274,29 +255,28 @@ public class Assembler
                         break;
                     case "CALL":
                         opcode = (uint)OpCode.CALL;
-                        byte methodIndex = 0;
+                        uint methodIndex = 0;
                         try
                         {
-                            methodIndex = (byte)methods[words[1]];
+                            methodIndex = (uint)methods[words[1]];
                         }
                         catch
                         {
                             Console.WriteLine("There isnt a method with name " + words[1]);
                             return;
                         }
-                        byte start = byte.Parse(words[2].TrimStart('r'));
-                        rawSbx = methodIndex + sBxBias;
+                        uint start = uint.Parse(words[2].TrimStart('r'));
                         instruction =
                             opcode
-                            | (uint)((methodIndex << 6) & 0x1FF)
-                            | (uint)((start << 15) & 0xFF);
+                            | (uint)((methodIndex << 0x1FF) << 6)
+                            | (uint)((start & 0xFF) << 15);
                         break;
                     case "RETURN":
                         opcode = (uint)OpCode.RETURN;
                         start = byte.Parse(words[1].TrimStart('r'));
                         byte end = byte.Parse(words[2].TrimStart('r'));
                         instruction =
-                            opcode | (uint)((start << 6) & 0xFF) | (uint)((end << 14) & 0xFF);
+                            opcode | (uint)((start & 0xFF) << 6) | (uint)((end & 0xFF) << 14);
                         break;
                     case "PRINT":
                         opcode = (uint)OpCode.PRINT;

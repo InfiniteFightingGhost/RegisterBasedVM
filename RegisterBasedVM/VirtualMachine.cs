@@ -10,7 +10,7 @@ public unsafe class VirtualMachine
     int _basePtr = 0;
     private static readonly Random random = new Random();
     private int[] _breakpoints = null!;
-    private uint[] _methods = new uint[512];
+    private uint[] _methods = null!;
 
     public void LoadProgram(VMChunk chunk, int[] breakpoints)
     {
@@ -26,8 +26,7 @@ public unsafe class VirtualMachine
     {
         for (int i = 0; i < count; i++)
         {
-            double bits = BitConverter.DoubleToInt64Bits(registers[i]);
-            Console.Write($"R{i:D2}: 0x{bits:X16} | ");
+            Console.Write($"R{i:D2}: {registers[i]:G} | ");
 
             if ((i + 1) % 2 == 0)
                 Console.WriteLine();
@@ -43,7 +42,7 @@ public unsafe class VirtualMachine
             uint*,
             ref int,
             ref int,
-            StackFrame*,
+            ref StackFrame*,
             bool>* dispatchTable =
             stackalloc delegate* <
                 uint,
@@ -52,7 +51,7 @@ public unsafe class VirtualMachine
                 uint*,
                 ref int,
                 ref int,
-                StackFrame*,
+                ref StackFrame*,
                 bool>[64];
 
         dispatchTable[(int)OpCode.LOADC] = &ExecuteLoadC;
@@ -107,13 +106,28 @@ public unsafe class VirtualMachine
                         methodTablePtr,
                         ref _pc,
                         ref _basePtr,
-                        framePtr
+                        ref framePtr
                     );
                 _pc++;
             }
             stopwatch.Stop();
             Console.WriteLine($"Time: {stopwatch.ElapsedMilliseconds} ms");
         }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void CallStackPush(ref StackFrame* stackFramePtr, StackFrame frame)
+    {
+        *stackFramePtr = frame;
+        stackFramePtr++;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static StackFrame CallStackPop(ref StackFrame* stackFramePtr)
+    {
+        stackFramePtr--;
+        StackFrame frame = *stackFramePtr;
+        return frame;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -130,7 +144,7 @@ public unsafe class VirtualMachine
         uint* methodTablePtr,
         ref int pc,
         ref int basePtr,
-        StackFrame* callStackPtr
+        ref StackFrame* callStackPtr
     )
     {
         byte a = (byte)((instruction >> 6) & 0xFF);
@@ -147,7 +161,7 @@ public unsafe class VirtualMachine
         uint* methodTablePtr,
         ref int pc,
         ref int basePtr,
-        StackFrame* callStackPtr
+        ref StackFrame* callStackPtr
     )
     {
         byte a = (byte)((instruction >> 6) & 0xFF);
@@ -164,7 +178,7 @@ public unsafe class VirtualMachine
         uint* methodTablePtr,
         ref int pc,
         ref int basePtr,
-        StackFrame* callStackPtr
+        ref StackFrame* callStackPtr
     )
     {
         byte a = (byte)((instruction >> 6) & 0xFF);
@@ -184,7 +198,7 @@ public unsafe class VirtualMachine
         uint* methodTablePtr,
         ref int pc,
         ref int basePtr,
-        StackFrame* callStackPtr
+        ref StackFrame* callStackPtr
     )
     {
         byte a = (byte)((instruction >> 6) & 0xFF);
@@ -202,7 +216,7 @@ public unsafe class VirtualMachine
         uint* methodTablePtr,
         ref int pc,
         ref int basePtr,
-        StackFrame* callStackPtr
+        ref StackFrame* callStackPtr
     )
     {
         const int sBxBias = 33554431;
@@ -220,16 +234,16 @@ public unsafe class VirtualMachine
         uint* methodTablePtr,
         ref int pc,
         ref int basePtr,
-        StackFrame* callStackPtr
+        ref StackFrame* callStackPtr
     )
     {
         ushort methodIndex = (ushort)((instruction >> 6) & 0x1FF);
-        byte start = (byte)((instruction >> 15) & 0xFF);
-
+        int start = (int)((instruction >> 15));
         StackFrame frame = new StackFrame(pc, basePtr);
-        *(callStackPtr++) = frame;
-        pc = (int)methodTablePtr[methodIndex] - 1; // TODO: check if this -1 needs to be here
+        CallStackPush(ref callStackPtr, frame);
         basePtr += start;
+
+        pc = (int)methodTablePtr[methodIndex];
         return true;
     }
 
@@ -241,19 +255,21 @@ public unsafe class VirtualMachine
         uint* methodTablePtr,
         ref int pc,
         ref int basePtr,
-        StackFrame* callStackPtr
+        ref StackFrame* callStackPtr
     )
     {
-        byte start = (byte)(instruction >> 6);
+        byte start = (byte)((instruction >> 6) & 0xFF);
         byte end = (byte)(instruction >> 14);
-        for (uint i = start; i <= end; i++)
+        byte count = (byte)(end - start);
+        for (uint i = 0; i <= count; i++)
         {
             Reg(regPtr, basePtr, i) = Reg(regPtr, basePtr, start + i);
         }
-        int target = callStackPtr->ReturnPC;
-        basePtr = callStackPtr->PreviousBase;
-        callStackPtr--;
+        StackFrame frame = CallStackPop(ref callStackPtr);
+        int target = frame.ReturnPC;
+        basePtr = frame.PreviousBase;
         pc = target;
+
         return true;
     }
 
@@ -265,7 +281,7 @@ public unsafe class VirtualMachine
         uint* methodTablePtr,
         ref int pc,
         ref int basePtr,
-        StackFrame* callStackPtr
+        ref StackFrame* callStackPtr
     )
     {
         byte a = (byte)((instruction >> 6) & 0xFF);
@@ -285,7 +301,7 @@ public unsafe class VirtualMachine
         uint* methodTablePtr,
         ref int pc,
         ref int basePtr,
-        StackFrame* callStackPtr
+        ref StackFrame* callStackPtr
     )
     {
         byte a = (byte)((instruction >> 6) & 0xFF);
@@ -305,7 +321,7 @@ public unsafe class VirtualMachine
         uint* methodTablePtr,
         ref int pc,
         ref int basePtr,
-        StackFrame* callStackPtr
+        ref StackFrame* callStackPtr
     )
     {
         byte a = (byte)((instruction >> 6) & 0xFF);
@@ -325,7 +341,7 @@ public unsafe class VirtualMachine
         uint* methodTablePtr,
         ref int pc,
         ref int basePtr,
-        StackFrame* callStackPtr
+        ref StackFrame* callStackPtr
     )
     {
         byte a = (byte)((instruction >> 6) & 0xFF);
@@ -345,7 +361,7 @@ public unsafe class VirtualMachine
         uint* methodTablePtr,
         ref int pc,
         ref int basePtr,
-        StackFrame* callStackPtr
+        ref StackFrame* callStackPtr
     )
     {
         byte a = (byte)((instruction >> 6) & 0xFF);
@@ -365,7 +381,7 @@ public unsafe class VirtualMachine
         uint* methodTablePtr,
         ref int pc,
         ref int basePtr,
-        StackFrame* callStackPtr
+        ref StackFrame* callStackPtr
     )
     {
         byte a = (byte)((instruction >> 6) & 0xFF);
@@ -390,7 +406,7 @@ public unsafe class VirtualMachine
         uint* methodTablePtr,
         ref int pc,
         ref int basePtr,
-        StackFrame* callStackPtr
+        ref StackFrame* callStackPtr
     )
     {
         byte a = (byte)((instruction >> 6) & 0xFF);
@@ -416,11 +432,11 @@ public unsafe class VirtualMachine
         uint* methodTablePtr,
         ref int pc,
         ref int basePtr,
-        StackFrame* callStackPtr
+        ref StackFrame* callStackPtr
     )
     {
         byte a = (byte)((instruction >> 6) & 0xFF);
-        uint b = (uint)(instruction >> 14) & 0x1FF;
+        uint b = (uint)((instruction >> 14) & 0x1FF);
         double valB = b < 256 ? Reg(regPtr, basePtr, b) : constPtr[b - 256];
         uint c = (uint)(instruction >> 23) & 0x1FF;
         double valC = c < 256 ? Reg(regPtr, basePtr, c) : constPtr[c - 256];
@@ -441,7 +457,7 @@ public unsafe class VirtualMachine
         uint* methodTablePtr,
         ref int pc,
         ref int basePtr,
-        StackFrame* callStackPtr
+        ref StackFrame* callStackPtr
     )
     {
         uint a = (uint)((instruction >> 6) & 0xFF);
@@ -458,12 +474,12 @@ public unsafe class VirtualMachine
         uint* methodTablePtr,
         ref int pc,
         ref int basePtr,
-        StackFrame* callStackPtr
+        ref StackFrame* callStackPtr
     )
     {
-        uint a = (uint)((instruction >> 6) & 0xFF);
+        uint a = (uint)((instruction >> 6) & 0x1FF);
         double valA = a < 256 ? Reg(regPtr, basePtr, a) : constPtr[a - 256];
-        Console.WriteLine((char)valA);
+        Console.Write((char)valA);
         return true;
     }
 
@@ -475,7 +491,7 @@ public unsafe class VirtualMachine
         uint* methodTablePtr,
         ref int pc,
         ref int basePtr,
-        StackFrame* callStackPtr
+        ref StackFrame* callStackPtr
     )
     {
         return false;
@@ -489,7 +505,7 @@ public unsafe class VirtualMachine
         uint* methodTablePtr,
         ref int pc,
         ref int basePtr,
-        StackFrame* callStackPtr
+        ref StackFrame* callStackPtr
     )
     {
         byte a = (byte)((instruction >> 6) & 0xFF);
@@ -505,7 +521,7 @@ public unsafe class VirtualMachine
         uint* methodTablePtr,
         ref int pc,
         ref int basePtr,
-        StackFrame* callStackPtr
+        ref StackFrame* callStackPtr
     )
     {
         byte a = (byte)((instruction >> 6) & 0xFF);
@@ -523,7 +539,7 @@ public unsafe class VirtualMachine
         uint* methodTablePtr,
         ref int pc,
         ref int basePtr,
-        StackFrame* callStackPtr
+        ref StackFrame* callStackPtr
     ) // TODO: Make sure that FISR works even with doubles
     {
         byte a = (byte)((instruction >> 6) & 0xFF);
