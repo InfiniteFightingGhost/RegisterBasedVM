@@ -6,8 +6,8 @@ public unsafe class VirtualMachine
 {
     private uint[] _instructions = null!;
     private double[] _constants = null!;
-    int _pc = 0;
-    int _basePtr = 0;
+    int Pc = 0;
+    int BasePtr = 0;
     private static readonly Random random = new Random();
     private int[] _breakpoints = null!;
     private uint[] _methods = null!;
@@ -17,8 +17,8 @@ public unsafe class VirtualMachine
         _instructions = chunk.Instructions;
         _constants = chunk.Constants;
         _methods = chunk.MethodTable;
-        _pc = 0;
-        _basePtr = 0;
+        Pc = 0;
+        BasePtr = 0;
         _breakpoints = breakpoints;
     }
 
@@ -35,24 +35,8 @@ public unsafe class VirtualMachine
 
     public unsafe void RunFast()
     {
-        delegate* <
-            uint,
-            double*,
-            double*,
-            uint*,
-            ref int,
-            ref int,
-            ref StackFrame*,
-            bool>* dispatchTable =
-            stackalloc delegate* <
-                uint,
-                double*,
-                double*,
-                uint*,
-                ref int,
-                ref int,
-                ref StackFrame*,
-                bool>[64];
+        delegate* <Instruction, ref VMState, bool>* dispatchTable =
+            stackalloc delegate* <Instruction, ref VMState, bool>[64];
 
         dispatchTable[(int)OpCode.LOADC] = &ExecuteLoadC;
         dispatchTable[(int)OpCode.MOVE] = &ExecuteMove;
@@ -76,8 +60,8 @@ public unsafe class VirtualMachine
         dispatchTable[(int)OpCode.CALL] = &ExecuteCall;
         dispatchTable[(int)OpCode.RETURN] = &ExecuteReturn;
 
-        double* regPtr = stackalloc double[256];
-        Unsafe.InitBlockUnaligned(regPtr, 0, 256 * sizeof(float));
+        double* RegPtr = stackalloc double[256];
+        Unsafe.InitBlockUnaligned(RegPtr, 0, 256 * sizeof(double));
 
         StackFrame* framePtr = stackalloc StackFrame[32];
         fixed (uint* instPtr = _instructions)
@@ -87,28 +71,39 @@ public unsafe class VirtualMachine
             bool isRunning = true;
             Console.WriteLine("Starting VM...");
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+            VMState state = new VMState
+            {
+                RegPtr = RegPtr,
+                ConstPtr = constPtr,
+                MethodTablePtr = methodTablePtr,
+                Pc = 0,
+                BasePtr = 0,
+                CallStackPtr = framePtr,
+            };
             while (isRunning)
             {
+                Instruction instruction = new Instruction(instPtr[state.Pc]);
 #if DEBUG
-                if (_breakpoints.Contains(_pc))
+                if (_breakpoints.Contains(Pc))
                 {
-                    DumpRegisters(regPtr);
+                    DumpRegisters(state.RegPtr);
                     Console.ReadLine();
                 }
+                Console.WriteLine(
+                    $"[TRACE] PC:{state.Pc:D4} | Op:{instruction.Op, -8} | A:{instruction.A, -3} | B:{instruction.B, -3} | C:{instruction.C, -3} | Bx:{instruction.Bx, -5} | sBx:{instruction.sBx26}"
+                );
 #endif
-                uint instruction = instPtr[_pc];
-                byte opcode = (byte)(instruction & 0x3F);
-                isRunning = dispatchTable[opcode]
-                    (
-                        instruction,
-                        regPtr,
-                        constPtr,
-                        methodTablePtr,
-                        ref _pc,
-                        ref _basePtr,
-                        ref framePtr
-                    );
-                _pc++;
+                try
+                {
+                    isRunning = dispatchTable[(int)instruction.Op](instruction, ref state);
+                }
+                catch (NullReferenceException ex)
+                {
+                    Console.WriteLine(ex);
+                    Console.WriteLine("Opcode was " + (int)instruction.Op);
+                    return;
+                }
+                state.Pc++;
             }
             stopwatch.Stop();
             Console.WriteLine($"Time: {stopwatch.ElapsedMilliseconds} ms");
@@ -131,420 +126,249 @@ public unsafe class VirtualMachine
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static unsafe ref double Reg(double* regPtr, int basePtr, uint index)
+    private static unsafe ref double Reg(double* RegPtr, int BasePtr, uint index)
     {
-        return ref regPtr[basePtr + index];
+        return ref RegPtr[BasePtr + index];
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe bool ExecuteLoadC(
-        uint instruction,
-        double* regPtr,
-        double* constPtr,
-        uint* methodTablePtr,
-        ref int pc,
-        ref int basePtr,
-        ref StackFrame* callStackPtr
-    )
+    public static unsafe bool ExecuteLoadC(Instruction instruction, ref VMState state)
     {
-        byte a = (byte)((instruction >> 6) & 0xFF);
-        uint constantIndex = (byte)(instruction >> 14 & 0xFFFFFF);
-        Reg(regPtr, basePtr, a) = constPtr[constantIndex];
+        byte a = instruction.A;
+        uint constantIndex = instruction.Bx;
+        Reg(state.RegPtr, state.BasePtr, a) = state.ConstPtr[constantIndex];
         return true;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe bool ExecuteMove(
-        uint instruction,
-        double* regPtr,
-        double* constPtr,
-        uint* methodTablePtr,
-        ref int pc,
-        ref int basePtr,
-        ref StackFrame* callStackPtr
-    )
+    public static unsafe bool ExecuteMove(Instruction instruction, ref VMState state)
     {
-        byte a = (byte)((instruction >> 6) & 0xFF);
-        byte b = (byte)((instruction >> 14) & 0xFF);
-        Reg(regPtr, basePtr, a) = Reg(regPtr, basePtr, b);
+        byte a = instruction.A;
+        byte b = (byte)instruction.B;
+        Reg(state.RegPtr, state.BasePtr, a) = Reg(state.RegPtr, state.BasePtr, b);
         return true;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe bool ExecuteSwp(
-        uint instruction,
-        double* regPtr,
-        double* constPtr,
-        uint* methodTablePtr,
-        ref int pc,
-        ref int basePtr,
-        ref StackFrame* callStackPtr
-    )
+    public static unsafe bool ExecuteSwp(Instruction instruction, ref VMState state)
     {
-        byte a = (byte)((instruction >> 6) & 0xFF);
-        byte b = (byte)((instruction >> 14) & 0xFF);
-        (Reg(regPtr, basePtr, a), Reg(regPtr, basePtr, b)) = (
-            Reg(regPtr, basePtr, b),
-            Reg(regPtr, basePtr, a)
+        byte a = instruction.A;
+        byte b = (byte)instruction.B;
+        (Reg(state.RegPtr, state.BasePtr, a), Reg(state.RegPtr, state.BasePtr, b)) = (
+            Reg(state.RegPtr, state.BasePtr, b),
+            Reg(state.RegPtr, state.BasePtr, a)
         );
         return true;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe bool ExecuteUnm(
-        uint instruction,
-        double* regPtr,
-        double* constPtr,
-        uint* methodTablePtr,
-        ref int pc,
-        ref int basePtr,
-        ref StackFrame* callStackPtr
-    )
+    public static unsafe bool ExecuteUnm(Instruction instruction, ref VMState state)
     {
-        byte a = (byte)((instruction >> 6) & 0xFF);
-        uint b = (uint)((instruction >> 14) & 0xFF);
-        double valB = b < 256 ? Reg(regPtr, basePtr, b) : constPtr[b - 256];
-        Reg(regPtr, basePtr, a) = -valB;
+        byte a = instruction.A;
+        ushort b = instruction.B;
+        double valB = b < 256 ? Reg(state.RegPtr, state.BasePtr, b) : state.ConstPtr[b - 256];
+        Reg(state.RegPtr, state.BasePtr, a) = -valB;
         return true;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe bool ExecuteJump(
-        uint instruction,
-        double* regPtr,
-        double* constPtr,
-        uint* methodTablePtr,
-        ref int pc,
-        ref int basePtr,
-        ref StackFrame* callStackPtr
-    )
+    public static unsafe bool ExecuteJump(Instruction instruction, ref VMState state)
     {
-        const int sBxBias = 33554431;
-        uint unsignedBx = (uint)(instruction >> 6);
-        int sBx = (int)(unsignedBx - sBxBias);
-        pc += sBx - 1;
+        state.Pc += instruction.sBx26 - 1;
         return true;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe bool ExecuteCall(
-        uint instruction,
-        double* regPtr,
-        double* constPtr,
-        uint* methodTablePtr,
-        ref int pc,
-        ref int basePtr,
-        ref StackFrame* callStackPtr
-    )
+    public static unsafe bool ExecuteCall(Instruction instruction, ref VMState state)
     {
-        ushort methodIndex = (ushort)((instruction >> 6) & 0x1FF);
-        int start = (int)((instruction >> 15));
-        StackFrame frame = new StackFrame(pc, basePtr);
-        CallStackPush(ref callStackPtr, frame);
-        basePtr += start;
+        byte start = instruction.A;
+        ushort methodIndex = instruction.B;
+        StackFrame frame = new StackFrame(state.Pc, state.BasePtr);
+        CallStackPush(ref state.CallStackPtr, frame);
+        state.BasePtr += start;
 
-        pc = (int)methodTablePtr[methodIndex];
+        state.Pc = (int)state.MethodTablePtr[methodIndex];
         return true;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe bool ExecuteReturn(
-        uint instruction,
-        double* regPtr,
-        double* constPtr,
-        uint* methodTablePtr,
-        ref int pc,
-        ref int basePtr,
-        ref StackFrame* callStackPtr
-    )
+    public static unsafe bool ExecuteReturn(Instruction instruction, ref VMState state)
     {
-        byte start = (byte)((instruction >> 6) & 0xFF);
-        byte end = (byte)(instruction >> 14);
+        byte start = instruction.A;
+        byte end = (byte)instruction.B;
         byte count = (byte)(end - start);
         for (uint i = 0; i <= count; i++)
         {
-            Reg(regPtr, basePtr, i) = Reg(regPtr, basePtr, start + i);
+            Reg(state.RegPtr, state.BasePtr, i) = Reg(state.RegPtr, state.BasePtr, start + i);
         }
-        StackFrame frame = CallStackPop(ref callStackPtr);
+        StackFrame frame = CallStackPop(ref state.CallStackPtr);
         int target = frame.ReturnPC;
-        basePtr = frame.PreviousBase;
-        pc = target;
+        state.BasePtr = frame.PreviousBase;
+        state.Pc = target;
 
         return true;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe bool ExecuteAdd(
-        uint instruction,
-        double* regPtr,
-        double* constPtr,
-        uint* methodTablePtr,
-        ref int pc,
-        ref int basePtr,
-        ref StackFrame* callStackPtr
-    )
+    public static unsafe bool ExecuteAdd(Instruction instruction, ref VMState state)
     {
-        byte a = (byte)((instruction >> 6) & 0xFF);
-        uint b = (uint)(instruction >> 14) & 0x1FF;
-        double valB = b < 256 ? Reg(regPtr, basePtr, b) : constPtr[b - 256];
-        uint c = (uint)(instruction >> 23) & 0x1FF;
-        double valC = c < 256 ? Reg(regPtr, basePtr, c) : constPtr[c - 256];
-        Reg(regPtr, basePtr, a) = valB + valC;
+        byte a = instruction.A;
+        ushort b = instruction.B;
+        double valB = b < 256 ? Reg(state.RegPtr, state.BasePtr, b) : state.ConstPtr[b - 256];
+        ushort c = instruction.C;
+        double valC = c < 256 ? Reg(state.RegPtr, state.BasePtr, c) : state.ConstPtr[c - 256];
+        Reg(state.RegPtr, state.BasePtr, a) = valB + valC;
         return true;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe bool ExecuteSub(
-        uint instruction,
-        double* regPtr,
-        double* constPtr,
-        uint* methodTablePtr,
-        ref int pc,
-        ref int basePtr,
-        ref StackFrame* callStackPtr
-    )
+    public static unsafe bool ExecuteSub(Instruction instruction, ref VMState state)
     {
-        byte a = (byte)((instruction >> 6) & 0xFF);
-        uint b = (uint)(instruction >> 14) & 0x1FF;
-        double valB = b < 256 ? Reg(regPtr, basePtr, b) : constPtr[b - 256];
-        uint c = (uint)(instruction >> 23) & 0x1FF;
-        double valC = c < 256 ? Reg(regPtr, basePtr, c) : constPtr[c - 256];
-        Reg(regPtr, basePtr, a) = valB - valC;
+        byte a = instruction.A;
+        ushort b = instruction.B;
+        double valB = b < 256 ? Reg(state.RegPtr, state.BasePtr, b) : state.ConstPtr[b - 256];
+        ushort c = instruction.C;
+        double valC = c < 256 ? Reg(state.RegPtr, state.BasePtr, c) : state.ConstPtr[c - 256];
+        Reg(state.RegPtr, state.BasePtr, a) = valB - valC;
         return true;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe bool ExecuteMul(
-        uint instruction,
-        double* regPtr,
-        double* constPtr,
-        uint* methodTablePtr,
-        ref int pc,
-        ref int basePtr,
-        ref StackFrame* callStackPtr
-    )
+    public static unsafe bool ExecuteMul(Instruction instruction, ref VMState state)
     {
-        byte a = (byte)((instruction >> 6) & 0xFF);
-        uint b = (uint)(instruction >> 14) & 0x1FF;
-        double valB = b < 256 ? Reg(regPtr, basePtr, b) : constPtr[b - 256];
-        uint c = (uint)(instruction >> 23) & 0x1FF;
-        double valC = c < 256 ? Reg(regPtr, basePtr, c) : constPtr[c - 256];
-        Reg(regPtr, basePtr, a) = valB * valC;
+        byte a = instruction.A;
+        ushort b = instruction.B;
+        double valB = b < 256 ? Reg(state.RegPtr, state.BasePtr, b) : state.ConstPtr[b - 256];
+        ushort c = instruction.C;
+        double valC = c < 256 ? Reg(state.RegPtr, state.BasePtr, c) : state.ConstPtr[c - 256];
+        Reg(state.RegPtr, state.BasePtr, a) = valB * valC;
         return true;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe bool ExecuteDiv(
-        uint instruction,
-        double* regPtr,
-        double* constPtr,
-        uint* methodTablePtr,
-        ref int pc,
-        ref int basePtr,
-        ref StackFrame* callStackPtr
-    )
+    public static unsafe bool ExecuteDiv(Instruction instruction, ref VMState state)
     {
-        byte a = (byte)((instruction >> 6) & 0xFF);
-        uint b = (uint)(instruction >> 14) & 0x1FF;
-        double valB = b < 256 ? Reg(regPtr, basePtr, b) : constPtr[b - 256];
-        uint c = (uint)(instruction >> 23) & 0x1FF;
-        double valC = c < 256 ? Reg(regPtr, basePtr, c) : constPtr[c - 256];
-        Reg(regPtr, basePtr, a) = valB / valC;
+        byte a = instruction.A;
+        ushort b = instruction.B;
+        double valB = b < 256 ? Reg(state.RegPtr, state.BasePtr, b) : state.ConstPtr[b - 256];
+        ushort c = instruction.C;
+        double valC = c < 256 ? Reg(state.RegPtr, state.BasePtr, c) : state.ConstPtr[c - 256];
+        Reg(state.RegPtr, state.BasePtr, a) = valB / valC;
         return true;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe bool ExecutePow(
-        uint instruction,
-        double* regPtr,
-        double* constPtr,
-        uint* methodTablePtr,
-        ref int pc,
-        ref int basePtr,
-        ref StackFrame* callStackPtr
-    )
+    public static unsafe bool ExecutePow(Instruction instruction, ref VMState state)
     {
-        byte a = (byte)((instruction >> 6) & 0xFF);
-        uint b = (uint)(instruction >> 14) & 0x1FF;
-        double valB = b < 256 ? Reg(regPtr, basePtr, b) : constPtr[b - 256];
-        uint c = (uint)(instruction >> 23) & 0x1FF;
-        double valC = c < 256 ? Reg(regPtr, basePtr, c) : constPtr[c - 256];
-        Reg(regPtr, basePtr, a) = (float)Math.Pow(valB, valC);
+        byte a = instruction.A;
+        ushort b = instruction.B;
+        double valB = b < 256 ? Reg(state.RegPtr, state.BasePtr, b) : state.ConstPtr[b - 256];
+        ushort c = instruction.C;
+        double valC = c < 256 ? Reg(state.RegPtr, state.BasePtr, c) : state.ConstPtr[c - 256];
+        Reg(state.RegPtr, state.BasePtr, a) = (float)Math.Pow(valB, valC);
         return true;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe bool ExecuteEq(
-        uint instruction,
-        double* regPtr,
-        double* constPtr,
-        uint* methodTablePtr,
-        ref int pc,
-        ref int basePtr,
-        ref StackFrame* callStackPtr
-    )
+    public static unsafe bool ExecuteEq(Instruction instruction, ref VMState state)
     {
-        byte a = (byte)((instruction >> 6) & 0xFF);
-        uint b = (uint)(instruction >> 14) & 0x1FF;
-        double valB = b < 256 ? Reg(regPtr, basePtr, b) : constPtr[b - 256];
-        uint c = (uint)(instruction >> 23) & 0x1FF;
-        double valC = c < 256 ? Reg(regPtr, basePtr, c) : constPtr[c - 256];
+        byte a = instruction.A;
+        ushort b = instruction.B;
+        double valB = b < 256 ? Reg(state.RegPtr, state.BasePtr, b) : state.ConstPtr[b - 256];
+        ushort c = instruction.C;
+        double valC = c < 256 ? Reg(state.RegPtr, state.BasePtr, c) : state.ConstPtr[c - 256];
         bool comparison = valB == valC;
         bool expected = (a != 0);
         if (comparison == expected)
         {
-            pc++;
+            state.Pc++;
         }
         return true;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe bool ExecuteLt(
-        uint instruction,
-        double* regPtr,
-        double* constPtr,
-        uint* methodTablePtr,
-        ref int pc,
-        ref int basePtr,
-        ref StackFrame* callStackPtr
-    )
+    public static unsafe bool ExecuteLt(Instruction instruction, ref VMState state)
     {
-        byte a = (byte)((instruction >> 6) & 0xFF);
-        uint b = (uint)(instruction >> 14) & 0x1FF;
-        double valB = b < 256 ? Reg(regPtr, basePtr, b) : constPtr[b - 256];
-        uint c = (uint)(instruction >> 23) & 0x1FF;
-        double valC = c < 256 ? Reg(regPtr, basePtr, c) : constPtr[c - 256];
+        byte a = instruction.A;
+        ushort b = instruction.B;
+        double valB = b < 256 ? Reg(state.RegPtr, state.BasePtr, b) : state.ConstPtr[b - 256];
+        ushort c = instruction.C;
+        double valC = c < 256 ? Reg(state.RegPtr, state.BasePtr, c) : state.ConstPtr[c - 256];
         bool comparison = valB < valC;
 
         bool expected = (a != 0);
         if (comparison != expected)
         {
-            pc++;
+            state.Pc++;
         }
         return true;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe bool ExecuteLe(
-        uint instruction,
-        double* regPtr,
-        double* constPtr,
-        uint* methodTablePtr,
-        ref int pc,
-        ref int basePtr,
-        ref StackFrame* callStackPtr
-    )
+    public static unsafe bool ExecuteLe(Instruction instruction, ref VMState state)
     {
-        byte a = (byte)((instruction >> 6) & 0xFF);
-        uint b = (uint)((instruction >> 14) & 0x1FF);
-        double valB = b < 256 ? Reg(regPtr, basePtr, b) : constPtr[b - 256];
-        uint c = (uint)(instruction >> 23) & 0x1FF;
-        double valC = c < 256 ? Reg(regPtr, basePtr, c) : constPtr[c - 256];
+        byte a = instruction.A;
+        ushort b = instruction.B;
+        double valB = b < 256 ? Reg(state.RegPtr, state.BasePtr, b) : state.ConstPtr[b - 256];
+        ushort c = instruction.C;
+        double valC = c < 256 ? Reg(state.RegPtr, state.BasePtr, c) : state.ConstPtr[c - 256];
         bool comparison = valB <= valC;
         bool expected = (a != 0);
         if (comparison == expected)
         {
-            pc++;
+            state.Pc++;
         }
         return true;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe bool ExecutePrint(
-        uint instruction,
-        double* regPtr,
-        double* constPtr,
-        uint* methodTablePtr,
-        ref int pc,
-        ref int basePtr,
-        ref StackFrame* callStackPtr
-    )
+    public static unsafe bool ExecutePrint(Instruction instruction, ref VMState state)
     {
-        uint a = (uint)((instruction >> 6) & 0xFF);
-        double valA = a < 256 ? Reg(regPtr, basePtr, a) : constPtr[a - 256];
+        uint a = (uint)instruction.B;
+        double valA = a < 256 ? Reg(state.RegPtr, state.BasePtr, a) : state.ConstPtr[a - 256];
         Console.WriteLine(valA);
         return true;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe bool ExecutePrintA(
-        uint instruction,
-        double* regPtr,
-        double* constPtr,
-        uint* methodTablePtr,
-        ref int pc,
-        ref int basePtr,
-        ref StackFrame* callStackPtr
-    )
+    public static unsafe bool ExecutePrintA(Instruction instruction, ref VMState state)
     {
-        uint a = (uint)((instruction >> 6) & 0x1FF);
-        double valA = a < 256 ? Reg(regPtr, basePtr, a) : constPtr[a - 256];
+        uint a = (uint)instruction.B;
+        double valA = a < 256 ? Reg(state.RegPtr, state.BasePtr, a) : state.ConstPtr[a - 256];
         Console.Write((char)valA);
         return true;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe bool ExecuteHalt(
-        uint instruction,
-        double* regPtr,
-        double* constPtr,
-        uint* methodTablePtr,
-        ref int pc,
-        ref int basePtr,
-        ref StackFrame* callStackPtr
-    )
+    public static unsafe bool ExecuteHalt(Instruction instruction, ref VMState state)
     {
         return false;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe bool ExecuteRand(
-        uint instruction,
-        double* regPtr,
-        double* constPtr,
-        uint* methodTablePtr,
-        ref int pc,
-        ref int basePtr,
-        ref StackFrame* callStackPtr
-    )
+    public static unsafe bool ExecuteRand(Instruction instruction, ref VMState state)
     {
-        byte a = (byte)((instruction >> 6) & 0xFF);
-        Reg(regPtr, basePtr, a) = random.NextSingle();
+        byte a = instruction.A;
+        Reg(state.RegPtr, state.BasePtr, a) = random.NextSingle();
         return true;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe bool ExecuteSqrt(
-        uint instruction,
-        double* regPtr,
-        double* constPtr,
-        uint* methodTablePtr,
-        ref int pc,
-        ref int basePtr,
-        ref StackFrame* callStackPtr
-    )
+    public static unsafe bool ExecuteSqrt(Instruction instruction, ref VMState state)
     {
-        byte a = (byte)((instruction >> 6) & 0xFF);
-        uint b = (uint)((instruction >> 14) & 0xFF);
-        double valB = b < 256 ? Reg(regPtr, basePtr, b) : constPtr[b - 256];
-        Reg(regPtr, basePtr, a) = (float)Math.Sqrt(valB);
+        byte a = instruction.A;
+        ushort b = instruction.B;
+        double valB = b < 256 ? Reg(state.RegPtr, state.BasePtr, b) : state.ConstPtr[b - 256];
+        Reg(state.RegPtr, state.BasePtr, a) = (float)Math.Sqrt(valB);
         return true;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe bool ExecuteFisr(
-        uint instruction,
-        double* regPtr,
-        double* constPtr,
-        uint* methodTablePtr,
-        ref int pc,
-        ref int basePtr,
-        ref StackFrame* callStackPtr
-    ) // TODO: Make sure that FISR works even with doubles
+    public static unsafe bool ExecuteFisr(Instruction instruction, ref VMState state) // TODO: Make sure that FISR works even with doubles
     {
-        byte a = (byte)((instruction >> 6) & 0xFF);
-        uint b = (uint)((instruction >> 14) & 0xFF);
-        double valB = b < 256 ? Reg(regPtr, basePtr, b) : constPtr[b - 256];
+        byte a = instruction.A;
+        ushort b = instruction.B;
+        double valB = b < 256 ? Reg(state.RegPtr, state.BasePtr, b) : state.ConstPtr[b - 256];
         long i;
         double x2,
             y;
@@ -557,7 +381,7 @@ public unsafe class VirtualMachine
         y = *(double*)&i;
         y = y * (threehalfs - (x2 * y * y)); // 1st iteration
         //	y  = y * ( threehalfs - ( x2 * y * y ) );   // 2nd iteration, this can be removed
-        Reg(regPtr, basePtr, a) = y;
+        Reg(state.RegPtr, state.BasePtr, a) = y;
         return true;
     }
 }

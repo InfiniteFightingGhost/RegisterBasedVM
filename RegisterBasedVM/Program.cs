@@ -21,12 +21,7 @@ math:
     CALL method() r1
     SUB r2 r0 2
     CALL method() r2
-    PRINT r0
-    PRINT r1
-    PRINT r2
     ADD r1 r1 r2
-    PRINT r1
-    PRINTA 10
     RETURN r1 r1";
 
 string linearFib =
@@ -34,7 +29,7 @@ string linearFib =
 DEFINE last r1
 DEFINE lastlast r2
 DEFINE counter r4
-DEFINE n 10
+DEFINE n 5
 LOADC result 1
 LOADC counter 1
 loop:
@@ -42,6 +37,7 @@ loop:
     MOVE last result
     ADD result last lastlast
     ADD counter counter 1
+    PRINT counter
     LT 1 counter n
     JUMP loop
 PRINT result
