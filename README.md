@@ -1,10 +1,27 @@
 # RegisterBasedVM
 
-This is a project that tries to build a register virtual machine, akin to the one that [Lua 5.0 implements](https://www.lua.org/doc/jucs05.pdf)
-The speed it hit is 83.3 MIPS. This speed was achieved by doing the following things:
-- Used a register based VM instead of a stack based one
-- Used unmanaged function pointers for a O(1) dispatch table, bypassing the CPU's branch predictor
-- Used unsafe code in order to eliminate bound checking overhead
+A high-performance(300 MIPS), Turing-complete virtual machine featuring SPARC-style overlapping register windows, stackless recursion, and a custom multi-pass assembler.
+## Introduction and overview
+The goal: Building a high performance register based VM to better understand how VM's work and how to write faster C# code
+Core features:
+ - Overlapping register window(Zero copy argument passing)
+ - Custom 3 Pass Assembler(Labels, comments, DEFINE statements, forward JUMP resolution)
+## The Assembler pipeline
+The assembler is responsible for translating human-readable text into the raw 32-bit uint bytecode consumed by the Virtual Machine. To handle forward-jumping and macro expansion, the assembler operates in three distinct passes.
+### The first pass:
+The first pass is all about stripping everything away that is just syntactic sugar: comments and empty lines are all removed.
+The assembler scans for DEFINE \[name\] \[value\] and replaces all subsequent instances of \[name\] with \[value\]
+
+### The second pass:
+The second pass focuses on labels and methods.
+The assembler scans for lines ending with ":", checks if its not a JUMP and saves the label alongside the expected instruction index.
+Methods are a little special, because their instruction index doesn't get saved in a dictionary, it gets saved in an array, and the index gets saved in the dictionary. This is done this way in order to allow for bit packing.
+
+### The third pass:
+This is the place where the magic happens.
+The assembler iterates over the now clean instruction list and translates string opcodes(eg. ADD r1 r2 r3) into their binary representation.
+This is also the place where the JUMP and CALL statements are resolved using the label and method dictionaries.
+
 ## OpCodes:
 Here is the notation I am using for ease of understanding:
  - R(n) -> nth register
@@ -13,16 +30,16 @@ Here is the notation I am using for ease of understanding:
  - PC -> program counter
  - CS -> Call stack
 
+### Bit packing
 Each instruction is 32 bits long. The break down is:
 Opcode is always 6 bits long
-
 | Format | Destitation Register | RC 1 | RC 2 |
 | --------------- | --------------- | --------------- | --------------- |
 | ABC | 8 bits | 9 bits | 9 bits |
 | ABx | 8 bits | 18 bits (unsigned) | 0 bits |
 | sBx | 18 bits(signed) | 0 bits | 0 bits |
 
-
+### Instruction Set Architecture(ISA)
 | OpCode | Destitation Register | RC 1 | RC 2(if it's needed) | Notation |
 | --------------- | --------------- | --------------- | --------------- | --------------- |
 | LOADC | A | Bx | | R(A) := C(Bx) |
@@ -44,8 +61,8 @@ Opcode is always 6 bits long
 | RAND | A | | | | R(A) = Random.NextSingle()
 | SQRT | A | B | | R(A) := Math.Sqrt(RC(B)) |
 | FISR | A | B | | R(A) := FISR algorithm (RC(B)) |
-| CALL | sBx| A | | CS.Push(PC); PC += sBx, Bias += A
-| RETURN| | | | PC = CS.Pop() + 1 |
+| CALL | A| B | | CS.Push(PC, Bias); PC = A, Bias += B
+| RETURN| | | | (PC, Bias) = CS.Pop()|
 
 ## Example programs:
 
@@ -82,6 +99,36 @@ PRINT result
 HALT
 ```
 
+### Recursive Fibonacci
+```asm
+DEFINE n 25
+DEFINE result r0
+LOADC result n
+
+CALL method() result
+PRINT result
+HALT
+
+method()
+    PRINT r0
+    LE 1 r0 2
+    JUMP math
+    LOADC r0 1
+    RETURN r0 r0
+
+math:
+    SUB r1 r0 1
+    CALL method() r1
+    SUB r2 r0 2
+    CALL method() r2
+    PRINT r0
+    PRINT r1
+    PRINT r2
+    ADD r1 r1 r2
+    PRINT r1
+    PRINTA 10
+    RETURN r1 r1
+```
 
 ### Monte Carlo PI approximator
 | Instruction Number   | Instruction    | Description |
@@ -133,7 +180,7 @@ Work in progress
 Work in progress
 
 
-### Graveyard of raytraycers
+### Graveyard of ray-tracers
 ```asm
 LT 1 r1 40
 JUMP 75
