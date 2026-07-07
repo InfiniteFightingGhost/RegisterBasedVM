@@ -11,6 +11,7 @@ public readonly struct Instruction
     private const int BBits = 9;
     private const int CBits = 9;
     private const int BxBits = 18;
+    private const int sBx16Bits = 16;
     private const int sBx26Bits = 26;
 
     private const int AShift = OpCodeBits;
@@ -22,6 +23,7 @@ public readonly struct Instruction
     private const uint BMask = (1 << BBits) - 1;
     private const uint CMask = (1 << CBits) - 1;
     private const uint BxMask = (1 << BxBits) - 1;
+    private const uint sBx16Mask = (1 << sBx16Bits) - 1;
     private const uint sBx26Mask = (1 << sBx26Bits) - 1;
 
     public Instruction(uint value) => Value = value;
@@ -31,10 +33,11 @@ public readonly struct Instruction
     public ushort B => (ushort)((Value >> BShift) & BMask);
     public ushort C => (ushort)((Value >> CShift) & CMask);
     public uint Bx => (Value >> BShift) & BxMask;
+    private const int sBx16Bias = 32767;
+    public int sBx16 => (int)((Value >> BShift) & sBx16Mask) - sBx16Bias;
 
-    public int sBx => (int)Bx - ((1 << (BxBits - 1)) - 1);
-
-    public int sBx26 => (int)((Value >> AShift) & sBx26Mask) - 33554431;
+    private const int sBx26Bias = 33554431;
+    public int sBx26 => (int)((Value >> AShift) & sBx26Mask) - sBx26Bias;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Instruction CreateABC(OpCode op, byte a, ushort b, ushort c)
@@ -51,12 +54,19 @@ public readonly struct Instruction
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Instruction CreateAsBx(OpCode op, byte a, int sbx)
+    {
+        uint biasedBx = (uint)(sbx + sBx16Bias) & sBx16Mask;
+        uint val = (uint)op | ((uint)a << AShift) | (biasedBx << BShift);
+        return new Instruction(val);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Instruction CreateSBx26(OpCode op, int sBxOffset)
     {
-        const int sBxBias = 33554431;
-        uint biasedBx = (uint)(sBxOffset + sBxBias) & 0x3FFFFFF;
+        uint biasedBx = (uint)(sBxOffset + sBx26Bias) & 0x3FFFFFF;
 
-        uint val = (uint)op | (biasedBx << 6);
+        uint val = (uint)op | (biasedBx << AShift);
 
         return new Instruction(val);
     }

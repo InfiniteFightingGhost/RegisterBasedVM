@@ -141,6 +141,9 @@ public class Assembler
                     case "MUL":
                     case "DIV":
                     case "POW":
+                    case "MOD":
+                    case "SETARR":
+                    case "SETARRA":
                         byte destA3 = byte.Parse(words[1].TrimStart('r'));
 
                         ushort destB3;
@@ -295,7 +298,6 @@ public class Assembler
                         instruction = Instruction.CreateABx(OpCode.SQRT, destA4, destB4);
                         break;
                     case "FISR":
-
                         destA4 = byte.Parse(words[2].TrimStart('r'));
                         if (words[2].StartsWith("r"))
                         {
@@ -307,6 +309,68 @@ public class Assembler
                         }
                         instruction = Instruction.CreateABx(OpCode.FISR, destA4, destB4);
                         break;
+                    case "FOR":
+                        byte rIndex = byte.Parse(words[1].TrimStart("r"));
+                        ushort rMax;
+                        if (words[2].StartsWith("r"))
+                            rMax = ushort.Parse(words[2].TrimStart('r'));
+                        else
+                            rMax = (ushort)(_chunk.SetConstant(float.Parse(words[2])) + 256);
+
+                        ushort rStep;
+                        if (words[3].StartsWith("r"))
+                            rStep = ushort.Parse(words[3].TrimStart('r'));
+                        else
+                            rStep = (ushort)(_chunk.SetConstant(float.Parse(words[3])) + 256);
+                        byte comp = 0;
+                        switch (words[4])
+                        {
+                            case "<":
+                                comp = 0;
+                                break;
+                            case ">":
+                                comp = 1;
+                                break;
+                            case "<=":
+                                comp = 2;
+                                break;
+                            case ">=":
+                                comp = 3;
+                                break;
+                        }
+                        int jumpOffset = (int)(labels[words[5]] - pc);
+                        instruction = Instruction.CreateABC(OpCode.FOR, rIndex, rMax, rStep);
+                        instructions.Add(instruction);
+                        instruction = Instruction.CreateAsBx(OpCode.FOR, comp, jumpOffset);
+                        break;
+                    case "NEWARR":
+                    case "GETARR":
+                    case "GETARRA":
+                        OpCode code;
+                        switch (words[0])
+                        {
+                            case "NEWARR":
+                                code = OpCode.NEWARR;
+                                break;
+                            case "GETARR":
+                                code = OpCode.GETARR;
+                                break;
+                            case "GETARRA":
+                                code = OpCode.GETARRA;
+                                break;
+                            default:
+                                code = OpCode.PRINT;
+                                break;
+                        }
+                        byte regPtr = byte.Parse(words[1]);
+
+                        ushort index;
+                        if (words[2].StartsWith("r"))
+                            index = ushort.Parse(words[2].TrimStart('r'));
+                        else
+                            index = (ushort)(_chunk.SetConstant(float.Parse(words[2])) + 256);
+                        instruction = Instruction.CreateABC(code, regPtr, index, 0);
+                        break;
                     default:
                         throw new Exception($"Unknown opcode found: {words[0]} on line {pc}");
                 }
@@ -314,6 +378,7 @@ public class Assembler
             catch (Exception x)
             {
                 Console.WriteLine($"{x.Message} at line {pc}");
+                return;
             }
             instructions.Add(instruction);
             pc++;
@@ -333,6 +398,8 @@ public class Assembler
                 return OpCode.MUL;
             case "DIV":
                 return OpCode.DIV;
+            case "MOD":
+                return OpCode.MOD;
             case "POW":
                 return OpCode.POW;
             case "EQ":
@@ -341,6 +408,10 @@ public class Assembler
                 return OpCode.LT;
             case "LE":
                 return OpCode.LE;
+            case "GETARR":
+                return OpCode.GETARR;
+            case "GETARRA":
+                return OpCode.GETARRA;
         }
         return OpCode.LOADC;
     }

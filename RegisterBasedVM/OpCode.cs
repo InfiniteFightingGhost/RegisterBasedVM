@@ -23,4 +23,11 @@ public enum OpCode
     FISR, // 18
     CALL, // 19
     RETURN, // 20
+    FOR, // 21
+    MOD, // 22
+    NEWARR, // 23
+    SETARR, // 24
+    SETARRA, // 25
+    GETARR, // 26
+    GETARRA, // 27
 }

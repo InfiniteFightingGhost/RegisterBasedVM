@@ -11,6 +11,9 @@ public unsafe class VirtualMachine
     private static readonly Random random = new Random();
     private int[] _breakpoints = null!;
     private uint[] _methods = null!;
+    private const int _heapSize = 4 * 1024 * 1024;
+    private byte[] _heap = new byte[_heapSize];
+    uint rngState = 2463534215; // RNG seed
 
     public void LoadProgram(VMChunk chunk, int[] breakpoints)
     {
@@ -35,31 +38,6 @@ public unsafe class VirtualMachine
 
     public unsafe void RunFast()
     {
-        delegate* <Instruction, ref VMState, bool>* dispatchTable =
-            stackalloc delegate* <Instruction, ref VMState, bool>[64];
-
-        dispatchTable[(int)OpCode.LOADC] = &ExecuteLoadC;
-        dispatchTable[(int)OpCode.MOVE] = &ExecuteMove;
-        dispatchTable[(int)OpCode.SWAP] = &ExecuteSwp;
-        dispatchTable[(int)OpCode.ADD] = &ExecuteAdd;
-        dispatchTable[(int)OpCode.SUB] = &ExecuteSub;
-        dispatchTable[(int)OpCode.MUL] = &ExecuteMul;
-        dispatchTable[(int)OpCode.DIV] = &ExecuteDiv;
-        dispatchTable[(int)OpCode.POW] = &ExecutePow;
-        dispatchTable[(int)OpCode.UNM] = &ExecuteUnm;
-        dispatchTable[(int)OpCode.JUMP] = &ExecuteJump;
-        dispatchTable[(int)OpCode.EQ] = &ExecuteEq;
-        dispatchTable[(int)OpCode.LT] = &ExecuteLt;
-        dispatchTable[(int)OpCode.LE] = &ExecuteLe;
-        dispatchTable[(int)OpCode.HALT] = &ExecuteHalt;
-        dispatchTable[(int)OpCode.PRINT] = &ExecutePrint;
-        dispatchTable[(int)OpCode.PRINTA] = &ExecutePrintA;
-        dispatchTable[(int)OpCode.RAND] = &ExecuteRand;
-        dispatchTable[(int)OpCode.FISR] = &ExecuteFisr;
-        dispatchTable[(int)OpCode.SQRT] = &ExecuteSqrt;
-        dispatchTable[(int)OpCode.CALL] = &ExecuteCall;
-        dispatchTable[(int)OpCode.RETURN] = &ExecuteReturn;
-
         double* RegPtr = stackalloc double[256];
         Unsafe.InitBlockUnaligned(RegPtr, 0, 256 * sizeof(double));
 
@@ -76,9 +54,11 @@ public unsafe class VirtualMachine
                 RegPtr = RegPtr,
                 ConstPtr = constPtr,
                 MethodTablePtr = methodTablePtr,
+                InstPtr = instPtr,
                 Pc = 0,
                 BasePtr = 0,
                 CallStackPtr = framePtr,
+                RngState = rngState,
             };
             while (isRunning)
             {
@@ -89,19 +69,80 @@ public unsafe class VirtualMachine
                     DumpRegisters(state.RegPtr);
                     Console.ReadLine();
                 }
+                Thread.Sleep(50);
                 Console.WriteLine(
                     $"[TRACE] PC:{state.Pc:D4} | Op:{instruction.Op, -8} | A:{instruction.A, -3} | B:{instruction.B, -3} | C:{instruction.C, -3} | Bx:{instruction.Bx, -5} | sBx:{instruction.sBx26}"
                 );
 #endif
-                try
+                // isRunning = dispatchTable[(int)instruction.Op](instruction, ref state);
+                switch (instruction.Op)
                 {
-                    isRunning = dispatchTable[(int)instruction.Op](instruction, ref state);
-                }
-                catch (NullReferenceException ex)
-                {
-                    Console.WriteLine(ex);
-                    Console.WriteLine("Opcode was " + (int)instruction.Op);
-                    return;
+                    case OpCode.LOADC:
+                        isRunning = ExecuteLoadC(instruction, ref state);
+                        break;
+                    case OpCode.MOVE:
+                        isRunning = ExecuteMove(instruction, ref state);
+                        break;
+                    case OpCode.UNM:
+                        isRunning = ExecuteUnm(instruction, ref state);
+                        break;
+                    case OpCode.SWAP:
+                        isRunning = ExecuteSwap(instruction, ref state);
+                        break;
+                    case OpCode.ADD:
+                        isRunning = ExecuteAdd(instruction, ref state);
+                        break;
+                    case OpCode.SUB:
+                        isRunning = ExecuteSub(instruction, ref state);
+                        break;
+                    case OpCode.MUL:
+                        isRunning = ExecuteMul(instruction, ref state);
+                        break;
+                    case OpCode.DIV:
+                        isRunning = ExecuteDiv(instruction, ref state);
+                        break;
+                    case OpCode.POW:
+                        isRunning = ExecutePow(instruction, ref state);
+                        break;
+                    case OpCode.SQRT:
+                        isRunning = ExecuteSqrt(instruction, ref state);
+                        break;
+                    case OpCode.FISR:
+                        isRunning = ExecuteFisr(instruction, ref state);
+                        break;
+                    case OpCode.JUMP:
+                        isRunning = ExecuteJump(instruction, ref state);
+                        break;
+                    case OpCode.CALL:
+                        isRunning = ExecuteCall(instruction, ref state);
+                        break;
+                    case OpCode.RETURN:
+                        isRunning = ExecuteReturn(instruction, ref state);
+                        break;
+                    case OpCode.PRINT:
+                        isRunning = ExecutePrint(instruction, ref state);
+                        break;
+                    case OpCode.PRINTA:
+                        isRunning = ExecutePrintA(instruction, ref state);
+                        break;
+                    case OpCode.EQ:
+                        isRunning = ExecuteEq(instruction, ref state);
+                        break;
+                    case OpCode.LT:
+                        isRunning = ExecuteLt(instruction, ref state);
+                        break;
+                    case OpCode.LE:
+                        isRunning = ExecuteLe(instruction, ref state);
+                        break;
+                    case OpCode.HALT:
+                        isRunning = ExecuteHalt(instruction, ref state);
+                        break;
+                    case OpCode.RAND:
+                        isRunning = ExecuteRand(instruction, ref state);
+                        break;
+                    case OpCode.FOR:
+                        isRunning = ExecuteFor(instruction, ref state);
+                        break;
                 }
                 state.Pc++;
             }
@@ -150,7 +191,7 @@ public unsafe class VirtualMachine
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe bool ExecuteSwp(Instruction instruction, ref VMState state)
+    public static unsafe bool ExecuteSwap(Instruction instruction, ref VMState state)
     {
         byte a = instruction.A;
         byte b = (byte)instruction.B;
@@ -270,6 +311,18 @@ public unsafe class VirtualMachine
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static unsafe bool ExecuteMod(Instruction instruction, ref VMState state) // TODO: Make sure that FISR works even with doubles
+    {
+        byte a = instruction.A;
+        ushort b = instruction.B;
+        double valB = b < 256 ? Reg(state.RegPtr, state.BasePtr, b) : state.ConstPtr[b - 256];
+        ushort c = instruction.C;
+        double valC = c < 256 ? Reg(state.RegPtr, state.BasePtr, c) : state.ConstPtr[c - 256];
+        Reg(state.RegPtr, state.BasePtr, a) = valB % valC;
+        return true;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe bool ExecuteEq(Instruction instruction, ref VMState state)
     {
         byte a = instruction.A;
@@ -349,7 +402,11 @@ public unsafe class VirtualMachine
     public static unsafe bool ExecuteRand(Instruction instruction, ref VMState state)
     {
         byte a = instruction.A;
-        Reg(state.RegPtr, state.BasePtr, a) = random.NextSingle();
+        state.RngState ^= state.RngState << 13;
+        state.RngState ^= state.RngState >> 17;
+        state.RngState ^= state.RngState << 5;
+        double result = state.RngState * 2.3283064365386963e-10;
+        Reg(state.RegPtr, state.BasePtr, a) = result;
         return true;
     }
 
@@ -382,6 +439,46 @@ public unsafe class VirtualMachine
         y = y * (threehalfs - (x2 * y * y)); // 1st iteration
         //	y  = y * ( threehalfs - ( x2 * y * y ) );   // 2nd iteration, this can be removed
         Reg(state.RegPtr, state.BasePtr, a) = y;
+        return true;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static unsafe bool ExecuteFor(Instruction instruction, ref VMState state)
+    {
+        byte index = instruction.A;
+        ushort max = instruction.B;
+        ushort step = instruction.C;
+
+        double valIndex = Reg(state.RegPtr, state.BasePtr, index);
+        double valMax =
+            max < 256 ? Reg(state.RegPtr, state.BasePtr, max) : state.ConstPtr[max - 256];
+        double valStep =
+            step < 256 ? Reg(state.RegPtr, state.BasePtr, step) : state.ConstPtr[step - 256];
+        valIndex += valStep;
+        Reg(state.RegPtr, state.BasePtr, index) = valIndex;
+        Instruction secondInst = new Instruction(state.InstPtr[++state.Pc]);
+        byte condition = secondInst.A;
+        bool conditionMet = false;
+        switch (condition)
+        {
+            case 0:
+                conditionMet = (valIndex < valMax);
+                break;
+            case 1:
+                conditionMet = (valIndex > valMax);
+                break;
+            case 2:
+                conditionMet = (valIndex <= valMax);
+                break;
+            case 3:
+                conditionMet = (valIndex >= valMax);
+                break;
+        }
+        if (conditionMet)
+        {
+            int jumpOffset = secondInst.sBx16;
+            state.Pc += jumpOffset - 2;
+        }
         return true;
     }
 }
