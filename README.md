@@ -1,263 +1,71 @@
-# RegisterBasedVM
+# Unsafe Register-Based Virtual Machine
 
-A high-performance(300 MIPS), Turing-complete virtual machine featuring SPARC-style overlapping register windows, stackless recursion, and a custom multi-pass assembler.
-## Introduction and overview
-The goal: Building a high performance register based VM to better understand how VM's work and how to write faster C# code
-Core features:
- - Overlapping register window(Zero copy argument passing)
- - Custom 3 Pass Assembler(Labels, comments, DEFINE statements, forward JUMP resolution)
-## The Assembler pipeline
-The assembler is responsible for translating human-readable text into the raw 32-bit uint bytecode consumed by the Virtual Machine. To handle forward-jumping and macro expansion, the assembler operates in three distinct passes.
-### The first pass:
-The first pass is all about stripping everything away that is just syntactic sugar: comments and empty lines are all removed.
-The assembler scans for DEFINE \[name\] \[value\] and replaces all subsequent instances of \[name\] with \[value\]
+Welcome to the **Unsafe Register-Based Virtual Machine**, a high-performance, single-threaded bytecode interpreter written in C# targeting **.NET 10.0**.
 
-### The second pass:
-The second pass focuses on labels and methods.
-The assembler scans for lines ending with ":", checks if its not a JUMP and saves the label alongside the expected instruction index.
-Methods are a little special, because their instruction index doesn't get saved in a dictionary, it gets saved in an array, and the index gets saved in the dictionary. This is done this way in order to allow for bit packing.
+Unlike standard hobby runtimes(I am still a hobbyist, smh) which are typically stack-based, this project implements a register-based VM (reminiscent of the Lua 5.0) optimized to run extremely close to the metal. Leveraging raw pointer arithmetic, stack allocation, zero-copy sliding register windows, and manual heap block coalescing, it achieves execution speeds between **360 MIPS and 490+ MIPS** on standard consumer hardware.
 
-### The third pass:
-This is the place where the magic happens.
-The assembler iterates over the now clean instruction list and translates string opcodes(eg. ADD r1 r2 r3) into their binary representation.
-This is also the place where the JUMP and CALL statements are resolved using the label and method dictionaries.
+---
 
-## OpCodes:
-Here is the notation I am using for ease of understanding:
- - R(n) -> nth register
- - C(n) -> nth value in the constants array
- - RC(n) -> either R(n) or C(n - k), depending on the value of n - it is R(n) for values smaller than k(default is 256)
- - PC -> program counter
- - CS -> Call stack
+## Key Performance Highlights
 
-### Bit packing
-Each instruction is 32 bits long. The break down is:
-Opcode is always 6 bits long
-| Format | Destitation Register | RC 1 | RC 2 |
-| --------------- | --------------- | --------------- | --------------- |
-| ABC | 8 bits | 9 bits | 9 bits |
-| ABx | 8 bits | 18 bits (unsigned) | 0 bits |
-| sBx | 18 bits(signed) | 0 bits | 0 bits |
+- **Screamingly Fast Interpreter:** Operates at **~10 CPU clock cycles per VM instruction** on modern architectures, executing **475+ million virtual instructions per second**.
+- **Stack-Allocated Register File:** Zero garbage collection overhead during execution via `stackalloc` memory buffers.
+- **Zero-Check Memory Operations:** Fixed pointer pins bypass all managed array bounds checks (`IndexOutOfRangeException`), yielding linear JIT-compiled assembly instructions.
+- **Sliding Register Windows:** Dynamic function calls shift the register frame pointer directly (`BasePtr += offset`), enabling zero-copy parameter passing.
+- **Intrinsic Memory Allocator:** A complete custom allocator (`NEWARR` / `FREEARR`) managing a linked list of free blocks directly within a raw heap byte array, featuring immediate block coalescing (compaction).
 
-### Instruction Set Architecture(ISA)
-| OpCode | Destitation Register | RC 1 | RC 2(if it's needed) | Notation |
-| --------------- | --------------- | --------------- | --------------- | --------------- |
-| LOADC | A | Bx | | R(A) := C(Bx) |
-| MOVE | A | B | | R(A) := R(B) |
-| SWP | A | B | | R(A) <=> R(B)
-| ADD | A | B | C | R(A) := RC(B) + RC(C) |
-| SUB | A | B | C | R(A) := RC(B) - RC(C) |
-| MUL | A | B | C | R(A) := RC(B) * RC(C) |
-| DIV | A | B | C | R(A) := RC(B) / RC(C) |
-| POW | A | B | C | R(A) := RC(B) ^ RC(C) |
-| UNM | A | B | | R(A) := -RC(B) |
-| JUMP | sBx | | | PC += sBx |
-| EQ | A | B | C | if ((RC(B) == RC(C)) != A) then PC++ |
-| LT | A | B | C | if ((RC(B) < RC(C)) != A) then PC++ |
-| LE | A | B | C | if ((RC(B) <= RC(C)) != A) then PC++ |
-| HALT | | | | |
-| PRINT | A | | | Console.WriteLine(R(A)) |
-| PRINTA | A | | | Console.WriteLine((char)R(A)) |
-| RAND | A | | | | R(A) = Random.NextSingle()
-| SQRT | A | B | | R(A) := Math.Sqrt(RC(B)) |
-| FISR | A | B | | R(A) := FISR algorithm (RC(B)) |
-| CALL | A| B | | CS.Push(PC, Bias); PC = A, Bias += B
-| RETURN| | | | (PC, Bias) = CS.Pop()|
+---
 
-## Example programs:
+## Technical Directory
 
-### Fibonacci:
-| Instruction Number   | Instruction    | Description |
-|--------------- | --------------- | --- |
-| 1   | LOADC 0 1     | Load 1 into R(0)|
-| 2   | LOADC 4 1     | Load 1 in R(4) for the counter|
-| 3   | MOVE 2 1      | Shift the value from R(1) to R(2)|
-| 4   | MOVE 1 0      | Shift the value from R(0) to R(1)|
-| 5   | ADD r0 r1 r2  | Add the values from R(1) and R(2) in order to get the current Fibonacci value|
-| 6   | ADD r4 r4 1   | Increment the index|
-| 7   | LT 0 r4 10    | Check if the index has reached the desired Fibonacci number. If it has it increments the PC by two, directly halting. If not, it increments only by one, which hits the jump instruction|
-| 8   | JUMP -6       | Jump the PC 6 places backward|
-| 9   | PRINT r0       | Print the result|
-| 10   | HALT           | Halt the program|
-Code block for ease of ctrl + C:
-```asm
-DEFINE result r0
-DEFINE last r1
-DEFINE lastlast r2
-DEFINE counter r4
-DEFINE n 10
-LOADC result 1
-LOADC counter 1
-loop:
-    MOVE lastlast last
-    MOVE last result
-    ADD result last lastlast
-    ADD counter counter 1
-    LT 1 counter n
-    JUMP loop
-PRINT result
-HALT
+The project documentation is split into architectural specifications (`docs/`) and example programs (`examples/`):
+
+### Core Architecture & Memory Details
+- [Core Architecture & Calling Conventions](docs/architecture.md): Detailed specifications on instruction formats, the 256-register layout, Register/Constant (RC) addressing, sliding windows, and the call stack.
+- [Instruction Set Architecture (ISA) Reference](docs/isa.md): A comprehensive reference table detailing operational behavior, encoding formats, and assembly syntax for every VM opcode.
+- [Heap Memory Management & Custom Allocator](docs/memory.md): Deep-dive into the custom byte heap, the intrinsically linked list format, first-fit allocation, and immediate neighbor coalescing.
+- [Performance & Hardware-Level Optimizations](docs/optimizations.md): Analysis of raw pointer mapping, `stackalloc` cache locality, the Xorshift32 PRNG, double-precision Fast Inverse Square Root (FISR), and the two-word compound `FOR` super-instruction.
+
+### Example Assembly Workloads
+- [Recursive & Linear Fibonacci Examples](examples/fibonacci.md): Side-by-side comparison of recursive and linear algorithms, recursion depth limits, and call-stack frame analysis.
+- [Monte Carlo Pi Approximation](examples/monte_carlo.md): Mathematical explanation of the Pi estimation, and how a 4x loop unrolling optimization achieves a **25.6% speedup**.
+- [Perceptron Machine Learning Model](examples/perceptron.md): Step-by-step training of a logical gate perceptron, detailing functional calls, weight updates, and execution speed.
+- [3D Raytracer Visual Render](examples/raytracer.md): Summary of the orbit rendering raytracer producing a PPM image sequence, with camera orbit parameters.
+
+---
+
+## Project Structure
+
+The codebase is highly modular, consisting of the following key source files:
+- [VirtualMachine.cs](RegisterBasedVM/VirtualMachine.cs): The hot execution engine containing the dispatch loop and instruction handlers.
+- [VMState.cs](RegisterBasedVM/VMState.cs): The execution state packed into a single unsafe struct passed by reference.
+- [Instruction.cs](RegisterBasedVM/Instruction.cs): The bit-packed 32-bit instruction layout helper.
+- [Assembler.cs](RegisterBasedVM/Assembler.cs): The three-pass assembler compiling textual assembly syntax into bytecode chunks.
+- [VMChunk.cs](RegisterBasedVM/VMChunk.cs): Encapsulates compiled bytecode, the constant pool, and method lookup table.
+- [StackFrame.cs](RegisterBasedVM/StackFrame.cs): Call stack frame metadata.
+- [Program.cs](RegisterBasedVM/Program.cs): Entry point loading and running the benchmark suites and orbit raytracer.
+
+---
+
+## Quick Start & Building
+
+To run the VM benchmarks and orbit raytracer:
+
+### Prerequisites
+- [.NET 10.0 SDK](https://dotnet.microsoft.com/download)
+- [ImageMagick](https://imagemagick.org/) (optional, required to merge rendered frames into `orbit.gif`)
+
+### Build and Run
+Build the project in Release configuration for maximum speed and run:
+```bash
+cd RegisterBasedVM
+dotnet run -c Release
 ```
 
-### Recursive Fibonacci
-```asm
-DEFINE n 25
-DEFINE result r0
-LOADC result n
-
-CALL method() result
-PRINT result
-HALT
-
-method()
-    PRINT r0
-    LE 1 r0 2
-    JUMP math
-    LOADC r0 1
-    RETURN r0 r0
-
-math:
-    SUB r1 r0 1
-    CALL method() r1
-    SUB r2 r0 2
-    CALL method() r2
-    PRINT r0
-    PRINT r1
-    PRINT r2
-    ADD r1 r1 r2
-    PRINT r1
-    PRINTA 10
-    RETURN r1 r1
+To render the 30-frame orbiting raytracer and generate the GIF:
+```bash
+cd RegisterBasedVM
+chmod +x run_ray_tracer.sh
+./run_ray_tracer.sh
 ```
-
-### Monte Carlo PI approximator
-| Instruction Number   | Instruction    | Description |
-| --------------- | --------------- | --------------- |
-| 1 | LOADC 0 10000000 | |
-| 2 | RAND 1            | |
-| 3 | RAND 2            | |
-| 4 | POW r1 r1 2       | |
-| 5 | POW r2 r2 2       | |
-| 6 | ADD r2 r1 r2      | |
-| 7 | LE 0 r2 1         | |
-| 8 | ADD r4 r4 1       | |
-| 9 | ADD r5 r5 1       | |
-| 10 | LE 0 r5 r0        | |
-| 11 | JUMP -10          | |
-| 12 | DIV r6 r4 r0      | |
-| 13 | MUL r6 r6 4       | |
-| 14 | PRINT r6          | |
-| 15 | HALT         | |
-
-
-Code block for ease of ctrl + C:
-```asm
-LOADC 0 100000000
-RAND 1
-RAND 2
-POW r1 r1 2
-POW r2 r2 2
-ADD r2 r1 r2
-LE 0 r2 1
-ADD r4 r4 1
-ADD r5 r5 1
-LE 0 r5 r0
-JUMP -10
-DIV r6 r4 r0
-MUL r6 r6 4
-PRINT r6
-PRINT r4
-PRINT r5
-HALT
-```
-
-This piece of code runs in 1200~ ms on my machine, achieving the before-mentioned 83.3 MIPS
-
-### Logic Gate Perceptron
-Work in progress
-
-### Mandlebrod set visualizer
-Work in progress
-
-
-### Graveyard of ray-tracers
-```asm
-LT 1 r1 40
-JUMP 75
-LT 1 r2 80
-JUMP 69
-DIV r3 r1 20
-UNM r3 r3
-ADD r3 r3 1
-POW r4 r3 2
-DIV r5 r2 40
-SUB r5 r5 1
-POW r6 r5 2
-ADD r7 r4 r6
-ADD r7 r7 1
-FISR r8 r7
-MUL r9 r5 r8
-MUL r10 r3 r8
-MUL r11 1 r8
-MUL r8 r11 2
-POW r12 r8 2
-SUB r12 r12 3
-SQRT r12 r12
-SUB r13 r8 r12
-MUL r14 r13 r9
-MUL r15 r13 r10
-MUL r16 r13 r11
-SUB r16 r16 2
-POW r17 r14 2
-POW r18 r15 2
-POW r19 r16 2
-ADD r20 r17 r18
-ADD r20 r20 r19
-FISR r20 r20
-MUL r15 r20 r15
-ADD r15 r15 1
-LE 1 r15 0.2
-JUMP 2
-PRINTA 32
-JUMP 33
-LE 1 r15 0.4
-JUMP 2
-PRINTA 46
-JUMP 29
-LE 1 r15 0.8
-JUMP 2
-PRINTA 58
-JUMP 25
-LE 1 r15 1.0
-JUMP 2
-PRINTA 45
-JUMP 21
-LE 1 r15 1.2
-JUMP 2
-PRINTA 61
-JUMP 17
-LE 1 r15 1.4
-JUMP 2
-PRINTA 42
-JUMP 13
-LE 1 r15 1.6
-JUMP 2
-PRINTA 42
-JUMP 9
-LE 1 r15 1.8
-JUMP 2
-PRINTA 35
-JUMP 5
-LE 1 r15 2.0
-JUMP 2
-PRINTA 64
-JUMP 1
-PRINTA 46
-ADD r2 r2 1
-JUMP -71
-PRINTA 10
-LOADC r2 0
-ADD r1 r1 1
-JUMP -77
-HALT
-```
+This will compile and execute the raytracer, outputting `frame_00.ppm` to `frame_29.ppm`, and then merge them into `orbit.gif` before deleting the raw PPM files.

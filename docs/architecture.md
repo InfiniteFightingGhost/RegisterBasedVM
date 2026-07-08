@@ -1,0 +1,165 @@
+# VM Architecture & Calling Conventions
+
+This document specifies the virtual machine's register layout, instruction encoding, parameter-passing conventions, and call stack representation.
+
+---
+
+## 1. Bit-Packed Instruction Format
+
+The VM uses fixed-width **32-bit instructions** represented by the `Instruction` struct. These instructions are bit-packed into four main layouts to accommodate various operations: `ABC`, `ABx`, `AsBx`, and `sBx26`.
+
+### Bit Allocation Layouts
+
+1. **ABC Format** (Three-register/constant operations like `ADD`, `SUB`, `MUL`, etc.):
+   ```text
+   +-----------------------+---------+---------+---------+
+   |   C (9)   |   B (9)   |  A (8)  | Op (6)  | Bits
+   +-----------------------+---------+---------+---------+
+   31          22          13        5         0
+   ```
+   - **OpCode (6 bits):** Opcodes `0` to `63`.
+   - **A (8 bits):** Destination register `0` to `255`.
+   - **B (9 bits):** First operand. If `< 256`, maps to register. If `>= 256`, maps to constant pool index `B - 256`.
+   - **C (9 bits):** Second operand. If `< 256`, maps to register. If `>= 256`, maps to constant pool index `C - 256`.
+
+2. **ABx Format** (Two-operand operations with larger immediate constant pool indices like `LOADC`, `MOVE`, `CALL`, etc.):
+   ```text
+   +---------------------------------+---------+---------+
+   |             Bx (18)             |  A (8)  | Op (6)  | Bits
+   +---------------------------------+---------+---------+
+   31                                13        5         0
+   ```
+   - **A (8 bits):** Destination register `0` to `255`.
+   - **Bx (18 bits):** Unsigned index or immediate value (up to `262,143`).
+
+3. **AsBx Format** (Two-operand operations with signed immediate offsets like `FOR` second-half):
+   ```text
+   +---------------------------------+---------+---------+
+   |            sBx16 (16)           |  A (8)  | Op (6)  | Bits
+   +---------------------------------+---------+---------+
+   31                                13        5         0
+   ```
+   - **A (8 bits):** Opcode modifier/operand (e.g. comparison condition).
+   - **sBx16 (16 bits):** Signed branch offset, biased by `32,767`.
+
+4. **sBx26 Format** (Single-operand branch operations like `JUMP`):
+   ```text
+   +-------------------------------------------+---------+
+   |                 sBx26 (26)                | Op (6)  | Bits
+   +-------------------------------------------+---------+
+   31                                          5         0
+   ```
+   - **sBx26 (26 bits):** Large signed branch offset, biased by `33,554,431`.
+
+---
+
+## 2. Register/Constant Addressing (RC Operand Resolution)
+
+To avoid separate instruction variants for register-register and register-constant operations (e.g., `ADD_RR` vs. `ADD_RC`), the VM utilizes a **Register/Constant (RC)** addressing mechanism.
+
+For any 9-bit operand (fields `B` and `C` in `ABC` format, or `B` in `ABx` format when used as an operand):
+- If the encoded value is **less than 256**, it references a register relative to the active stack frame:
+  $$\text{Operand} = \text{Registers}[\text{BasePtr} + \text{Index}]$$
+- If the encoded value is **greater than or equal to 256**, it references the global constant table:
+  $$\text{Operand} = \text{Constants}[\text{Index} - 256]$$
+
+This logic is implemented in [VirtualMachine.cs](file:///home/andy/Projects/RegisterBasedVM/RegisterBasedVM/VirtualMachine.cs) as follows:
+```csharp
+double valB = b < 256 ? Reg(state.RegPtr, state.BasePtr, b) : state.ConstPtr[b - 256];
+```
+This design maximizes code density, permitting up to 256 registers and 256 active constants to be accessed directly within a single three-address instruction.
+
+---
+
+## 3. Sliding Register Windows (Zero-Copy Method Calls)
+
+One of the VM's primary performance features is **sliding register windows**, which completely eliminates memory copies when passing arguments to methods.
+
+### The Problem in Traditional VMs
+In stack-based VMs or standard register VMs, calling a function requires copying arguments from the parent frame onto a call stack, or copying them into parameters registers for the callee. This copying wastes CPU cycles.
+
+### The Zero-Copy Solution
+The VM allocates a single continuous register file of 256 doubles on the thread stack. It uses a base pointer (`BasePtr`) to index registers relative to the active method frame.
+
+When a method is called via `CALL A B`:
+- `A` is the register index in the parent's frame where the callee's frame should start.
+- `B` is the index of the callee method in the method table.
+
+The VM pushes the current `Pc` and `BasePtr` onto the call stack and shifts `BasePtr` forward:
+$$\text{BasePtr}_{\text{callee}} = \text{BasePtr}_{\text{parent}} + A$$
+
+```csharp
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+public static unsafe bool ExecuteCall(Instruction instruction, ref VMState state)
+{
+    byte start = instruction.A;
+    ushort methodIndex = instruction.B;
+    
+    // Save current frame details
+    StackFrame frame = new StackFrame(state.Pc, state.BasePtr);
+    CallStackPush(ref state.CallStackPtr, frame);
+    
+    // Shift base pointer forward (register window slide)
+    state.BasePtr += start;
+    state.Pc = (int)state.MethodTablePtr[methodIndex] - 1;
+    return true;
+}
+```
+
+### Argument Passing
+Because the callee's register frame begins exactly at `BasePtr_parent + A`, the parent can place arguments directly into registers starting at `R[A]` (relative to the parent). These arguments automatically become `R0`, `R1`, `R2`, etc. inside the callee, requiring **zero memory copies**.
+
+### Returning Values
+When returning via `RETURN A B` (returning values from callee's register `A` to register `B`):
+1. The return values are copied from the returning range `[A, B]` to the start of the callee's frame (`R0, R1, ...`).
+2. The VM pops the `StackFrame`, restoring the parent's `BasePtr` and `Pc`.
+3. Because the callee's `R0` corresponds to the parent's `R[start]`, the returned values are automatically sitting at the correct return registers in the parent's frame.
+
+```csharp
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+public static unsafe bool ExecuteReturn(Instruction instruction, ref VMState state)
+{
+    byte start = instruction.A;
+    byte end = (byte)instruction.B;
+    byte count = (byte)(end - start);
+    
+    // Copy return values to the beginning of the current window
+    for (uint i = 0; i <= count; i++)
+    {
+        Reg(state.RegPtr, state.BasePtr, i) = Reg(state.RegPtr, state.BasePtr, start + i);
+    }
+    
+    // Restore parent's frame
+    StackFrame frame = CallStackPop(ref state.CallStackPtr);
+    state.BasePtr = frame.PreviousBase;
+    state.Pc = frame.ReturnPC;
+    return true;
+}
+```
+
+---
+
+## 4. The Call Stack
+
+The call stack is represented by a contiguous block of `StackFrame` structures, allocated directly on the thread stack.
+
+### StackFrame Structure
+Each stack frame is a lightweight 8-byte structure tracking:
+- `ReturnPC` (4 bytes): The program counter index to jump back to in the parent.
+- `PreviousBase` (4 bytes): The parent's register base pointer.
+
+```csharp
+public readonly struct StackFrame
+{
+    public readonly int ReturnPC;
+    public readonly int PreviousBase;
+    
+    public StackFrame(int returnPC, int previousBase)
+    {
+        ReturnPC = returnPC;
+        PreviousBase = previousBase;
+    }
+}
+```
+
+By keeping the call stack in stack-allocated memory (`stackalloc StackFrame[32]`), frame management operations compile to basic pointer dereferences and increments, bypassing C# heap allocation entirely.

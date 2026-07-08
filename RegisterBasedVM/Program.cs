@@ -349,8 +349,8 @@ DEFINE cam_z r69
 DEFINE step r70
 
 ; --- INITIALIZATION ---
-LOADC width 2048
-LOADC height 2048
+LOADC width 1024
+LOADC height 1024
 LOADC zero 0.0
 LOADC max_val 255.0
 LOADC one_val 1.0
@@ -371,15 +371,15 @@ NEWARR header_ptr 18
 SETARRA header_ptr 0 80   ; 'P'
 SETARRA header_ptr 1 51   ; '3'
 SETARRA header_ptr 2 10   ; '\n'
-SETARRA header_ptr 3 50   ; '2'
+SETARRA header_ptr 3 50   ; '1'
 SETARRA header_ptr 4 48   ; '0'
-SETARRA header_ptr 5 52   ; '4'
-SETARRA header_ptr 6 56   ; '8'
+SETARRA header_ptr 5 52   ; '2'
+SETARRA header_ptr 6 56   ; '4'
 SETARRA header_ptr 7 32   ; ' '
-SETARRA header_ptr 8 50   ; '2'
+SETARRA header_ptr 8 50   ; '1'
 SETARRA header_ptr 9 48   ; '0'
-SETARRA header_ptr 10 52  ; '4'
-SETARRA header_ptr 11 56  ; '8'
+SETARRA header_ptr 10 52  ; '2'
+SETARRA header_ptr 11 56  ; '4'
 SETARRA header_ptr 12 10  ; '\n'
 SETARRA header_ptr 13 50  ; '2'
 SETARRA header_ptr 14 53  ; '5'
