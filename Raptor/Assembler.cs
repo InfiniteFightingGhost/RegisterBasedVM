@@ -383,20 +383,6 @@ public class Assembler
                         regPtr = byte.Parse(words[1].Trim("r"));
                         instruction = Instruction.CreateABC(OpCode.FREEARR, regPtr, 0, 0);
                         break;
-                    case "PRINTS":
-
-                        ushort printS;
-                        if (words[1].StartsWith("r"))
-                        {
-                            printS = ushort.Parse(words[1].TrimStart('r'));
-                        }
-                        else
-                        {
-                            printS = (ushort)(_chunk.SetConstant(double.Parse(words[1])) + 256);
-                        }
-
-                        instruction = Instruction.CreateABC(OpCode.PRINT, 0, printS, 0);
-                        break;
                     default:
                         throw new Exception($"Unknown opcode found: {words[0]} on line {pc}");
                 }

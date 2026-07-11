@@ -30,7 +30,7 @@ HALT";
         ass.Parse(linearFib.Split("\n").ToList());
 
         VirtualMachine machine = new VirtualMachine();
-        machine.LoadProgram(chunk, new int[] { });
+        machine.LoadProgram(chunk);
         var result = machine.RunFast();
         Assert.Equal(result.Status, VMStatus.Halted);
     }
@@ -66,7 +66,7 @@ math:
         ass.Parse(recursiveFib.Split("\n").ToList());
 
         VirtualMachine machine = new VirtualMachine();
-        machine.LoadProgram(chunk, new int[] { });
+        machine.LoadProgram(chunk);
         var result = machine.RunFast();
         Assert.Equal(result.Status, VMStatus.Halted);
     }
@@ -119,7 +119,7 @@ HALT";
         ass.Parse(monteCarlo.Split("\n").ToList());
 
         VirtualMachine machine = new VirtualMachine();
-        machine.LoadProgram(chunk, new int[] { });
+        machine.LoadProgram(chunk);
         var result = machine.RunFast();
         Assert.Equal(result.Status, VMStatus.Halted);
     }
@@ -238,7 +238,7 @@ update()
         ass.Parse(perceptron.Split("\n").ToList());
 
         VirtualMachine machine = new VirtualMachine();
-        machine.LoadProgram(chunk, new int[] { });
+        machine.LoadProgram(chunk);
         var result = machine.RunFast();
         Assert.Equal(result.Status, VMStatus.Halted);
     }
@@ -262,7 +262,7 @@ HALT
         ass.Parse(arrayTest.Split("\n").ToList());
 
         VirtualMachine machine = new VirtualMachine();
-        machine.LoadProgram(chunk, new int[] { });
+        machine.LoadProgram(chunk);
         var result = machine.RunFast();
         Assert.Equal(result.Status, VMStatus.Halted);
     }
@@ -297,7 +297,7 @@ math:
         ass.Parse(hardArrayTest.Split("\n").ToList());
 
         VirtualMachine machine = new VirtualMachine();
-        machine.LoadProgram(chunk, new int[] { });
+        machine.LoadProgram(chunk);
         var result = machine.RunFast();
         Assert.Equal(result.Status, VMStatus.Halted);
     }
@@ -691,7 +691,7 @@ no_hit:
         Assembler ass = new(chunk);
         ass.Parse(rayTracer.Split("\n").ToList());
         VirtualMachine machine = new VirtualMachine();
-        machine.LoadProgram(chunk, new int[] { });
+        machine.LoadProgram(chunk);
         var result = machine.RunFast();
         Assert.Equal(VMStatus.Halted, result.Status);
     }

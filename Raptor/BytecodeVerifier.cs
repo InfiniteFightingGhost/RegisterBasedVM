@@ -98,7 +98,6 @@ public static class BytecodeVerifier
                 case OpCode.FISR:
                 case OpCode.PRINT:
                 case OpCode.PRINTA:
-                case OpCode.PRINTS:
                     VerifyRcOperand(inst.B, chunk.Constants.Length, i, "B", op);
                     break;
 

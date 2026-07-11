@@ -88,7 +88,3 @@ If a program uses the same literal number multiple times (e.g. `0.0` or `1.0` in
 
 ---
 
-## 5. Deprecated Instruction Mapping
-
-To maintain compatibility with older bytecode assembly source code, the assembler handles deprecated instructions by mapping them to modern opcodes during Pass 3 (Codegen):
-- **`PRINTS` Mapping:** The `PRINTS` instruction (which formerly appended a double value to the output buffer without a newline) is deprecated. The assembler transparently parses `PRINTS` and compiles it using `OpCode.PRINT` instead.

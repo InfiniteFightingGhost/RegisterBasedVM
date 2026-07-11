@@ -3,16 +3,22 @@ namespace Raptor;
 /// <summary>
 /// High-level wrapper that hides VMChunk creation, assembler passes, bytecode verification,
 /// pointer pinning, and stack allocations behind simple, safe methods.
-/// 
-/// Usage:
+///
+/// <examples>
+///   <code>
 ///   var engine = new ScriptEngine();
 ///   engine.RegisterHostMethod("spawnEnemy", 0, myHandler);
 ///   var result = engine.Execute("script.rbc");
+///   </code>
+/// </examples>
 /// </summary>
 public sealed class ScriptEngine
 {
     private readonly VirtualMachine _vm;
-    private readonly Dictionary<string, (ushort index, VirtualMachine.HostFFIDelegate callback)> _hostMethods;
+    private readonly Dictionary<
+        string,
+        (ushort index, VirtualMachine.HostFFIDelegate callback)
+    > _hostMethods;
     private readonly int _heapSizeBytes;
 
     /// <summary>
@@ -30,7 +36,11 @@ public sealed class ScriptEngine
     /// Registers a host FFI method that scripts can call by name.
     /// Must be called before Compile() or Run() for the method to be available.
     /// </summary>
-    public void RegisterHostMethod(string name, ushort index, VirtualMachine.HostFFIDelegate callback)
+    public void RegisterHostMethod(
+        string name,
+        ushort index,
+        VirtualMachine.HostFFIDelegate callback
+    )
     {
         _hostMethods[name] = (index, callback);
         _vm.RegisterHostMethod(index, callback);
@@ -60,7 +70,7 @@ public sealed class ScriptEngine
     /// </summary>
     public ExecutionResult Execute(VMChunk chunk)
     {
-        _vm.LoadProgram(chunk, Array.Empty<int>());
+        _vm.LoadProgram(chunk);
         return _vm.RunFast();
     }
 
@@ -87,7 +97,7 @@ public sealed class ScriptEngine
     /// </summary>
     public ExecutionResult ExecuteDebug(VMChunk chunk, VirtualMachine.DebugHook hook)
     {
-        _vm.LoadProgram(chunk, Array.Empty<int>());
+        _vm.LoadProgram(chunk);
         return _vm.RunDebug(hook);
     }
 

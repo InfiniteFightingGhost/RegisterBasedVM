@@ -1,5 +1,8 @@
 namespace Raptor;
 
+///<summary>
+///Enum displaying the instructions that <see cref="VirtualMachine"/> posseses.
+///</summary>
 public enum OpCode
 {
     LOADC, //0
@@ -31,10 +34,9 @@ public enum OpCode
     SETARRA, // 26
     GETARR, // 27
     GETARRA, // 28
-    PRINTS, // 29 - Deprecated
-    BINAND, // 30
-    BINOR, // 31
-    BINXOR, // 32
-    BINLSH, // 33
-    BINRSH, // 34
+    BINAND, // 29
+    BINOR, // 30
+    BINXOR, // 31
+    BINLSH, // 32
+    BINRSH, // 33
 }

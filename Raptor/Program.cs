@@ -78,7 +78,7 @@ testVm.RegisterHostMethod(
 
 testAss.Parse(testScript.Split("\n").ToList());
 BytecodeVerifier.Verify(testChunk, 1024);
-testVm.LoadProgram(testChunk, new int[] { });
+testVm.LoadProgram(testChunk);
 testVm.RunFast();
 Console.Error.WriteLine("Phase 3 FFI and Direct Memory Access Unit Tests PASSED.");
 
@@ -99,7 +99,7 @@ HALT
     assDiv.Parse(script.Split("\n").ToList());
     BytecodeVerifier.Verify(chunkDivZero, 1024);
     VirtualMachine vm = new VirtualMachine();
-    vm.LoadProgram(chunkDivZero, new int[] { });
+    vm.LoadProgram(chunkDivZero);
     ExecutionResult result = vm.RunFast();
     if (result.Status != VMStatus.DivisionByZero)
     {
@@ -129,7 +129,7 @@ HALT
     assOom.Parse(script.Split("\n").ToList());
     BytecodeVerifier.Verify(chunkOom, 1024);
     VirtualMachine vm = new VirtualMachine();
-    vm.LoadProgram(chunkOom, new int[] { });
+    vm.LoadProgram(chunkOom);
     ExecutionResult result = vm.RunFast();
     if (result.Status != VMStatus.OutOfMemory)
     {
@@ -159,7 +159,7 @@ HALT
 
     BytecodeVerifier.Verify(chunkOverflow, 1024);
     VirtualMachine vm = new VirtualMachine();
-    vm.LoadProgram(chunkOverflow, new int[] { });
+    vm.LoadProgram(chunkOverflow);
     ExecutionResult result = vm.RunFast();
     if (result.Status != VMStatus.StackOverflow)
     {
@@ -225,7 +225,7 @@ HALT
     dbgAss.Parse(script.Split("\n").ToList());
     BytecodeVerifier.Verify(dbgChunk, 1024);
     VirtualMachine vm = new VirtualMachine();
-    vm.LoadProgram(dbgChunk, new int[] { });
+    vm.LoadProgram(dbgChunk);
 
     int instructionsExecuted = 0;
     vm.RunDebug(
@@ -303,7 +303,7 @@ HALT
         }
 
         VirtualMachine rtVm = new VirtualMachine();
-        rtVm.LoadProgram(loadedChunk, Array.Empty<int>());
+        rtVm.LoadProgram(loadedChunk);
         ExecutionResult rtResult = rtVm.RunFast();
         if (rtResult.Status != VMStatus.Halted)
             throw new Exception($"Round-trip execution failed with status: {rtResult.Status}.");
@@ -513,7 +513,7 @@ var originalOut = Console.Out;
 //         Console.SetOut(writer);
 //
 //         VirtualMachine vm = new();
-//         vm.LoadProgram(chunk, new int[] { });
+//         vm.LoadProgram(chunk);
 //         vm.RunFast();
 //     }
 //     Console.Error.WriteLine($"Frame {frame:D2} rendered in {sw.ElapsedMilliseconds} ms");

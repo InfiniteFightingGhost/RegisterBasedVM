@@ -2,6 +2,13 @@ using System.Runtime.CompilerServices;
 
 namespace Raptor;
 
+///<summary>
+///The struct that unifies all bit fiddling logic into a simple and bug-free solution.
+///</summary>
+///<remarks>
+///Every bytecode packing and unpacking needs to go through here.
+///No manual bit fiddling is allowed for instructions.
+///</remarks>
 public readonly struct Instruction
 {
     public readonly uint Value;

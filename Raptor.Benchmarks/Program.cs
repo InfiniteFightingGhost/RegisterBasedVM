@@ -60,44 +60,50 @@ public class VmBenchmarks
         int camYIndex = Array.IndexOf(_rayTracerChunk.Constants, -999.012);
         int camZIndex = Array.IndexOf(_rayTracerChunk.Constants, -999.345);
 
-        if (sinIndex != -1) _rayTracerChunk.Constants[sinIndex] = 0.0;
-        if (cosIndex != -1) _rayTracerChunk.Constants[cosIndex] = 1.0;
-        if (camXIndex != -1) _rayTracerChunk.Constants[camXIndex] = 0.0;
-        if (camYIndex != -1) _rayTracerChunk.Constants[camYIndex] = 0.0;
-        if (camZIndex != -1) _rayTracerChunk.Constants[camZIndex] = 3.5;
+        if (sinIndex != -1)
+            _rayTracerChunk.Constants[sinIndex] = 0.0;
+        if (cosIndex != -1)
+            _rayTracerChunk.Constants[cosIndex] = 1.0;
+        if (camXIndex != -1)
+            _rayTracerChunk.Constants[camXIndex] = 0.0;
+        if (camYIndex != -1)
+            _rayTracerChunk.Constants[camYIndex] = 0.0;
+        if (camZIndex != -1)
+            _rayTracerChunk.Constants[camZIndex] = 3.5;
     }
 
     [Benchmark]
     public void Benchmark_Fibonacci()
     {
-        _vm.LoadProgram(_fibChunk, Array.Empty<int>());
+        _vm.LoadProgram(_fibChunk);
         _vm.RunFast();
     }
 
     [Benchmark]
     public void Benchmark_MonteCarlo()
     {
-        _vm.LoadProgram(_monteCarloChunk, Array.Empty<int>());
+        _vm.LoadProgram(_monteCarloChunk);
         _vm.RunFast();
     }
 
     [Benchmark]
     public void Benchmark_Perceptron()
     {
-        _vm.LoadProgram(_perceptronChunk, Array.Empty<int>());
+        _vm.LoadProgram(_perceptronChunk);
         _vm.RunFast();
     }
 
     [Benchmark]
     public void Benchmark_RayTracerSingleFrame()
     {
-        _vm.LoadProgram(_rayTracerChunk, Array.Empty<int>());
+        _vm.LoadProgram(_rayTracerChunk);
         _vm.RunFast();
     }
 
     // --- WORKLOAD SPECIFICATIONS ---
 
-    private const string LinearFibAsm = @"
+    private const string LinearFibAsm =
+        @"
 DEFINE result r0
 DEFINE last r1
 DEFINE lastlast r2
@@ -114,7 +120,8 @@ loop:
     JUMP loop
 HALT";
 
-    private const string MonteCarloAsm = @"
+    private const string MonteCarloAsm =
+        @"
 DEFINE epochs 100000
 DEFINE x r1
 DEFINE y r2
@@ -133,7 +140,8 @@ DEFINE result r6
 DIV result hits epochs
 HALT";
 
-    private const string PerceptronAsm = @"
+    private const string PerceptronAsm =
+        @"
 DEFINE x1 r0
 DEFINE x2 r1
 DEFINE w1 r2
@@ -210,7 +218,8 @@ update()
     ADD b b error
     RETURN r0 r0";
 
-    private const string RayTracerAsm = @"
+    private const string RayTracerAsm =
+        @"
 DEFINE width r1
 DEFINE height r2
 DEFINE i r3

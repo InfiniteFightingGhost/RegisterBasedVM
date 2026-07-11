@@ -48,7 +48,6 @@ This document serves as a complete reference manual for the virtual machine's In
 | **`GETARRA`**| `ABC` | `GETARRA rA rPtr`| Reads byte from heap array `rPtr` at byte offset `r0` and writes to register `rA`. <br> $\text{rA} = \text{Heap}[\text{rPtr} + \text{r0}]$ |
 | **`PRINT`** | `ABC` | `PRINT opB` | Prints the double value of `opB` followed by a newline to the standard output. |
 | **`PRINTA`**| `ABC` | `PRINTA opB` | Prints the value of `opB` cast to a character (ASCII) to the standard output. |
-| **`PRINTS`**| `ABC` | `PRINTS opB` | **Deprecated.** The assembler compiles this assembly instruction using `OpCode.PRINT` instead. |
 | **`HALT`** | `ABC` | `HALT` | Halts VM execution. Flushes and prints the contents of the thread's internal string buffer. |
 | **`BINAND`**| `ABC` | `BINAND rA opB opC` | Performs bitwise AND of `opB` and `opC` (cast to `long`), writing the result as a double to `rA`. |
 | **`BINOR`** | `ABC` | `BINOR rA opB opC`  | Performs bitwise OR of `opB` and `opC` (cast to `long`), writing the result as a double to `rA`. |
