@@ -21,7 +21,7 @@ fixed (double* constPtr = _constants)
 fixed (uint* methodTablePtr = _methods)
 fixed (byte* heapPtr = _heap)
 ```
-These raw pointers are stored inside a CPU-register-friendly `VMState` value-type struct. Index lookups are resolved using pointer arithmetic (e.g., `instPtr[state.Pc]`), which compiles to straight-line assembly with **zero branch checks**, allowing the CPU to execute instructions in a tight linear flow.
+These raw pointers are stored inside a CPU-register-friendly `VMState` value-type struct. Instruction dispatch fetches the next opcode by directly dereferencing and post-incrementing the instruction pointer pointer (e.g., `*state.Ip++`), which compiles to straight-line assembly with **zero branch checks** or array lookup overhead, allowing the CPU to execute instructions in a tight linear flow.
 
 ---
 
@@ -114,12 +114,63 @@ Instruction 2 (AsBx Format):
 When the VM dispatches the first `FOR` word:
 1. It fetches the index, limit, and step values.
 2. It increments the index register: `valIndex += valStep;`.
-3. It fetches the second word from the instruction stream by advancing the PC: `secondInst = instPtr[++Pc];`.
+3. It fetches the second word from the instruction stream by directly dereferencing and advancing the Instruction Pointer: `secondInst = new Instruction(*state.Ip++);`.
 4. It reads the comparison operator (`comp`) from the second instruction and performs the condition check:
    - `0` ($<$), `1` ($>$), `2` ($\le$), `3` ($\ge$).
 5. **If condition is met (loop continues):**
-   It updates the PC: `state.Pc += jumpOffset - 2` (jumping back to the start of the loop body).
+   It updates the Instruction Pointer: `state.Ip += jumpOffset - 2` (jumping back to the start of the loop body).
 6. **If condition is not met (loop exits):**
-   The VM ignores the jump. The PC points to the second word (`PC+1`). At the end of the iteration, the main dispatch loop performs its standard `state.Pc++`, moving execution to `PC+2` (the instruction immediately following the `FOR` block).
+   The VM ignores the jump. Since the Instruction Pointer `state.Ip` was already advanced past the second word during the fetch on step 3, it naturally points to the instruction immediately following the `FOR` block, continuing linear execution.
 
 This fuses three dispatches into **one single instruction cycle**, cutting loop control overhead in half.
+
+---
+
+## 7. Zero-GC Output Formatting (`OutBufferPtr`)
+
+Standard output interpret functions like `Console.WriteLine` formatting `double` values directly to text generate heap allocation garbage (specifically C# string objects and formatting buffers). In a high-frequency execution environment (like a game scripting loop), output formatting garbage will quickly trigger GC collection spikes and frame rate drops.
+
+To achieve complete zero-allocation output:
+1. The virtual machine maintains a raw output buffer on the stack or pinned heap (`_outBuffer = new char[65536]`).
+2. The `VMState` struct holds pointers and metrics for this buffer:
+   - `char* OutBufferPtr`: Pointer to the start of the output buffer.
+   - `int OutBufferCapacity`: Maximum character capacity of the buffer.
+   - `int OutBufferOffset`: Current offset of written characters.
+3. Instruction handlers like `ExecutePrint`, `ExecutePrintA`, and `ExecutePrintS` write directly to this buffer using `valB.TryFormat(span, out int charsWritten)` which formats the doubles into characters in-place without generating any C# string objects.
+4. When the buffer is nearly full, or when the execution loop hits a `HALT` instruction, the buffer is flushed to standard output in a single batch operation using `Console.Out.Write(new ReadOnlySpan<char>(state.OutBufferPtr, state.OutBufferOffset))`, resetting the offset to `0`.
+
+This output buffer mechanism ensures that even print-heavy workloads generate exactly **zero bytes of garbage** on the C# managed heap during interpretation.
+
+---
+
+## 8. Register Type Union Optimization (Eliminating Cast Stalls)
+
+In the virtual machine's original implementation, registers were stored and accessed as `double` values. While convenient for floating-point math, this created CPU execution pipeline stalls when executing non-float operations:
+- **Bitwise Operations** (AND, OR, XOR, shifts): Required casting `double` to `long` (via floating-point conversion instructions like `cvttsd2si` in x64 assembly) to perform the logic, and casting the result back to `double` (via `cvtsi2sd`).
+- **Heap Indexing & Pointers**: The allocation pointer address and index parameters in instructions like `NEWARR`, `GETARR`, and `SETARR` had to be cast from `double` to `uint` and `ulong` for address arithmetic.
+
+These conversion operations cross CPU register files (SSE/AVX to general-purpose registers and back), which introduces high latency and stalls the instruction pipeline.
+
+To resolve this, the register file uses a unified representation defined by the `Register` struct using explicit layout:
+
+```csharp
+[StructLayout(LayoutKind.Explicit, Size = 8)]
+public struct Register
+{
+    [FieldOffset(0)]
+    public double AsDouble;
+
+    [FieldOffset(0)]
+    public long AsLong;
+
+    [FieldOffset(0)]
+    public ulong AsULong;
+}
+```
+
+By storing the register file as a block of `Register` structs on the stack (`Register* RegPtr` in `VMState`), the virtual machine can read and write raw integer bytes and doubles directly:
+- Floating-point instructions read/write `.AsDouble`.
+- Bitwise instructions read/write `.AsLong`.
+- Array pointers and indices read/write `.AsULong`.
+
+This eliminates **all** casting instructions from the hot execution path, allowing execution of memory indexing and bitwise logic at direct hardware speeds.

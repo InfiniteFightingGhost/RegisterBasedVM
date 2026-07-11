@@ -1,6 +1,6 @@
 # The Assembler Pipeline & Constant Pool
 
-The VM uses a text-based assembly syntax compiled into binary format via a structured **three-pass compiler pipeline** implemented in [Assembler.cs](../RegisterBasedVM/Assembler.cs).
+The VM uses a text-based assembly syntax compiled into binary format via a structured **three-pass compiler pipeline** implemented in [Assembler.cs](../Raptor/Assembler.cs).
 
 ---
 
@@ -60,7 +60,7 @@ The final pass loops through the cleaned assembly instructions, parses registers
 
 ## 4. Constant Pool Deduplication
 
-To prevent constant pool overflow, [VMChunk.cs](../RegisterBasedVM/VMChunk.cs) implements **constant deduplication** inside `SetConstant`:
+To prevent constant pool overflow, [VMChunk.cs](../Raptor/VMChunk.cs) implements **constant deduplication** inside `SetConstant`:
 
 ```csharp
 public uint SetConstant(double value)
@@ -85,3 +85,10 @@ Because the bit-packed `ABC` instruction format dedicates **9 bits** for operand
 - Indices `256–511` are mapped to constant pool slots (giving a max limit of 256 constants).
 
 If a program uses the same literal number multiple times (e.g. `0.0` or `1.0` in clamping blocks), deduplication ensures they share a single slot. Without deduplication, complex workloads like the raytracer would rapidly exceed 256 constants and trigger compiler crashes.
+
+---
+
+## 5. Deprecated Instruction Mapping
+
+To maintain compatibility with older bytecode assembly source code, the assembler handles deprecated instructions by mapping them to modern opcodes during Pass 3 (Codegen):
+- **`PRINTS` Mapping:** The `PRINTS` instruction (which formerly appended a double value to the output buffer without a newline) is deprecated. The assembler transparently parses `PRINTS` and compiles it using `OpCode.PRINT` instead.

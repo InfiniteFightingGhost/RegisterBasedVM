@@ -44,7 +44,12 @@ At startup, the entire 16MB heap starts as a single free block at address `0`:
 
 ## 2. Allocation Algorithm (`NEWARR`)
 
-The `NEWARR rDest size` instruction allocates an array of `size` elements (converted to bytes) from the heap.
+The `NEWARR rDest size` instruction allocates a block of `size` raw bytes on the heap. 
+
+> [!WARNING]
+> The VM does **not** scale the size parameter by the size of the elements automatically during allocation. It allocates exactly the number of bytes specified by `size`.
+> - For character arrays (accessed via `SETARRA` / `GETARRA` in 1-byte offsets), `size` equals the number of characters.
+> - For double-precision arrays (accessed via `SETARR` / `GETARR` in 8-byte offsets), the developer or compiler must specify the size in bytes, which is `elements * 8`. Failure to scale the allocation size will result in writes overlapping with subsequent free blocks or memory blocks, leading to heap corruption.
 
 ```text
                                Allocation Flow
