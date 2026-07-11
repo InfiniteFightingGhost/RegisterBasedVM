@@ -23,6 +23,7 @@ The project documentation is split into architectural specifications (`docs/`) a
 ### Core Architecture & Memory Details
 - [Core Architecture & Calling Conventions](docs/architecture.md): Detailed specifications on instruction formats, the 256-register layout, Register/Constant (RC) addressing, sliding windows, and the call stack.
 - [Instruction Set Architecture (ISA) Reference](docs/isa.md): A comprehensive reference table detailing operational behavior, encoding formats, and assembly syntax for every VM opcode.
+- [The Assembler Pipeline & Constant Pool](docs/assembler.md): Details of the lexical scanner, macro parser, label symbol mapping (with two-word instruction offset correction), and constant pool deduplication.
 - [Heap Memory Management & Custom Allocator](docs/memory.md): Deep-dive into the custom byte heap, the intrinsically linked list format, first-fit allocation, and immediate neighbor coalescing.
 - [Performance & Hardware-Level Optimizations](docs/optimizations.md): Analysis of raw pointer mapping, `stackalloc` cache locality, the Xorshift32 PRNG, double-precision Fast Inverse Square Root (FISR), and the two-word compound `FOR` super-instruction.
 
