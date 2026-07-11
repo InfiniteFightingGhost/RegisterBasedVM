@@ -163,3 +163,14 @@ public readonly struct StackFrame
 ```
 
 By keeping the call stack in stack-allocated memory (`stackalloc StackFrame[32]`), frame management operations compile to basic pointer dereferences and increments, bypassing C# heap allocation entirely.
+
+---
+
+## 5. The Assembler Pipeline (Overview)
+
+The textual assembly code is compiled into execution chunks (`VMChunk`) using a modular **three-pass assembler**:
+- **Pass 1 (Lexical & Macros):** Preprocesses strings, cleans whitespaces, strips comments, and expands symbol macros defined via the `DEFINE` syntax.
+- **Pass 2 (Jump & Method Mapping):** Maps labels (`label:`) and methods (`method()`) to bytecode indices. To keep relative offsets aligned, it increments the PC counter by `2` when encountering a two-word `FOR` instruction, and `1` for all other instructions.
+- **Pass 3 (Codegen):** Parses operands, performs constant pool allocation with deduplication, and packs instruction values into 32-bit words.
+
+For a detailed specification of the compiler passes and constant table pooling, see the dedicated [Assembler Documentation](assembler.md).

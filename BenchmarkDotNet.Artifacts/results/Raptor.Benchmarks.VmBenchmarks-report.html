@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='utf-8' />
+<title>Raptor.Benchmarks.VmBenchmarks-20260711-135537</title>
+
+<style type="text/css">
+	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
+	td, th { padding: 6px 13px; border: 1px solid #ddd; text-align: right; }
+	tr { background-color: #fff; border-top: 1px solid #ccc; }
+	tr:nth-child(even) { background: #f8f8f8; }
+</style>
+</head>
+<body>
+<pre><code>
+BenchmarkDotNet v0.14.0, Arch Linux
+AMD Ryzen 7 260 w/ Radeon 780M Graphics, 1 CPU, 16 logical and 8 physical cores
+.NET SDK 10.0.101
+  [Host]     : .NET 10.0.1 (10.0.125.57005), X64 RyuJIT AVX-512F+CD+BW+DQ+VL+VBMI
+  DefaultJob : .NET 10.0.1 (10.0.125.57005), X64 RyuJIT AVX-512F+CD+BW+DQ+VL+VBMI
+</code></pre>
+<pre><code></code></pre>
+
+<table>
+<thead><tr><th>Method                  </th><th>Mean</th><th>Error</th><th>StdDev</th><th>Allocated</th>
+</tr>
+</thead><tbody><tr><td>Benchmark_Fibonacci</td><td>503.1 &mu;s</td><td>2.05 &mu;s</td><td>1.92 &mu;s</td><td>105 B</td>
+</tr><tr><td>Benchmark_MonteCarlo</td><td>1,610.2 &mu;s</td><td>3.10 &mu;s</td><td>2.90 &mu;s</td><td>106 B</td>
+</tr><tr><td>Benchmark_Perceptron</td><td>238.2 &mu;s</td><td>3.26 &mu;s</td><td>3.05 &mu;s</td><td>104 B</td>
+</tr><tr><td>Benchmark_RayTracerSingleFrame</td><td>273.7 &mu;s</td><td>2.93 &mu;s</td><td>2.75 &mu;s</td><td>105 B</td>
+</tr></tbody></table>
+</body>
+</html>

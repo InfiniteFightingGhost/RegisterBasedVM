@@ -31,5 +31,10 @@ public enum OpCode
     SETARRA, // 26
     GETARR, // 27
     GETARRA, // 28
-    PRINTS, // 29
+    PRINTS, // 29 - Deprecated
+    BINAND, // 30
+    BINOR, // 31
+    BINXOR, // 32
+    BINLSH, // 33
+    BINRSH, // 34
 }

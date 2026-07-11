@@ -106,6 +106,7 @@ public class Assembler
         int pc = 0;
         foreach (var item in lines)
         {
+            Console.Error.WriteLine($"ASM Inst {pc}: {item}");
             var words = item.Split();
             uint instruction = 0;
             try
@@ -133,6 +134,11 @@ public class Assembler
                     case "MOD":
                     case "SETARR":
                     case "SETARRA":
+                    case "BINAND":
+                    case "BINOR":
+                    case "BINXOR":
+                    case "BINLSH":
+                    case "BINRSH":
                         byte destA3 = byte.Parse(words[1].TrimStart('r'));
 
                         ushort destB3;
@@ -420,6 +426,16 @@ public class Assembler
                 return OpCode.SETARR;
             case "SETARRA":
                 return OpCode.SETARRA;
+            case "BINAND":
+                return OpCode.BINAND;
+            case "BINOR":
+                return OpCode.BINOR;
+            case "BINXOR":
+                return OpCode.BINXOR;
+            case "BINLSH":
+                return OpCode.BINLSH;
+            case "BINRSH":
+                return OpCode.BINRSH;
         }
         return OpCode.LOADC;
     }

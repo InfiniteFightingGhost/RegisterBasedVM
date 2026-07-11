@@ -15,6 +15,7 @@ public unsafe class VirtualMachine
     private uint _heapHeader = 0;
     private byte[] _heap = new byte[_heapSize];
     uint rngState = 2463534215; // RNG seed
+    private char[] _outBuffer = new char[65536];
 
     public void LoadProgram(VMChunk chunk, int[] breakpoints)
     {
@@ -46,6 +47,7 @@ public unsafe class VirtualMachine
         fixed (double* constPtr = _constants)
         fixed (uint* methodTablePtr = _methods)
         fixed (byte* heapPtr = _heap)
+        fixed (char* outBufferPtr = _outBuffer)
         {
             *(uint*)heapPtr = 0xFFFFFFFF;
             *(uint*)(heapPtr + 4) = (uint)_heapSize;
@@ -63,7 +65,9 @@ public unsafe class VirtualMachine
                 BasePtr = 0,
                 CallStackPtr = framePtr,
                 RngState = rngState,
-                StringBuilder = new StringBuilder(),
+                OutBufferPtr = outBufferPtr,
+                OutBufferCapacity = _outBuffer.Length,
+                OutBufferOffset = 0,
             };
             var stopwatch = Stopwatch.StartNew();
             while (true)
@@ -142,7 +146,7 @@ public unsafe class VirtualMachine
                     case OpCode.HALT:
                         stopwatch.Stop();
                         ExecuteHalt(instruction, ref state);
-                        Console.WriteLine($"Execution time:{stopwatch.ElapsedMilliseconds} ms");
+                        Console.Error.WriteLine($"Execution time:{stopwatch.ElapsedMilliseconds} ms");
                         return;
                     case OpCode.RAND:
                         ExecuteRand(instruction, ref state);
@@ -167,6 +171,21 @@ public unsafe class VirtualMachine
                         break;
                     case OpCode.FREEARR:
                         ExecuteFreeArray(instruction, ref state);
+                        break;
+                    case OpCode.BINAND:
+                        ExecuteBinaryAnd(instruction, ref state);
+                        break;
+                    case OpCode.BINOR:
+                        ExecuteBinaryOr(instruction, ref state);
+                        break;
+                    case OpCode.BINXOR:
+                        ExecuteBinaryXor(instruction, ref state);
+                        break;
+                    case OpCode.BINLSH:
+                        ExecuteBinaryLeftShift(instruction, ref state);
+                        break;
+                    case OpCode.BINRSH:
+                        ExecuteBinaryRightShift(instruction, ref state);
                         break;
                 }
             }
@@ -255,7 +274,7 @@ public unsafe class VirtualMachine
         state.BasePtr += start;
         state.RegPtr += state.BasePtr;
 
-        state.Ip = state.InstPtr + (int)state.MethodTablePtr[methodIndex] - 1;
+        state.Ip = state.InstPtr + (int)state.MethodTablePtr[methodIndex];
         return true;
     }
 
@@ -403,36 +422,73 @@ public unsafe class VirtualMachine
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static unsafe void FlushOutput(ref VMState state)
+    {
+        if (state.OutBufferOffset > 0)
+        {
+            Console.Out.Write(new ReadOnlySpan<char>(state.OutBufferPtr, state.OutBufferOffset));
+            state.OutBufferOffset = 0;
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe bool ExecutePrint(Instruction instruction, ref VMState state)
     {
-        uint a = (uint)instruction.B;
-        double valA = a < 256 ? Reg(state.RegPtr, state.BasePtr, a) : state.ConstPtr[a - 256];
-        Console.WriteLine(valA);
+        uint b = (uint)instruction.B;
+        double valB = b < 256 ? Reg(state.RegPtr, state.BasePtr, b) : state.ConstPtr[b - 256];
+
+        if (state.OutBufferCapacity - state.OutBufferOffset < 48)
+        {
+            FlushOutput(ref state);
+        }
+
+        Span<char> span = new Span<char>(state.OutBufferPtr + state.OutBufferOffset, state.OutBufferCapacity - state.OutBufferOffset);
+        if (valB.TryFormat(span, out int charsWritten, default, System.Globalization.CultureInfo.InvariantCulture))
+        {
+            state.OutBufferOffset += charsWritten;
+            state.OutBufferPtr[state.OutBufferOffset++] = '\n';
+        }
         return true;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe bool ExecutePrintA(Instruction instruction, ref VMState state)
     {
-        uint a = (uint)instruction.B;
-        double valA = a < 256 ? Reg(state.RegPtr, state.BasePtr, a) : state.ConstPtr[a - 256];
-        Console.Write((char)valA);
+        uint b = (uint)instruction.B;
+        double valB = b < 256 ? Reg(state.RegPtr, state.BasePtr, b) : state.ConstPtr[b - 256];
+
+        if (state.OutBufferCapacity - state.OutBufferOffset < 4)
+        {
+            FlushOutput(ref state);
+        }
+
+        state.OutBufferPtr[state.OutBufferOffset++] = (char)valB;
         return true;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe bool ExecutePrintS(Instruction instruction, ref VMState state)
     {
-        uint a = (uint)instruction.B;
-        double valA = a < 256 ? Reg(state.RegPtr, state.BasePtr, a) : state.ConstPtr[a - 256];
-        state.StringBuilder.Append(valA);
+        uint b = (uint)instruction.B;
+        double valB = b < 256 ? Reg(state.RegPtr, state.BasePtr, b) : state.ConstPtr[b - 256];
+
+        if (state.OutBufferCapacity - state.OutBufferOffset < 48)
+        {
+            FlushOutput(ref state);
+        }
+
+        Span<char> span = new Span<char>(state.OutBufferPtr + state.OutBufferOffset, state.OutBufferCapacity - state.OutBufferOffset);
+        if (valB.TryFormat(span, out int charsWritten, default, System.Globalization.CultureInfo.InvariantCulture))
+        {
+            state.OutBufferOffset += charsWritten;
+        }
         return true;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe bool ExecuteHalt(Instruction instruction, ref VMState state)
     {
-        Console.WriteLine(state.StringBuilder.ToString());
+        FlushOutput(ref state);
         return false;
     }
 
@@ -703,6 +759,66 @@ public unsafe class VirtualMachine
         );
 
         Reg(state.RegPtr, state.BasePtr, destination) = *(state.HeapPtr + address + valIndex);
+        return true;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static unsafe bool ExecuteBinaryAnd(Instruction instruction, ref VMState state)
+    {
+        byte a = instruction.A;
+        ushort b = instruction.B;
+        double valB = b < 256 ? Reg(state.RegPtr, state.BasePtr, b) : state.ConstPtr[b - 256];
+        ushort c = instruction.C;
+        double valC = c < 256 ? Reg(state.RegPtr, state.BasePtr, c) : state.ConstPtr[c - 256];
+        Reg(state.RegPtr, state.BasePtr, a) = (double)((long)valB & (long)valC);
+        return true;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static unsafe bool ExecuteBinaryOr(Instruction instruction, ref VMState state)
+    {
+        byte a = instruction.A;
+        ushort b = instruction.B;
+        double valB = b < 256 ? Reg(state.RegPtr, state.BasePtr, b) : state.ConstPtr[b - 256];
+        ushort c = instruction.C;
+        double valC = c < 256 ? Reg(state.RegPtr, state.BasePtr, c) : state.ConstPtr[c - 256];
+        Reg(state.RegPtr, state.BasePtr, a) = (double)((long)valB | (long)valC);
+        return true;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static unsafe bool ExecuteBinaryXor(Instruction instruction, ref VMState state)
+    {
+        byte a = instruction.A;
+        ushort b = instruction.B;
+        double valB = b < 256 ? Reg(state.RegPtr, state.BasePtr, b) : state.ConstPtr[b - 256];
+        ushort c = instruction.C;
+        double valC = c < 256 ? Reg(state.RegPtr, state.BasePtr, c) : state.ConstPtr[c - 256];
+        Reg(state.RegPtr, state.BasePtr, a) = (double)((long)valB ^ (long)valC);
+        return true;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static unsafe bool ExecuteBinaryLeftShift(Instruction instruction, ref VMState state)
+    {
+        byte a = instruction.A;
+        ushort b = instruction.B;
+        double valB = b < 256 ? Reg(state.RegPtr, state.BasePtr, b) : state.ConstPtr[b - 256];
+        ushort c = instruction.C;
+        double valC = c < 256 ? Reg(state.RegPtr, state.BasePtr, c) : state.ConstPtr[c - 256];
+        Reg(state.RegPtr, state.BasePtr, a) = (double)((long)valB << (int)valC);
+        return true;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static unsafe bool ExecuteBinaryRightShift(Instruction instruction, ref VMState state)
+    {
+        byte a = instruction.A;
+        ushort b = instruction.B;
+        double valB = b < 256 ? Reg(state.RegPtr, state.BasePtr, b) : state.ConstPtr[b - 256];
+        ushort c = instruction.C;
+        double valC = c < 256 ? Reg(state.RegPtr, state.BasePtr, c) : state.ConstPtr[c - 256];
+        Reg(state.RegPtr, state.BasePtr, a) = (double)((long)valB >> (int)valC);
         return true;
     }
 }

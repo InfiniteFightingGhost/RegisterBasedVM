@@ -1,0 +1,55 @@
+// Validating benchmarks:
+// ***** BenchmarkRunner: Start   *****
+// ***** Found 4 benchmark(s) in total *****
+// ***** Building 1 exe(s) in Parallel: Start   *****
+// start dotnet  restore /p:UseSharedCompilation=false /p:BuildInParallel=false /m:1 /p:Deterministic=true /p:Optimize=true /p:IntermediateOutputPath="/home/andy/Projects/RegisterBasedVM/Raptor.Benchmarks/bin/Release/net10.0/4b2f1549-2ce6-4db4-81c3-48ca79167db0/obj/Release/net10.0/" /p:OutDir="/home/andy/Projects/RegisterBasedVM/Raptor.Benchmarks/bin/Release/net10.0/4b2f1549-2ce6-4db4-81c3-48ca79167db0/bin/Release/net10.0/" /p:OutputPath="/home/andy/Projects/RegisterBasedVM/Raptor.Benchmarks/bin/Release/net10.0/4b2f1549-2ce6-4db4-81c3-48ca79167db0/bin/Release/net10.0/" in /home/andy/Projects/RegisterBasedVM/Raptor.Benchmarks/bin/Release/net10.0/4b2f1549-2ce6-4db4-81c3-48ca79167db0
+// command took 0.74 sec and exited with 0
+// start dotnet  build -c Release --no-restore /p:UseSharedCompilation=false /p:BuildInParallel=false /m:1 /p:Deterministic=true /p:Optimize=true /p:IntermediateOutputPath="/home/andy/Projects/RegisterBasedVM/Raptor.Benchmarks/bin/Release/net10.0/4b2f1549-2ce6-4db4-81c3-48ca79167db0/obj/Release/net10.0/" /p:OutDir="/home/andy/Projects/RegisterBasedVM/Raptor.Benchmarks/bin/Release/net10.0/4b2f1549-2ce6-4db4-81c3-48ca79167db0/bin/Release/net10.0/" /p:OutputPath="/home/andy/Projects/RegisterBasedVM/Raptor.Benchmarks/bin/Release/net10.0/4b2f1549-2ce6-4db4-81c3-48ca79167db0/bin/Release/net10.0/" --output "/home/andy/Projects/RegisterBasedVM/Raptor.Benchmarks/bin/Release/net10.0/4b2f1549-2ce6-4db4-81c3-48ca79167db0/bin/Release/net10.0/" in /home/andy/Projects/RegisterBasedVM/Raptor.Benchmarks/bin/Release/net10.0/4b2f1549-2ce6-4db4-81c3-48ca79167db0
+// command took 5.72 sec and exited with 0
+// ***** Done, took 00:00:06 (6.49 sec)   *****
+// Found 4 benchmarks:
+//   VmBenchmarks.Benchmark_Fibonacci: DefaultJob
+//   VmBenchmarks.Benchmark_MonteCarlo: DefaultJob
+//   VmBenchmarks.Benchmark_Perceptron: DefaultJob
+//   VmBenchmarks.Benchmark_RayTracerSingleFrame: DefaultJob
+
+// **************************
+// Benchmark: VmBenchmarks.Benchmark_Fibonacci: DefaultJob
+// *** Execute ***
+// Launch: 1 / 1
+// Execute: dotnet 4b2f1549-2ce6-4db4-81c3-48ca79167db0.dll --anonymousPipes 153 154 --benchmarkName Raptor.Benchmarks.VmBenchmarks.Benchmark_Fibonacci --job Default --benchmarkId 0 in /home/andy/Projects/RegisterBasedVM/Raptor.Benchmarks/bin/Release/net10.0/4b2f1549-2ce6-4db4-81c3-48ca79167db0/bin/Release/net10.0
+// Failed to set up high priority (Permission denied). In order to run benchmarks with high priority, make sure you have the right permissions.
+// BeforeAnythingElse
+
+// Benchmark Process Environment Information:
+// BenchmarkDotNet v0.14.0
+// Runtime=.NET 10.0.1 (10.0.125.57005), X64 RyuJIT AVX-512F+CD+BW+DQ+VL+VBMI
+// GC=Concurrent Workstation
+// HardwareIntrinsics=AVX-512F+CD+BW+DQ+VL+VBMI,AES,BMI1,BMI2,FMA,LZCNT,PCLMUL,POPCNT VectorSize=256
+// Job: DefaultJob
+
+OverheadJitting  1: 1 op, 183074.00 ns, 183.0740 us/op
+WorkloadJitting  1: 1 op, 7815025.00 ns, 7.8150 ms/op
+
+OverheadJitting  2: 16 op, 173305.00 ns, 10.8316 us/op
+WorkloadJitting  2: 16 op, 19200959.00 ns, 1.2001 ms/op
+
+WorkloadPilot    1: 16 op, 20001664.00 ns, 1.2501 ms/op
+WorkloadPilot    2: 32 op, 39171957.00 ns, 1.2241 ms/op
+WorkloadPilot    3: 64 op, 83185330.00 ns, 1.2998 ms/op
+WorkloadPilot    4: 128 op, 161912342.00 ns, 1.2649 ms/op
+WorkloadPilot    5: 256 op, 336886258.00 ns, 1.3160 ms/op
+WorkloadPilot    6: 512 op, 655545828.00 ns, 1.2804 ms/op
+
+OverheadWarmup   1: 512 op, 2194.00 ns, 4.2852 ns/op
+OverheadWarmup   2: 512 op, 1042.00 ns, 2.0352 ns/op
+OverheadWarmup   3: 512 op, 951.00 ns, 1.8574 ns/op
+OverheadWarmup   4: 512 op, 942.00 ns, 1.8398 ns/op
+OverheadWarmup   5: 512 op, 952.00 ns, 1.8594 ns/op
+OverheadWarmup   6: 512 op, 852.00 ns, 1.6641 ns/op
+OverheadWarmup   7: 512 op, 6853.00 ns, 13.3848 ns/op
+OverheadWarmup   8: 512 op, 891.00 ns, 1.7402 ns/op
+
+OverheadActual   1: 512 op, 962.00 ns, 1.8789 ns/op
+OverheadActual   2: 512 op, 1032.00 ns, 2.0156 ns/op
+OverheadActual 

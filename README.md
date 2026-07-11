@@ -1,4 +1,5 @@
 # Unsafe Register-Based Virtual Machine
+![Orbit Animation](./orbit.gif)
 
 Welcome to the **Unsafe Register-Based Virtual Machine**, a high-performance, single-threaded bytecode interpreter written in C# targeting **.NET 10.0**.
 

@@ -226,54 +226,8 @@ NEWARR r0 100
 HALT
 ";
 
-static string TruncateChannel(string reg, string tempReg, string tempDiv) =>
-    $@"
-    MOVE {tempReg} {reg}
-    LOADC {tempDiv} 128.0
-    LE 1 {tempDiv} {reg}
-    JUMP skip_128_{reg}
-    SUB {reg} {reg} {tempDiv}
-skip_128_{reg}:
-    LOADC {tempDiv} 64.0
-    LE 1 {tempDiv} {reg}
-    JUMP skip_64_{reg}
-    SUB {reg} {reg} {tempDiv}
-skip_64_{reg}:
-    LOADC {tempDiv} 32.0
-    LE 1 {tempDiv} {reg}
-    JUMP skip_32_{reg}
-    SUB {reg} {reg} {tempDiv}
-skip_32_{reg}:
-    LOADC {tempDiv} 16.0
-    LE 1 {tempDiv} {reg}
-    JUMP skip_16_{reg}
-    SUB {reg} {reg} {tempDiv}
-skip_16_{reg}:
-    LOADC {tempDiv} 8.0
-    LE 1 {tempDiv} {reg}
-    JUMP skip_8_{reg}
-    SUB {reg} {reg} {tempDiv}
-skip_8_{reg}:
-    LOADC {tempDiv} 4.0
-    LE 1 {tempDiv} {reg}
-    JUMP skip_4_{reg}
-    SUB {reg} {reg} {tempDiv}
-skip_4_{reg}:
-    LOADC {tempDiv} 2.0
-    LE 1 {tempDiv} {reg}
-    JUMP skip_2_{reg}
-    SUB {reg} {reg} {tempDiv}
-skip_2_{reg}:
-    LOADC {tempDiv} 1.0
-    LE 1 {tempDiv} {reg}
-    JUMP skip_1_{reg}
-    SUB {reg} {reg} {tempDiv}
-skip_1_{reg}:
-    SUB {reg} {tempReg} {reg}
-";
-
 string rayTracer =
-    $@"
+    @"
 ; --- REGISTER DEFINITIONS ---
 ; r0 is reserved as the index register for GETARR and GETARRA
 DEFINE width r1
@@ -348,8 +302,8 @@ DEFINE cam_z r69
 DEFINE step r70
 
 ; --- INITIALIZATION ---
-LOADC width 1024
-LOADC height 1024
+LOADC width 2048
+LOADC height 2048
 LOADC zero 0.0
 LOADC max_val 255.0
 LOADC one_val 1.0
@@ -589,7 +543,7 @@ r_not_neg:
     JUMP r_not_high
     LOADC r 255.0
 r_not_high:
-{TruncateChannel("r", "r_temp", "temp1")}
+    BINAND r r r
     ; Clamp and truncate g
     LT 0 g zero
     JUMP g_not_neg
@@ -599,7 +553,7 @@ g_not_neg:
     JUMP g_not_high
     LOADC g 255.0
 g_not_high:
-{TruncateChannel("g", "g_temp", "temp1")}
+    BINAND g g g
     ; Clamp and truncate b_val
     LT 0 b_val zero
     JUMP b_not_neg
@@ -609,10 +563,10 @@ b_not_neg:
     JUMP b_not_high
     LOADC b_val 255.0
 b_not_high:
-{TruncateChannel("b_val", "b_temp", "temp1")}
-    PRINTS r
-    PRINTS g
-    PRINTS b_val
+    BINAND b_val b_val b_val
+    PRINT r
+    PRINT g
+    PRINT b_val
 
     ADD rx rx step
     ADD i i 1
@@ -653,7 +607,6 @@ intersect()
 no_hit:
     LOADC t -1.0
     RETURN r0 r0
-
 ";
 
 VMChunk chunk = new VMChunk();
@@ -662,6 +615,24 @@ ass.Parse(monteCarlo.Split("\n").ToList());
 VirtualMachine machine = new VirtualMachine();
 machine.LoadProgram(chunk, new int[] { });
 machine.RunFast();
+
+// Console.Error.WriteLine($"Compiled {chunk.Instructions?.Length ?? 0} instructions.");
+//
+// // Verify compiled program
+// try
+// {
+//     BytecodeVerifier.(chunk, 16 * 1024 * 1024);
+//     Console.Error.WriteLine("RayTracer verification PASSED.");
+// }
+// catch (Exception ex)
+// {
+//     Console.Error.WriteLine($"RayTracer verification FAILED: {ex.Message}");
+//     throw;
+// }
+//
+// // Run verifier unit tests
+RunVerifierUnitTests();
+
 // int sinIndex = Array.IndexOf(chunk.Constants, -999.123);
 // int cosIndex = Array.IndexOf(chunk.Constants, -999.456);
 // int camXIndex = Array.IndexOf(chunk.Constants, -999.789);
@@ -674,7 +645,8 @@ machine.RunFast();
 // }
 //
 // int totalFrames = 30;
-// var originalOut = Console.Out;
+var originalOut = Console.Out;
+
 //
 // for (int frame = 0; frame < totalFrames; frame++)
 // {
@@ -696,6 +668,7 @@ machine.RunFast();
 //     chunk.Constants[camZIndex] = camZ;
 //
 //     // Redirect standard output to frame_xx.ppm
+//     var sw = System.Diagnostics.Stopwatch.StartNew();
 //     using (var writer = new System.IO.StreamWriter($"frame_{frame:D2}.ppm"))
 //     {
 //         Console.SetOut(writer);
@@ -704,8 +677,122 @@ machine.RunFast();
 //         vm.LoadProgram(chunk, new int[] { });
 //         vm.RunFast();
 //     }
+//     Console.Error.WriteLine($"Frame {frame:D2} rendered in {sw.ElapsedMilliseconds} ms");
 // }
 
 // Restore standard output
-// Console.SetOut(originalOut);
-// Console.Error.WriteLine("Successfully rendered 30 frames!");
+Console.SetOut(originalOut);
+Console.Error.WriteLine("Successfully rendered 30 frames!");
+
+void RunVerifierUnitTests()
+{
+    Console.Error.WriteLine("Running verifier unit tests...");
+
+    // Test 1: Empty instructions
+    try
+    {
+        VMChunk badChunk = new VMChunk();
+        BytecodeVerifier.Verify(badChunk, 1024);
+        throw new Exception(
+            "Test 1 failed: Expected VerificationException for empty instructions."
+        );
+    }
+    catch (VerificationException)
+    { /* expected */
+    }
+
+    // Test 2: Missing terminating instruction
+    try
+    {
+        VMChunk badChunk = new VMChunk();
+        badChunk.Instructions = new uint[] { Instruction.CreateABC(OpCode.ADD, 0, 0, 0) };
+        BytecodeVerifier.Verify(badChunk, 1024);
+        throw new Exception(
+            "Test 2 failed: Expected VerificationException for missing termination."
+        );
+    }
+    catch (VerificationException)
+    { /* expected */
+    }
+
+    // Test 3: Invalid jump out of bounds
+    try
+    {
+        VMChunk badChunk = new VMChunk();
+        badChunk.Instructions = new uint[]
+        {
+            Instruction.CreateSBx26(OpCode.JUMP, 10),
+            Instruction.CreateABC(OpCode.HALT, 0, 0, 0),
+        };
+        BytecodeVerifier.Verify(badChunk, 1024);
+        throw new Exception(
+            "Test 3 failed: Expected VerificationException for jump out of bounds."
+        );
+    }
+    catch (VerificationException)
+    { /* expected */
+    }
+
+    // Test 4: Jump into the middle of a FOR instruction
+    try
+    {
+        VMChunk badChunk = new VMChunk();
+        badChunk.Instructions = new uint[]
+        {
+            Instruction.CreateSBx26(OpCode.JUMP, 2),
+            Instruction.CreateABC(OpCode.FOR, 0, 0, 0),
+            Instruction.CreateAsBx(OpCode.FOR, 0, 0),
+            Instruction.CreateABC(OpCode.HALT, 0, 0, 0),
+        };
+        BytecodeVerifier.Verify(badChunk, 1024);
+        throw new Exception(
+            "Test 4 failed: Expected VerificationException for jump into middle of FOR."
+        );
+    }
+    catch (VerificationException)
+    { /* expected */
+    }
+
+    // Test 5: Register/Constant index out of bounds
+    try
+    {
+        VMChunk badChunk = new VMChunk();
+        typeof(VMChunk)
+            .GetProperty("Constants")
+            .GetSetMethod(true)
+            .Invoke(badChunk, new object[] { new double[0] });
+        badChunk.Instructions = new uint[]
+        {
+            Instruction.CreateABC(OpCode.ADD, 0, 256, 0),
+            Instruction.CreateABC(OpCode.HALT, 0, 0, 0),
+        };
+        BytecodeVerifier.Verify(badChunk, 1024);
+        throw new Exception(
+            "Test 5 failed: Expected VerificationException for out of bounds constant."
+        );
+    }
+    catch (VerificationException)
+    { /* expected */
+    }
+
+    // Test 6: Incomplete FOR instruction
+    try
+    {
+        VMChunk badChunk = new VMChunk();
+        badChunk.Instructions = new uint[] { Instruction.CreateABC(OpCode.FOR, 0, 0, 0) };
+        BytecodeVerifier.Verify(badChunk, 1024);
+        throw new Exception("Test 6 failed: Expected VerificationException for incomplete FOR.");
+    }
+    catch (VerificationException)
+    { /* expected */
+    }
+
+    // Test 7: Valid program passes
+    {
+        VMChunk goodChunk = new VMChunk();
+        goodChunk.Instructions = new uint[] { Instruction.CreateABC(OpCode.HALT, 0, 0, 0) };
+        BytecodeVerifier.Verify(goodChunk, 1024);
+    }
+
+    Console.Error.WriteLine("All verifier unit tests PASSED successfully.");
+}

@@ -7,6 +7,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Nullable>enable</Nullable>
     <OptimizationPreference>Speed</OptimizationPreference>
+    <Optimize>true</Optimize>
   </PropertyGroup>
 
 </Project>
