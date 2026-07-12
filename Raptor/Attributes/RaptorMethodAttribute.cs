@@ -1,5 +1,10 @@
-namespace Raptor.Attributes;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
+namespace Raptor.Attributes
+{
 /// <summary>
 /// Marks a method for automatic FFI registration with the Raptor VM.
 /// When no parameters are provided, the method name is converted to camelCase
@@ -54,4 +59,5 @@ public sealed class RaptorMethodAttribute : Attribute
         Name = name;
         Index = index;
     }
+}
 }

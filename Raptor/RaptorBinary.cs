@@ -1,5 +1,11 @@
-namespace Raptor;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
 
+namespace Raptor
+{
 /// <summary>
 /// Provides serialization and deserialization for the Raptor standardized binary format (.rbc).
 ///
@@ -141,4 +147,5 @@ public static class RaptorBinary
         using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
         return Load(stream);
     }
+}
 }

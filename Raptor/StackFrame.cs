@@ -1,5 +1,10 @@
-namespace Raptor;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
+namespace Raptor
+{
 /// <summary>
 /// Used to represent a call state in the call stack
 /// </summary>
@@ -19,4 +24,5 @@ public readonly struct StackFrame
         ReturnPC = returnPC;
         PreviousBase = previousBase;
     }
+}
 }

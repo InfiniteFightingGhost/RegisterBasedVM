@@ -1,8 +1,12 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
-namespace Raptor;
-
+namespace Raptor
+{
 ///<summary>
 ///The engine that this whole project relies upon. This is place that all of the instructions are executed.
 ///</summary>
@@ -115,7 +119,6 @@ public unsafe class VirtualMachine
                 OutBufferCapacity = _outBuffer.Length,
                 OutBufferOffset = 0,
             };
-            var stopwatch = Stopwatch.StartNew();
             try
             {
                 while (true)
@@ -181,12 +184,8 @@ public unsafe class VirtualMachine
                             ExecuteLe(instruction, ref state);
                             break;
                         case OpCode.HALT:
-                            stopwatch.Stop();
                             ExecuteHalt(instruction, ref state);
                             _rngState = state.RngState;
-                            Console.Error.WriteLine(
-                                $"Execution time:{stopwatch.ElapsedMilliseconds} ms ({stopwatch.ElapsedTicks} ticks, {stopwatch.Elapsed.TotalMicroseconds:F1} us)"
-                            );
 
                             double[] regSnapshot = new double[256];
                             new ReadOnlySpan<double>(RegPtr, 256).CopyTo(regSnapshot);
@@ -250,7 +249,6 @@ public unsafe class VirtualMachine
             }
             catch (VMPanicException ex)
             {
-                stopwatch.Stop();
                 _rngState = state.RngState;
 
                 double[] regSnapshot = new double[256];
@@ -389,7 +387,7 @@ public unsafe class VirtualMachine
                             ExecuteHalt(instruction, ref state);
                             _rngState = state.RngState;
                             Console.Error.WriteLine(
-                                $"Debug Execution time:{stopwatch.ElapsedMilliseconds} ms ({stopwatch.ElapsedTicks} ticks, {stopwatch.Elapsed.TotalMicroseconds:F1} us)"
+                                $"Debug Execution time:{stopwatch.ElapsedMilliseconds} ms ({stopwatch.ElapsedTicks} ticks, {(stopwatch.Elapsed.Ticks / 10.0):F1} us)"
                             );
 
                             double[] regSnapshot = new double[256];
@@ -1156,4 +1154,5 @@ public unsafe class VirtualMachine
         Reg(state.RegPtr, state.BasePtr, a) = (double)((long)valB >> (int)valC);
         return true;
     }
+}
 }

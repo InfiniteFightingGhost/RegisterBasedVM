@@ -1,5 +1,6 @@
 using UnityEngine;
 using Raptor;
+using Raptor.Attributes;
 
 /*
   =============================================================================
@@ -44,6 +45,7 @@ using Raptor;
 /// A real-world example of how to execute a complex C-like RaptorScript (.rapt) file
 /// on a Unity GameObject to run AI behaviors.
 /// </summary>
+[RaptorModule("enemy")]
 public class RaptorScriptGameplayExample : MonoBehaviour
 {
     [Header("Script Settings")]
@@ -60,12 +62,27 @@ public class RaptorScriptGameplayExample : MonoBehaviour
     
     private ScriptEngine _engine;
     private ScriptWatcher _watcher;
+    private string _raptSourceText = string.Empty;
 
     private void Awake()
     {
         // 1. Setup the FFI Table and register AI APIs
         var table = new FFIHostTable();
         table.RegisterModule(this); // Register this instance as FFI module
+
+        // Generate and save autocomplete typings (.d.ts) next to the script
+        try
+        {
+            string decls = table.GenerateAutocompleteDeclarations();
+            string? dir = System.IO.Path.GetDirectoryName(raptorScriptPath);
+            string declsPath = System.IO.Path.Combine(dir ?? "", "raptor-api.d.ts");
+            System.IO.File.WriteAllText(declsPath, decls);
+            Debug.Log($"[Raptor FFI] Autocomplete typings auto-saved to: {declsPath}");
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"[Raptor FFI] Failed to save autocomplete typings: {ex.Message}");
+        }
 
         // 2. Setup the compiler engine
         _engine = new ScriptEngine();
@@ -74,16 +91,15 @@ public class RaptorScriptGameplayExample : MonoBehaviour
         // 3. Compile the .rapt script file and monitor it for hot reloading
         try
         {
-            // Convert .rapt source to .rasm assembly, then compile to VM chunk
-            string rasmAssembly = Raptor.Compiler.RaptorScriptCompiler.Compile(
-                System.IO.File.ReadAllText(raptorScriptPath)
-            );
-            
-            // Create a temporary .rasm file for the watcher to monitor
-            string tempRasmPath = raptorScriptPath.Replace(".rapt", ".rasm");
-            System.IO.File.WriteAllText(tempRasmPath, rasmAssembly);
+            string absPath = System.IO.Path.GetFullPath(raptorScriptPath);
+            string initialSource = System.IO.File.ReadAllText(raptorScriptPath);
+            Debug.Log($"[Raptor AI Debug] Reading file from: {absPath} (Length: {initialSource.Length} chars)\nContent:\n{initialSource}");
 
-            _watcher = new ScriptWatcher(_engine, tempRasmPath);
+            // Watch the .rapt file directly, compile it in memory, and keep source text updated
+            _watcher = new ScriptWatcher(_engine, raptorScriptPath, (src) => {
+                _raptSourceText = src;
+                return Raptor.Compiler.RaptorScriptCompiler.Compile(src);
+            });
             
             _watcher.OnReloaded += (chunk) => Debug.Log("[Raptor AI] AI script hot-reloaded successfully.");
             _watcher.OnReloadError += (ex) => Debug.LogError($"[Raptor AI Compiler Error] {ex.Message}");
@@ -99,13 +115,14 @@ public class RaptorScriptGameplayExample : MonoBehaviour
         if (_watcher == null || playerTransform == null) return;
 
         // 4. Run the AI Script VM chunk on every frame
-        try
+        var runResult = _engine.Execute(_watcher.ActiveChunk);
+        if (runResult.Status != VMStatus.Halted && runResult.Status != VMStatus.Success)
         {
-            _engine.Execute(_watcher.ActiveChunk);
-        }
-        catch (System.Exception ex)
-        {
-            Debug.LogError($"[Raptor AI Runtime Error] {ex.Message}");
+            string errorDetails = ScriptEngine.TranslateError(_watcher.ActiveChunk, runResult.IpOffset, _raptSourceText);
+            Debug.LogError($"[Raptor AI VM Error] Status: {runResult.Status}. Details: {errorDetails}");
+            
+            // Disable component to prevent log spamming
+            enabled = false;
         }
     }
 
@@ -122,7 +139,9 @@ public class RaptorScriptGameplayExample : MonoBehaviour
     public double GetDistanceToPlayer()
     {
         if (playerTransform == null) return 999.0;
-        return Vector3.Distance(transform.position, playerTransform.position);
+        double dist = Vector3.Distance(transform.position, playerTransform.position);
+        Debug.Log($"[Raptor AI Pos Debug] Enemy Pos: {transform.position}, Player Pos: {playerTransform.position}, Distance: {dist}");
+        return dist;
     }
 
     [RaptorMethod("getState")]

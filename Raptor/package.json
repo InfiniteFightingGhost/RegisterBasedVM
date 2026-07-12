@@ -1,0 +1,20 @@
+{
+    "name": "com.raptor.scripting",
+    "version": "1.0.0",
+    "displayName": "Raptor Scripting VM",
+    "description": "High-performance, zero-allocation register-based scripting virtual machine and FFI compiler for game development.",
+    "unity": "2021.3",
+    "author": {
+        "name": "InfiniteFightingGhost"
+    },
+    "dependencies": {},
+    "keywords": [
+        "scripting",
+        "vm",
+        "ffi",
+        "compiler",
+        "performance",
+        "zero-allocation",
+        "unity"
+    ]
+}

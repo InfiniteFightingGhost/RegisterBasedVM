@@ -1,10 +1,11 @@
+using System.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace Raptor.Compiler;
-
+namespace Raptor.Compiler
+{
 #region Token Definitions
 
 public enum TokenType
@@ -54,7 +55,10 @@ public record Token(TokenType Type, string Value, int Line);
 
 #region AST Nodes
 
-public abstract class ASTNode { }
+public abstract class ASTNode
+{
+    public int Line { get; set; }
+}
 
 public class ProgramNode : ASTNode
 {
@@ -354,11 +358,12 @@ public class Parser
         Consume(TokenType.Assign, "Expected '=' in variable declaration.");
         ASTNode initializer = ParseExpression();
         Consume(TokenType.Semicolon, "Expected ';' after declaration.");
-        return new VarDeclNode(nameToken.Value, initializer);
+        return new VarDeclNode(nameToken.Value, initializer) { Line = nameToken.Line };
     }
 
     private ASTNode ParseIf()
     {
+        Token ifToken = Previous();
         Consume(TokenType.OpenParenthesis, "Expected '(' after 'if'.");
         ASTNode condition = ParseExpression();
         Consume(TokenType.CloseParenthesis, "Expected ')' after condition.");
@@ -371,17 +376,18 @@ public class Parser
             elseBlock = ParseBlock();
         }
 
-        return new IfNode(condition, thenBlock, elseBlock);
+        return new IfNode(condition, thenBlock, elseBlock) { Line = ifToken.Line };
     }
 
     private ASTNode ParseWhile()
     {
+        Token whileToken = Previous();
         Consume(TokenType.OpenParenthesis, "Expected '(' after 'while'.");
         ASTNode condition = ParseExpression();
         Consume(TokenType.CloseParenthesis, "Expected ')' after condition.");
 
         List<ASTNode> body = ParseBlock();
-        return new WhileNode(condition, body);
+        return new WhileNode(condition, body) { Line = whileToken.Line };
     }
 
     private List<ASTNode> ParseBlock()
@@ -433,14 +439,14 @@ public class Parser
                 // x -= y -> x = x - y
                 if (op.Type == TokenType.PlusEquals)
                 {
-                    value = new BinaryOpNode(id, "+", value);
+                    value = new BinaryOpNode(id, "+", value) { Line = op.Line };
                 }
                 else if (op.Type == TokenType.MinusEquals)
                 {
-                    value = new BinaryOpNode(id, "-", value);
+                    value = new BinaryOpNode(id, "-", value) { Line = op.Line };
                 }
 
-                return new AssignmentNode(id.Name, value);
+                return new AssignmentNode(id.Name, value) { Line = op.Line };
             }
 
             throw new Exception($"Invalid assignment target at line {op.Line}.");
@@ -456,8 +462,8 @@ public class Parser
                 // x++ -> x = x + 1
                 // x-- -> x = x - 1
                 string mathOp = op.Type == TokenType.PlusPlus ? "+" : "-";
-                var value = new BinaryOpNode(id, mathOp, new NumberNode(1.0));
-                return new AssignmentNode(id.Name, value);
+                var value = new BinaryOpNode(id, mathOp, new NumberNode(1.0) { Line = op.Line }) { Line = op.Line };
+                return new AssignmentNode(id.Name, value) { Line = op.Line };
             }
 
             throw new Exception($"Invalid increment/decrement target at line {op.Line}.");
@@ -483,7 +489,7 @@ public class Parser
         {
             Token op = Previous();
             ASTNode right = ParseTerm();
-            expr = new BinaryOpNode(expr, op.Value, right);
+            expr = new BinaryOpNode(expr, op.Value, right) { Line = op.Line };
         }
 
         return expr;
@@ -497,7 +503,7 @@ public class Parser
         {
             Token op = Previous();
             ASTNode right = ParseFactor();
-            expr = new BinaryOpNode(expr, op.Value, right);
+            expr = new BinaryOpNode(expr, op.Value, right) { Line = op.Line };
         }
 
         return expr;
@@ -511,7 +517,7 @@ public class Parser
         {
             Token op = Previous();
             ASTNode right = ParsePrimary();
-            expr = new BinaryOpNode(expr, op.Value, right);
+            expr = new BinaryOpNode(expr, op.Value, right) { Line = op.Line };
         }
 
         return expr;
@@ -521,7 +527,8 @@ public class Parser
     {
         if (Match(TokenType.Number))
         {
-            return new NumberNode(double.Parse(Previous().Value));
+            Token numToken = Previous();
+            return new NumberNode(double.Parse(numToken.Value)) { Line = numToken.Line };
         }
 
         if (Match(TokenType.Identifier))
@@ -540,14 +547,15 @@ public class Parser
                     } while (Match(TokenType.Comma));
                 }
                 Consume(TokenType.CloseParenthesis, "Expected ')' after arguments.");
-                return new CallNode(idToken.Value, args);
+                return new CallNode(idToken.Value, args) { Line = idToken.Line };
             }
 
-            return new IdentifierNode(idToken.Value);
+            return new IdentifierNode(idToken.Value) { Line = idToken.Line };
         }
 
         if (Match(TokenType.OpenParenthesis))
         {
+            Token parenToken = Previous();
             ASTNode expr = ParseExpression();
             Consume(TokenType.CloseParenthesis, "Expected ')' after expression.");
             return expr;
@@ -635,6 +643,11 @@ public class Emitter
 
     private void EmitNode(ASTNode node)
     {
+        if (node.Line > 0)
+        {
+            _sb.AppendLine($"#LINE {node.Line}");
+        }
+
         switch (node)
         {
             case VarDeclNode decl:
@@ -796,6 +809,11 @@ public class Emitter
 
     private int EmitExpression(ASTNode node)
     {
+        if (node.Line > 0)
+        {
+            _sb.AppendLine($"#LINE {node.Line}");
+        }
+
         switch (node)
         {
             case NumberNode num:
@@ -883,21 +901,28 @@ public class Emitter
 
     private void EmitCall(CallNode call, int returnReg)
     {
-        // 1. Move arguments into registers sequentially starting from r1
-        // (to match base registers alignment during the VM shift operation)
+        int callBase = _regCounter;
+
+        // 1. Evaluate arguments first (this might increment _regCounter if args contain sub-calls/expressions)
+        int[] argRegs = new int[call.Arguments.Count];
         for (int i = 0; i < call.Arguments.Count; i++)
         {
-            int argReg = EmitExpression(call.Arguments[i]);
-            _sb.AppendLine($"MOVE r{i + 1} r{argReg}");
+            argRegs[i] = EmitExpression(call.Arguments[i]);
         }
 
-        // 2. Call the FFI host method with register 1 as return parameter window offset
-        _sb.AppendLine($"CALL {call.MethodName}() r1");
-
-        // 3. Move return value (placed in r1 by FFI wrapper) to returnReg if needed
-        if (returnReg != 0)
+        // 2. Move arguments into registers sequentially starting from callBase + 1
+        for (int i = 0; i < call.Arguments.Count; i++)
         {
-            _sb.AppendLine($"MOVE r{returnReg} r1");
+            _sb.AppendLine($"MOVE r{callBase + i + 1} r{argRegs[i]}");
+        }
+
+        // 3. Call the method with callBase as return parameter window offset
+        _sb.AppendLine($"CALL {call.MethodName}() r{callBase}");
+
+        // 4. Move return value (placed in r{callBase} by FFI wrapper) to returnReg if needed
+        if (returnReg != 0 && returnReg != callBase)
+        {
+            _sb.AppendLine($"MOVE r{returnReg} r{callBase}");
         }
     }
 }
@@ -929,3 +954,4 @@ public static class RaptorScriptCompiler
 }
 
 #endregion
+}

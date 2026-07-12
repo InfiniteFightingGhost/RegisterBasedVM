@@ -1,5 +1,10 @@
-namespace Raptor;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
+namespace Raptor
+{
 ///<summary>
 ///Enum displaying the instructions that <see cref="VirtualMachine"/> posseses.
 ///</summary>
@@ -39,4 +44,5 @@ public enum OpCode
     BINXOR, // 31
     BINLSH, // 32
     BINRSH, // 33
+}
 }

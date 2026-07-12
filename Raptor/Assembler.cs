@@ -1,5 +1,10 @@
-namespace Raptor;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
+namespace Raptor
+{
 public class Assembler
 {
     private readonly VMChunk _chunk;
@@ -105,6 +110,10 @@ public class Assembler
                     }
                 }
             }
+            else if (lines[i].StartsWith("#LINE "))
+            {
+                continue;
+            }
             else if (lines[i].StartsWith("FOR "))
                 memoryAddress += 2;
             else
@@ -112,8 +121,17 @@ public class Assembler
         }
         List<UInt32> instructions = new List<UInt32>();
         int pc = 0;
+        int currentRaptLine = -1;
+        var sourceMap = new Compiler.SourceMap();
+        _chunk.SourceMap = sourceMap;
+
         foreach (var item in lines)
         {
+            if (item.StartsWith("#LINE "))
+            {
+                currentRaptLine = int.Parse(item.Split()[1]);
+                continue;
+            }
             Console.Error.WriteLine($"ASM Inst {pc}: {item}");
             var words = item.Split();
             uint instruction = 0;
@@ -128,9 +146,9 @@ public class Assembler
                         instruction = ExecuteMove(words);
                         break;
                     case "SWP":
-                        byte destA5 = byte.Parse(words[1].TrimStart("r"));
+                        byte destA5 = byte.Parse(words[1].TrimStart('r'));
 
-                        byte destB5 = byte.Parse(words[2].TrimStart("r"));
+                        byte destB5 = byte.Parse(words[2].TrimStart('r'));
                         instruction = Instruction.CreateABx(OpCode.SWAP, destA5, destB5);
                         break;
 
@@ -228,8 +246,7 @@ public class Assembler
                         }
                         catch
                         {
-                            Console.WriteLine("There isnt a label with name " + words[1]);
-                            return;
+                            throw new Exception("There isnt a label with name " + words[1]);
                         }
 
                         instruction = Instruction.CreateSBx26(OpCode.JUMP, labelIndex);
@@ -246,8 +263,7 @@ public class Assembler
                         }
                         else
                         {
-                            Console.WriteLine("There isnt a method with name " + words[1]);
-                            return;
+                            throw new Exception("There isnt a method with name " + words[1]);
                         }
                         byte start = byte.Parse(words[2].TrimStart('r'));
                         instruction = Instruction.CreateABx(OpCode.CALL, start, methodIndex);
@@ -317,7 +333,7 @@ public class Assembler
                         instruction = Instruction.CreateABx(OpCode.FISR, destA4, destB4);
                         break;
                     case "FOR":
-                        byte rIndex = byte.Parse(words[1].TrimStart("r"));
+                        byte rIndex = byte.Parse(words[1].TrimStart('r'));
                         ushort rMax;
                         if (words[2].StartsWith("r"))
                             rMax = ushort.Parse(words[2].TrimStart('r'));
@@ -347,6 +363,10 @@ public class Assembler
                         }
                         int jumpOffset = (int)(labels[words[5]] - pc);
                         instruction = Instruction.CreateABC(OpCode.FOR, rIndex, rMax, rStep);
+                        if (currentRaptLine > 0)
+                        {
+                            sourceMap.AddMapping(instructions.Count, currentRaptLine);
+                        }
                         instructions.Add(instruction);
                         pc++;
                         instruction = Instruction.CreateAsBx(OpCode.FOR, comp, jumpOffset);
@@ -370,7 +390,7 @@ public class Assembler
                                 code = OpCode.PRINT;
                                 break;
                         }
-                        byte regPtr = byte.Parse(words[1].Trim("r"));
+                        byte regPtr = byte.Parse(words[1].Trim('r'));
 
                         ushort index;
                         if (words[2].StartsWith("r"))
@@ -380,7 +400,7 @@ public class Assembler
                         instruction = Instruction.CreateABC(code, regPtr, index, 0);
                         break;
                     case "FREEARR":
-                        regPtr = byte.Parse(words[1].Trim("r"));
+                        regPtr = byte.Parse(words[1].Trim('r'));
                         instruction = Instruction.CreateABC(OpCode.FREEARR, regPtr, 0, 0);
                         break;
                     default:
@@ -390,6 +410,10 @@ public class Assembler
             catch (Exception x)
             {
                 throw new Exception($"Assembling failed at line {pc} for instruction '{item}': {x.Message}", x);
+            }
+            if (currentRaptLine > 0)
+            {
+                sourceMap.AddMapping(instructions.Count, currentRaptLine);
             }
             instructions.Add(instruction);
             pc++;
@@ -454,4 +478,5 @@ public class Assembler
         byte destB = byte.Parse(words[2].TrimStart('r'));
         return Instruction.CreateABx(OpCode.MOVE, destA, destB);
     }
+}
 }

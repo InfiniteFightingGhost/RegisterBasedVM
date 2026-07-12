@@ -1,7 +1,11 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using System.IO;
 
-namespace Raptor;
-
+namespace Raptor
+{
 /// <summary>
 /// Monitors a .rasm assembly source file on the filesystem and automatically
 /// recompiles it when changes are saved, swapping the active program chunk
@@ -14,6 +18,7 @@ public sealed class ScriptWatcher : IDisposable
     private VMChunk _activeChunk;
     private readonly string _filePath;
     private readonly object _lock = new();
+    private readonly Func<string, string>? _preprocessor;
 
     /// <summary>
     /// Event fired when the script is successfully recompiled.
@@ -43,14 +48,16 @@ public sealed class ScriptWatcher : IDisposable
     /// Creates a ScriptWatcher that compiles the file at startup and monitors it for changes.
     /// </summary>
     /// <param name="engine">The ScriptEngine to use for compilation.</param>
-    /// <param name="filePath">Path to the .rasm assembly file.</param>
-    public ScriptWatcher(ScriptEngine engine, string filePath)
+    /// <param name="filePath">Path to the script file.</param>
+    /// <param name="preprocessor">Optional preprocessor callback (e.g., to compile RaptorScript to RaptorAssembly).</param>
+    public ScriptWatcher(ScriptEngine engine, string filePath, Func<string, string>? preprocessor = null)
     {
         _engine = engine;
         _filePath = Path.GetFullPath(filePath);
+        _preprocessor = preprocessor;
 
         // Compile initial chunk
-        _activeChunk = _engine.CompileFile(_filePath);
+        _activeChunk = CompileFileWithPreprocessor(_filePath);
 
         // Setup FileSystemWatcher
         string? directory = Path.GetDirectoryName(_filePath);
@@ -68,6 +75,16 @@ public sealed class ScriptWatcher : IDisposable
         _watcher.Changed += OnFileChanged;
     }
 
+    private VMChunk CompileFileWithPreprocessor(string path)
+    {
+        string text = File.ReadAllText(path);
+        if (_preprocessor != null)
+        {
+            text = _preprocessor(text);
+        }
+        return _engine.Compile(text);
+    }
+
     private void OnFileChanged(object sender, FileSystemEventArgs e)
     {
         // Add a slight delay to allow the editor/IDE to finish writing to the file
@@ -78,7 +95,7 @@ public sealed class ScriptWatcher : IDisposable
             VMChunk newChunk;
             lock (_lock)
             {
-                newChunk = _engine.CompileFile(_filePath);
+                newChunk = CompileFileWithPreprocessor(_filePath);
                 _activeChunk = newChunk;
             }
             OnReloaded?.Invoke(newChunk);
@@ -96,4 +113,5 @@ public sealed class ScriptWatcher : IDisposable
     {
         _watcher.Dispose();
     }
+}
 }

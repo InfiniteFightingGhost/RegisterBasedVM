@@ -1,7 +1,10 @@
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using System;
 
-namespace Raptor;
-
+namespace Raptor
+{
 ///<summary>
 ///A VM's status after it has exited it run method(by design or not).
 ///</summary>
@@ -48,4 +51,5 @@ public class VMPanicException : Exception
         Status = status;
         IpOffset = ipOffset;
     }
+}
 }

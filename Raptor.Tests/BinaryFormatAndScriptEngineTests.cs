@@ -278,4 +278,76 @@ if (x > 15.0) {
         int resultReg = variables["result"];
         Assert.Equal(32.0, runResult.RegistersSnapshot[resultReg]);
     }
+
+    [Fact]
+    public void SourceMap_TranslateError_MapsRuntimeExceptionsCorrectly()
+    {
+        string raptorScript = @"
+var x = 10.0;
+var y = 0.0;
+var result = x / y; // Division by zero!
+";
+        string rasmCode = Raptor.Compiler.RaptorScriptCompiler.Compile(raptorScript);
+        
+        ScriptEngine engine = new ScriptEngine();
+        VMChunk chunk = engine.Compile(rasmCode);
+        ExecutionResult runResult = engine.Execute(chunk);
+
+        Assert.Equal(VMStatus.DivisionByZero, runResult.Status);
+        
+        string errorDetails = ScriptEngine.TranslateError(chunk, runResult.IpOffset, raptorScript);
+        
+        Assert.Contains("Runtime error at line 4", errorDetails);
+        Assert.Contains("var result = x / y;", errorDetails);
+    }
+
+    [Fact]
+    public void TestGameplayCompile()
+    {
+        string raptorScript = @"
+// Assets/Scripts/enemy_ai.rapt
+var targetDistance = enemy.getDistanceToPlayer();
+var state = enemy.getState(); // 0 = Idle, 1 = Chasing, 2 = Attacking
+
+if (targetDistance < 5.0) {
+    enemy.setState(2.0);
+    var cooldown = enemy.getAttackCooldown();
+    if (cooldown == 0.0) {
+        enemy.attackPlayer(15.0);
+        enemy.setAttackCooldown(3.0);
+    } else {
+        cooldown -= 0.016; // subtract delta
+        if (cooldown < 0.0) { cooldown = 0.0; }
+        enemy.setAttackCooldown(cooldown);
+    }
+} else {
+    if (targetDistance < 20.0) {
+        enemy.setState(1.0);
+        enemy.moveTowardsPlayer(8.0);
+    } else {
+        enemy.setState(0.0);
+        enemy.patrol(3.0);
+    }
+}
+";
+        string rasm = Raptor.Compiler.RaptorScriptCompiler.Compile(raptorScript);
+        Assert.NotEmpty(rasm);
+        System.IO.File.WriteAllText("/home/andy/.gemini/antigravity/brain/ec45c6eb-d535-4e23-909e-6974cf17074d/scratch/compiled_gameplay.rasm", rasm);
+        
+        ScriptEngine engine = new ScriptEngine();
+        // Register some dummy FFI methods so the assembler doesn't fail on missing names
+        var table = new FFIHostTable();
+        table.Register("enemy.getDistanceToPlayer", 0, (ref VMState s) => {});
+        table.Register("enemy.getState", 1, (ref VMState s) => {});
+        table.Register("enemy.setState", 2, (ref VMState s) => {});
+        table.Register("enemy.getAttackCooldown", 3, (ref VMState s) => {});
+        table.Register("enemy.setAttackCooldown", 4, (ref VMState s) => {});
+        table.Register("enemy.attackPlayer", 5, (ref VMState s) => {});
+        table.Register("enemy.moveTowardsPlayer", 6, (ref VMState s) => {});
+        table.Register("enemy.patrol", 7, (ref VMState s) => {});
+        engine.RegisterHostTable(table);
+        
+        VMChunk chunk = engine.Compile(rasm);
+        Assert.NotEmpty(chunk.Instructions);
+    }
 }

@@ -1,5 +1,10 @@
-namespace Raptor.Attributes;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
+namespace Raptor.Attributes
+{
 /// <summary>
 /// Marks a class or struct as a Raptor FFI module.
 /// Only types decorated with this attribute are scanned during assembly-wide registration
@@ -30,4 +35,5 @@ public sealed class RaptorModuleAttribute : Attribute
     {
         Prefix = prefix;
     }
+}
 }

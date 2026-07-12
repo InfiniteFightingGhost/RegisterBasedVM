@@ -1,5 +1,10 @@
-namespace Raptor;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
+namespace Raptor
+{
 /// <summary>
 /// High-level wrapper that hides VMChunk creation, assembler passes, bytecode verification,
 /// pointer pinning, and stack allocations behind simple, safe methods.
@@ -156,11 +161,35 @@ public sealed class ScriptEngine
     }
 
     /// <summary>
-    /// Loads a .rbc binary file and disassembles it into human-readable assembly text.
+    /// Disassembles a .rbc binary file and disassembles it into human-readable assembly text.
     /// </summary>
     public string Disassemble(string filePath)
     {
         var chunk = RaptorBinary.Load(filePath);
         return Disassembler.Disassemble(chunk);
     }
+
+    /// <summary>
+    /// Translates a runtime error's program counter instruction pointer (IP)
+    /// to the original RaptorScript source line if a SourceMap is available.
+    /// </summary>
+    public static string TranslateError(VMChunk chunk, int ip, string raptorScriptSource)
+    {
+        if (chunk.SourceMap == null)
+            return $"Runtime error at instruction {ip} (no source map available).";
+
+        int line = chunk.SourceMap.GetLineNumber(ip);
+        if (line <= 0)
+            return $"Runtime error at instruction {ip} (unmapped line).";
+
+        string[] sourceLines = raptorScriptSource.Split(new[] { "\r\n", "\r", "\n" }, System.StringSplitOptions.None);
+        if (line - 1 >= 0 && line - 1 < sourceLines.Length)
+        {
+            string codeSnippet = sourceLines[line - 1].Trim();
+            return $"Runtime error at line {line}: \"{codeSnippet}\"";
+        }
+
+        return $"Runtime error at line {line}";
+    }
+}
 }

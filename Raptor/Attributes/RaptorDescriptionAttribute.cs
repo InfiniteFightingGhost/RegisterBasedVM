@@ -1,5 +1,10 @@
-namespace Raptor.Attributes;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
+namespace Raptor.Attributes
+{
 /// <summary>
 /// Provides a human-readable description for a Raptor FFI host method.
 /// Functions like &lt;summary&gt; but for Raptor script documentation and tooling.
@@ -16,4 +21,5 @@ public sealed class RaptorDescriptionAttribute : Attribute
     {
         Description = description;
     }
+}
 }

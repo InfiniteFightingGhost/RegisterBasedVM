@@ -1,7 +1,10 @@
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using System;
 
-namespace Raptor;
-
+namespace Raptor
+{
 public class VerificationException : Exception
 {
     public VerificationException(string message)
@@ -298,4 +301,5 @@ public static class BytecodeVerifier
             }
         }
     }
+}
 }

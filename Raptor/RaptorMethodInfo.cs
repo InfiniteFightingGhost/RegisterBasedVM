@@ -1,5 +1,10 @@
-namespace Raptor;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
+namespace Raptor
+{
 /// <summary>
 /// Holds metadata about a registered Raptor FFI host method.
 /// Populated during reflection-based registration and available for
@@ -35,12 +40,18 @@ public sealed class RaptorMethodInfo
     /// </summary>
     public IReadOnlyDictionary<string, string>? ParameterDescriptions { get; }
 
+    /// <summary>
+    /// The names of all register-mapped parameters exposed to the scripting engine.
+    /// </summary>
+    public System.Collections.Generic.IReadOnlyList<string> ParameterNames { get; }
+
     public RaptorMethodInfo(
         string name,
         ushort index,
         string? description,
         bool isPure,
-        IReadOnlyDictionary<string, string>? parameterDescriptions
+        IReadOnlyDictionary<string, string>? parameterDescriptions,
+        System.Collections.Generic.IReadOnlyList<string> parameterNames
     )
     {
         Name = name;
@@ -48,5 +59,7 @@ public sealed class RaptorMethodInfo
         Description = description;
         IsPure = isPure;
         ParameterDescriptions = parameterDescriptions;
+        ParameterNames = parameterNames;
     }
+}
 }

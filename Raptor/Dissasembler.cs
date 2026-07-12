@@ -1,5 +1,10 @@
-namespace Raptor;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
+namespace Raptor
+{
 public static class Disassembler
 {
     ///<summary>
@@ -181,4 +186,5 @@ public static class Disassembler
         chunk.Instructions = insts;
         return Disassemble(chunk);
     }
+}
 }

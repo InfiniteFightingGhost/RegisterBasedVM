@@ -558,4 +558,33 @@ HALT
         Assert.Equal(VMStatus.Halted, result.Status);
         Assert.Equal(15.0, result.RegistersSnapshot[6]);
     }
+
+    [Fact]
+    public void GenerateAutocompleteDeclarations_OutputsValidTypeScript()
+    {
+        var table = new FFIHostTable();
+        table.RegisterModule<TypingsTestModule>();
+
+        string decls = table.GenerateAutocompleteDeclarations();
+        
+        Assert.Contains("declare namespace myGame", decls);
+        Assert.Contains("function spawn(x: number, y: number): void;", decls);
+        Assert.Contains("Spawns an entity in the game world.", decls);
+        Assert.Contains("@param x X coordinate", decls);
+        Assert.Contains("@param y Y coordinate", decls);
+    }
+}
+
+[RaptorModule("myGame")]
+public class TypingsTestModule
+{
+    [RaptorMethod("spawn")]
+    [RaptorDescription("Spawns an entity in the game world.")]
+    public static double Spawn(
+        [RaptorParam("X coordinate")] double x,
+        [RaptorParam("Y coordinate")] double y
+    )
+    {
+        return x + y;
+    }
 }

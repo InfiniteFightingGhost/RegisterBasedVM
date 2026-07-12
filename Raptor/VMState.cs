@@ -1,7 +1,11 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using System.Runtime.InteropServices;
 
-namespace Raptor;
-
+namespace Raptor
+{
 [StructLayout(LayoutKind.Sequential)]
 ///<summary>
 ///This struct represents everything that the <see cref="VirtualMachine"/> will need in order to do it's magic.
@@ -42,4 +46,5 @@ public unsafe struct VMState
     public char* OutBufferPtr;
     public int OutBufferCapacity;
     public int OutBufferOffset;
+}
 }

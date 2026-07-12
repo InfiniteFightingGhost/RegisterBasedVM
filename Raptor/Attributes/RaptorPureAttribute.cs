@@ -1,5 +1,10 @@
-namespace Raptor.Attributes;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
+namespace Raptor.Attributes
+{
 /// <summary>
 /// Marks a Raptor FFI host method as pure (side-effect-free).
 /// Pure methods always return the same output for the same inputs and do not
@@ -8,3 +13,4 @@ namespace Raptor.Attributes;
 /// </summary>
 [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
 public sealed class RaptorPureAttribute : Attribute { }
+}

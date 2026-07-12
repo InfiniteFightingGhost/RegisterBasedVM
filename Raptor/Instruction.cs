@@ -1,7 +1,11 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using System.Runtime.CompilerServices;
 
-namespace Raptor;
-
+namespace Raptor
+{
 ///<summary>
 ///The struct that unifies all bit fiddling logic into a simple and bug-free solution.
 ///</summary>
@@ -79,4 +83,5 @@ public readonly struct Instruction
     }
 
     public static implicit operator uint(Instruction i) => i.Value;
+}
 }

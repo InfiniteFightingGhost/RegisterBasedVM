@@ -1,9 +1,13 @@
+using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Reflection;
+using System.Text;
 using Raptor.Attributes;
 
-namespace Raptor;
-
+namespace Raptor
+{
 /// <summary>
 /// Registry that discovers, validates, and binds Raptor FFI host methods
 /// using reflection on <see cref="RaptorMethodAttribute"/>-decorated methods.
@@ -46,7 +50,7 @@ public sealed class FFIHostTable
         ValidateNoDuplicateIndex(index, name);
         _methods[name] = (index, callback);
         _usedIndices.Add(index);
-        _methodInfos.Add(new RaptorMethodInfo(name, index, null, false, null));
+        _methodInfos.Add(new RaptorMethodInfo(name, index, null, false, null, System.Array.Empty<string>()));
     }
 
     // --------------------------------------------
@@ -167,7 +171,17 @@ public sealed class FFIHostTable
         bool isPure = method.GetCustomAttribute<RaptorPureAttribute>() != null;
         var paramDescs = CollectParameterDescriptions(method);
 
-        var info = new RaptorMethodInfo(name, index, descAttr?.Description, isPure, paramDescs);
+        // Collect exposed parameter names
+        var exposedParams = new List<string>();
+        foreach (var p in method.GetParameters())
+        {
+            if (p.ParameterType != typeof(VMState).MakeByRefType())
+            {
+                exposedParams.Add(p.Name ?? "arg");
+            }
+        }
+
+        var info = new RaptorMethodInfo(name, index, descAttr?.Description, isPure, paramDescs, exposedParams);
 
         _methods[name] = (index, callback);
         _usedIndices.Add(index);
@@ -627,4 +641,112 @@ public sealed class FFIHostTable
         }
         return descriptions;
     }
+
+    /// <summary>
+    /// Generates TypeScript declaration file (.d.ts) content mapping all FFI modules
+    /// and methods, complete with JSDoc comments for autocomplete documentation.
+    /// </summary>
+    public string GenerateAutocompleteDeclarations()
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("/**");
+        sb.AppendLine(" * Auto-generated Raptor API declarations for autocomplete and IDE support.");
+        sb.AppendLine(" * Maps C# FFI host methods to global namespaces.");
+        sb.AppendLine(" */");
+        sb.AppendLine();
+
+        // Group methods by namespace
+        // e.g. "math.clamp" -> namespace "math", method "clamp"
+        // "spawnEnemy"      -> namespace "global", method "spawnEnemy"
+        var namespaces = new Dictionary<string, List<RaptorMethodInfo>>();
+
+        foreach (var info in _methodInfos)
+        {
+            string ns = "global";
+            int dotIdx = info.Name.IndexOf('.');
+            if (dotIdx != -1)
+            {
+                ns = info.Name.Substring(0, dotIdx);
+            }
+
+            if (!namespaces.TryGetValue(ns, out var list))
+            {
+                list = new List<RaptorMethodInfo>();
+                namespaces[ns] = list;
+            }
+            list.Add(info);
+        }
+
+        // Emit each namespace
+        foreach (var (ns, methods) in namespaces)
+        {
+            bool isGlobal = ns == "global";
+            if (!isGlobal)
+            {
+                sb.AppendLine($"declare namespace {ns} {{");
+            }
+
+            foreach (var info in methods)
+            {
+                string methodName = info.Name;
+                if (!isGlobal)
+                {
+                    int dotIdx = info.Name.IndexOf('.');
+                    methodName = info.Name.Substring(dotIdx + 1);
+                }
+
+                // 1. Build JSDoc comment
+                sb.AppendLine(isGlobal ? "/**" : "    /**");
+                
+                string commentPrefix = isGlobal ? " * " : "     * ";
+                if (!string.IsNullOrEmpty(info.Description))
+                {
+                    sb.AppendLine($"{commentPrefix}{info.Description}");
+                }
+                else
+                {
+                    sb.AppendLine($"{commentPrefix}Mapped FFI call index {info.Index}.");
+                }
+
+                if (info.IsPure)
+                {
+                    sb.AppendLine($"{commentPrefix}@pure");
+                }
+
+                foreach (var paramName in info.ParameterNames)
+                {
+                    if (info.ParameterDescriptions != null && info.ParameterDescriptions.TryGetValue(paramName, out var paramDesc))
+                    {
+                        sb.AppendLine($"{commentPrefix}@param {paramName} {paramDesc}");
+                    }
+                    else
+                    {
+                        sb.AppendLine($"{commentPrefix}@param {paramName}");
+                    }
+                }
+                sb.AppendLine(isGlobal ? " */" : "     */");
+
+                // 2. Build Method Signature
+                var args = string.Join(", ", info.ParameterNames.Select(p => $"{p}: number"));
+                
+                if (isGlobal)
+                {
+                    sb.AppendLine($"declare function {methodName}({args}): void;");
+                }
+                else
+                {
+                    sb.AppendLine($"    function {methodName}({args}): void;");
+                }
+            }
+
+            if (!isGlobal)
+            {
+                sb.AppendLine("}");
+            }
+            sb.AppendLine();
+        }
+
+        return sb.ToString();
+    }
+}
 }
