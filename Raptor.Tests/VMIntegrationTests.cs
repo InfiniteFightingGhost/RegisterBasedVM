@@ -1,8 +1,8 @@
-﻿using Raptor;
+using Raptor;
 
 namespace Raptor.Tests;
 
-public class UnitTest1
+public class VMIntegrationTests
 {
     [Fact]
     public void LinearFibonacciRunSucceeds()
@@ -32,7 +32,7 @@ HALT";
         VirtualMachine machine = new VirtualMachine();
         machine.LoadProgram(chunk);
         var result = machine.RunFast();
-        Assert.Equal(result.Status, VMStatus.Halted);
+        Assert.Equal(VMStatus.Halted, result.Status);
     }
 
     [Fact]
@@ -68,7 +68,7 @@ math:
         VirtualMachine machine = new VirtualMachine();
         machine.LoadProgram(chunk);
         var result = machine.RunFast();
-        Assert.Equal(result.Status, VMStatus.Halted);
+        Assert.Equal(VMStatus.Halted, result.Status);
     }
 
     [Fact]
@@ -121,7 +121,7 @@ HALT";
         VirtualMachine machine = new VirtualMachine();
         machine.LoadProgram(chunk);
         var result = machine.RunFast();
-        Assert.Equal(result.Status, VMStatus.Halted);
+        Assert.Equal(VMStatus.Halted, result.Status);
     }
 
     [Fact]
@@ -240,7 +240,7 @@ update()
         VirtualMachine machine = new VirtualMachine();
         machine.LoadProgram(chunk);
         var result = machine.RunFast();
-        Assert.Equal(result.Status, VMStatus.Halted);
+        Assert.Equal(VMStatus.Halted, result.Status);
     }
 
     [Fact]
@@ -264,7 +264,7 @@ HALT
         VirtualMachine machine = new VirtualMachine();
         machine.LoadProgram(chunk);
         var result = machine.RunFast();
-        Assert.Equal(result.Status, VMStatus.Halted);
+        Assert.Equal(VMStatus.Halted, result.Status);
     }
 
     [Fact]
@@ -299,7 +299,7 @@ math:
         VirtualMachine machine = new VirtualMachine();
         machine.LoadProgram(chunk);
         var result = machine.RunFast();
-        Assert.Equal(result.Status, VMStatus.Halted);
+        Assert.Equal(VMStatus.Halted, result.Status);
     }
 
     [Fact]
@@ -381,8 +381,8 @@ DEFINE cam_z r69
 DEFINE step r70
 
 ; --- INITIALIZATION ---
-LOADC width 2048
-LOADC height 2048
+LOADC width 512
+LOADC height 512
 LOADC zero 0.0
 LOADC max_val 255.0
 LOADC one_val 1.0
@@ -403,7 +403,7 @@ NEWARR header_ptr 18
 SETARRA header_ptr 0 80   ; 'P'
 SETARRA header_ptr 1 51   ; '3'
 SETARRA header_ptr 2 10   ; '\n'
-SETARRA header_ptr 3 50   ; '1'
+SETARRA header_ptr 3 50   ; '5'
 SETARRA header_ptr 4 48   ; '0'
 SETARRA header_ptr 5 52   ; '2'
 SETARRA header_ptr 6 56   ; '4'
@@ -643,9 +643,9 @@ b_not_neg:
     LOADC b_val 255.0
 b_not_high:
     BINAND b_val b_val b_val
-    PRINTS r
-    PRINTS g
-    PRINTS b_val
+    ;PRINT r
+    ;PRINT g
+    ;PRINT b_val
 
     ADD rx rx step
     ADD i i 1

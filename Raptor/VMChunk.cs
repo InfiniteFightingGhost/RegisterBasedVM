@@ -6,7 +6,7 @@ namespace Raptor;
 public class VMChunk
 {
     private uint currUsedConstantsIndex = 0;
-    public UInt32[] Instructions { get; set; }
+    public UInt32[] Instructions { get; set; } = System.Array.Empty<uint>();
     public double[] Constants { get; internal set; } = new double[512];
     public uint[] MethodTable { get; internal set; } = new uint[512];
 

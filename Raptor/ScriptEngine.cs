@@ -122,7 +122,7 @@ public sealed class ScriptEngine
     /// </summary>
     public string Disassemble(VMChunk chunk)
     {
-        return VirtualMachine.Disassemble(chunk);
+        return Disassembler.Disassemble(chunk);
     }
 
     /// <summary>
@@ -131,6 +131,6 @@ public sealed class ScriptEngine
     public string Disassemble(string filePath)
     {
         var chunk = RaptorBinary.Load(filePath);
-        return VirtualMachine.Disassemble(chunk);
+        return Disassembler.Disassemble(chunk);
     }
 }

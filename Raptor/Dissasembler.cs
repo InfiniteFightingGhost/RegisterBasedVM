@@ -1,6 +1,6 @@
 namespace Raptor;
 
-public static class Dissasembler
+public static class Disassembler
 {
     ///<summary>
     ///Turn a <see cref="VMChunk"/> into a human-readable assembly

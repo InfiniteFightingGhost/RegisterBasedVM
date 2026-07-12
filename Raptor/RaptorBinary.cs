@@ -16,6 +16,9 @@ namespace Raptor;
 ///   METHOD TABLE   (count × 4 bytes)
 ///   INSTRUCTIONS   (count × 4 bytes)
 /// </summary>
+/// <remarks>
+/// I really outdid myself here.
+/// </remarks>
 public static class RaptorBinary
 {
     public const uint MagicSignature = 0x52415054; // ASCII "RAPT"
@@ -72,14 +75,13 @@ public static class RaptorBinary
     }
 
     /// <summary>
-    /// Reads a standardized .rbc binary stream into a VMChunk.
+    /// Reads a standardized .rbc binary stream into a <see cref="VMChunk"/>.
     /// Validates magic bytes and version compatibility.
     /// </summary>
     public static VMChunk Load(Stream stream)
     {
         using var reader = new BinaryReader(stream, System.Text.Encoding.UTF8, leaveOpen: true);
 
-        // Validate magic signature
         uint magic = reader.ReadUInt32();
         if (magic != MagicSignature)
         {
@@ -88,7 +90,6 @@ public static class RaptorBinary
             ); // I don't know whether to show the magic number or not
         }
 
-        // Validate version compatibility
         byte majorVersion = reader.ReadByte();
         byte minorVersion = reader.ReadByte();
         if (majorVersion > VersionMajor)
@@ -101,26 +102,22 @@ public static class RaptorBinary
 
         ushort reserved = reader.ReadUInt16(); // reserved flags (ignored)
 
-        // Read section sizes
         uint constantsCount = reader.ReadUInt32();
         uint methodTableCount = reader.ReadUInt32();
         uint instructionsCount = reader.ReadUInt32();
 
-        // Read constants pool
         double[] constants = new double[constantsCount];
         for (int i = 0; i < constantsCount; i++)
         {
             constants[i] = reader.ReadDouble();
         }
 
-        // Read method table
         uint[] methodTable = new uint[methodTableCount];
         for (int i = 0; i < methodTableCount; i++)
         {
             methodTable[i] = reader.ReadUInt32();
         }
 
-        // Read instructions
         uint[] instructions = new uint[instructionsCount];
         for (int i = 0; i < instructionsCount; i++)
         {
@@ -137,7 +134,7 @@ public static class RaptorBinary
     }
 
     /// <summary>
-    /// Reads a standardized .rbc binary file into a VMChunk.
+    /// Reads a standardized .rbc binary file into a <see cref="VMChunk"/>.
     /// </summary>
     public static VMChunk Load(string filePath)
     {

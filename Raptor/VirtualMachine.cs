@@ -13,7 +13,6 @@ public unsafe class VirtualMachine
 {
     private uint[] _instructions = null!;
     private double[] _constants = null!;
-    int BasePtr = 0;
     private uint[] _methods = null!;
     private static readonly int _heapSize = 16 * 1024 * 1024;
     private uint _heapHeader = 0;
@@ -65,7 +64,6 @@ public unsafe class VirtualMachine
             }
         }
 
-        BasePtr = 0;
     }
 
     ///<summary>
