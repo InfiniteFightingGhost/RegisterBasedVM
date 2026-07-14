@@ -1,0 +1,3434 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Raptor VM Benchmark Consolidated Dashboard</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+        :root {
+            --bg: #0b0f19;
+            --card: #151b2c;
+            --primary: #6366f1;
+            --primary-glow: rgba(99, 102, 241, 0.15);
+            --text: #f3f4f6;
+            --text-muted: #9ca3af;
+            --border: #222d44;
+            --success: #10b981;
+            --accent: #a855f7;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        header {
+            margin-bottom: 40px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 24px;
+        }
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+        .meta { color: var(--text-muted); font-size: 0.95rem; }
+        .tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+        .tab-btn {
+            background: var(--card);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.25s ease;
+        }
+        .tab-btn:hover {
+            border-color: var(--primary);
+            color: var(--text);
+            background: var(--primary-glow);
+        }
+        .tab-btn.active {
+            border-color: var(--primary);
+            color: var(--text);
+            background: var(--primary);
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+        }
+        .suite-card {
+            display: none;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+            animation: fadeIn 0.4s ease forwards;
+        }
+        .suite-card.active { display: block; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        h2 { margin-bottom: 20px; font-weight: 600; font-size: 1.5rem; }
+        .table-wrapper { overflow-x: auto; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+        th, td { padding: 14px 18px; border-bottom: 1px solid var(--border); }
+        th {
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.05em;
+        }
+        td { font-size: 0.95rem; }
+        tr:hover td { background: rgba(255, 255, 255, 0.02); }
+        .highlight { color: var(--success); font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Raptor VM Consolidated Dashboard</h1>
+            <p class="meta">Generated on 2026-07-13 17:25:39 | BenchmarkDotNet Test Suite</p>
+        </header>
+        <div class="tabs">
+            <button class="tab-btn active" onclick="showSuite('CallStackBenchmark', this)">CallStackBenchmark</button>
+            <button class="tab-btn" onclick="showSuite('ControlFlowBenchmark', this)">ControlFlowBenchmark</button>
+            <button class="tab-btn" onclick="showSuite('GameplayBenchmark', this)">GameplayBenchmark</button>
+            <button class="tab-btn" onclick="showSuite('InstructionLatencyBenchmark', this)">InstructionLatencyBenchmark</button>
+            <button class="tab-btn" onclick="showSuite('LifecycleBenchmark', this)">LifecycleBenchmark</button>
+            <button class="tab-btn" onclick="showSuite('MemoryBenchmark', this)">MemoryBenchmark</button>
+            <button class="tab-btn" onclick="showSuite('MultithreadedBenchmark', this)">MultithreadedBenchmark</button>
+            <button class="tab-btn" onclick="showSuite('RegisterPressureBenchmark', this)">RegisterPressureBenchmark</button>
+            <button class="tab-btn" onclick="showSuite('VerifierBenchmark', this)">VerifierBenchmark</button>
+            <button class="tab-btn" onclick="showSuite('VmBenchmarks', this)">VmBenchmarks</button>
+        </div>
+        <div id="suite-CallStackBenchmark" class="suite-card active">
+            <h2>CallStackBenchmark Results</h2>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Method</th>
+                            <th>Job</th>
+                            <th>AnalyzeLaunchVariance</th>
+                            <th>EvaluateOverhead</th>
+                            <th>MaxAbsoluteError</th>
+                            <th>MaxRelativeError</th>
+                            <th>MinInvokeCount</th>
+                            <th>MinIterationTime</th>
+                            <th>OutlierMode</th>
+                            <th>Affinity</th>
+                            <th>EnvironmentVariables</th>
+                            <th>Jit</th>
+                            <th>LargeAddressAware</th>
+                            <th>Platform</th>
+                            <th>PowerPlanMode</th>
+                            <th>Runtime</th>
+                            <th>AllowVeryLargeObjects</th>
+                            <th>Concurrent</th>
+                            <th>CpuGroups</th>
+                            <th>Force</th>
+                            <th>HeapAffinitizeMask</th>
+                            <th>HeapCount</th>
+                            <th>NoAffinitize</th>
+                            <th>RetainVm</th>
+                            <th>Server</th>
+                            <th>Arguments</th>
+                            <th>BuildConfiguration</th>
+                            <th>Clock</th>
+                            <th>EngineFactory</th>
+                            <th>NuGetReferences</th>
+                            <th>Toolchain</th>
+                            <th>IsMutator</th>
+                            <th>InvocationCount</th>
+                            <th>IterationCount</th>
+                            <th>IterationTime</th>
+                            <th>LaunchCount</th>
+                            <th>MaxIterationCount</th>
+                            <th>MaxWarmupIterationCount</th>
+                            <th>MemoryRandomization</th>
+                            <th>MinIterationCount</th>
+                            <th>MinWarmupIterationCount</th>
+                            <th>RunStrategy</th>
+                            <th>UnrollFactor</th>
+                            <th>WarmupCount</th>
+                            <th>Mean</th>
+                            <th>Error</th>
+                            <th>StdDev</th>
+                            <th>Gen0</th>
+                            <th>Allocated</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="highlight">CallStack_Depth_10</td>
+                            <td>DefaultJob</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>Default</td>
+                            <td>871.68 μs</td>
+                            <td>5.095 μs</td>
+                            <td>4.766 μs</td>
+                            <td>0.0000</td>
+                            <td>0 B</td>
+                        </tr>
+                        <tr>
+                            <td class="highlight">CallStack_Depth_30</td>
+                            <td>DefaultJob</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>Default</td>
+                            <td>2,318.44 μs</td>
+                            <td>15.071 μs</td>
+                            <td>14.097 μs</td>
+                            <td>0.0000</td>
+                            <td>0 B</td>
+                        </tr>
+                        <tr>
+                            <td class="highlight">Ffi_InternalCall</td>
+                            <td>DefaultJob</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>Default</td>
+                            <td>83.96 μs</td>
+                            <td>1.661 μs</td>
+                            <td>3.318 μs</td>
+                            <td>0.0000</td>
+                            <td>0 B</td>
+                        </tr>
+                        <tr>
+                            <td class="highlight">Ffi_DirectBind</td>
+                            <td>DefaultJob</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>Default</td>
+                            <td>49.78 μs</td>
+                            <td>0.193 μs</td>
+                            <td>0.181 μs</td>
+                            <td>0.0000</td>
+                            <td>0 B</td>
+                        </tr>
+                        <tr>
+                            <td class="highlight">Ffi_TypedWrapper</td>
+                            <td>DefaultJob</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>Default</td>
+                            <td>61.52 μs</td>
+                            <td>0.329 μs</td>
+                            <td>0.308 μs</td>
+                            <td>0.0000</td>
+                            <td>0 B</td>
+                        </tr>
+                        <tr>
+                            <td class="highlight">Ffi_Fallback</td>
+                            <td>DefaultJob</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>Default</td>
+                            <td>850.82 μs</td>
+                            <td>16.915 μs</td>
+                            <td>16.613 μs</td>
+                            <td>171.8750</td>
+                            <td>1440001 B</td>
+                        </tr>
+                        <tr>
+                            <td class="highlight">Ffi_NoWorkDoneCall</td>
+                            <td>DefaultJob</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>Default</td>
+                            <td>49.56 μs</td>
+                            <td>0.207 μs</td>
+                            <td>0.173 μs</td>
+                            <td>0.0000</td>
+                            <td>0 B</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div id="suite-ControlFlowBenchmark" class="suite-card">
+            <h2>ControlFlowBenchmark Results</h2>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Method</th>
+                            <th>Job</th>
+                            <th>AnalyzeLaunchVariance</th>
+                            <th>EvaluateOverhead</th>
+                            <th>MaxAbsoluteError</th>
+                            <th>MaxRelativeError</th>
+                            <th>MinInvokeCount</th>
+                            <th>MinIterationTime</th>
+                            <th>OutlierMode</th>
+                            <th>Affinity</th>
+                            <th>EnvironmentVariables</th>
+                            <th>Jit</th>
+                            <th>LargeAddressAware</th>
+                            <th>Platform</th>
+                            <th>PowerPlanMode</th>
+                            <th>Runtime</th>
+                            <th>AllowVeryLargeObjects</th>
+                            <th>Concurrent</th>
+                            <th>CpuGroups</th>
+                            <th>Force</th>
+                            <th>HeapAffinitizeMask</th>
+                            <th>HeapCount</th>
+                            <th>NoAffinitize</th>
+                            <th>RetainVm</th>
+                            <th>Server</th>
+                            <th>Arguments</th>
+                            <th>BuildConfiguration</th>
+                            <th>Clock</th>
+                            <th>EngineFactory</th>
+                            <th>NuGetReferences</th>
+                            <th>Toolchain</th>
+                            <th>IsMutator</th>
+                            <th>InvocationCount</th>
+                            <th>IterationCount</th>
+                            <th>IterationTime</th>
+                            <th>LaunchCount</th>
+                            <th>MaxIterationCount</th>
+                            <th>MaxWarmupIterationCount</th>
+                            <th>MemoryRandomization</th>
+                            <th>MinIterationCount</th>
+                            <th>MinWarmupIterationCount</th>
+                            <th>RunStrategy</th>
+                            <th>UnrollFactor</th>
+                            <th>WarmupCount</th>
+                            <th>Mean</th>
+                            <th>Error</th>
+                            <th>StdDev</th>
+                            <th>Gen0</th>
+                            <th>Allocated</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="highlight">Benchmark_PredictableBranch</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>204.6 μs</td>
+                            <td>117.14 μs</td>
+                            <td>6.42 μs</td>
+                            <td>1.00</td>
+                            <td>0.04</td>
+                            <td>0 B</td>
+                            <td>NA</td>
+                        </tr>
+                        <tr>
+                            <td class="highlight">Benchmark_UnpredictableBranch</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>581.7 μs</td>
+                            <td>16.26 μs</td>
+                            <td>0.89 μs</td>
+                            <td>2.85</td>
+                            <td>0.08</td>
+                            <td>0 B</td>
+                            <td>NA</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div id="suite-GameplayBenchmark" class="suite-card">
+            <h2>GameplayBenchmark Results</h2>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Method</th>
+                            <th>Job</th>
+                            <th>AnalyzeLaunchVariance</th>
+                            <th>EvaluateOverhead</th>
+                            <th>MaxAbsoluteError</th>
+                            <th>MaxRelativeError</th>
+                            <th>MinInvokeCount</th>
+                            <th>MinIterationTime</th>
+                            <th>OutlierMode</th>
+                            <th>Affinity</th>
+                            <th>EnvironmentVariables</th>
+                            <th>Jit</th>
+                            <th>LargeAddressAware</th>
+                            <th>Platform</th>
+                            <th>PowerPlanMode</th>
+                            <th>Runtime</th>
+                            <th>AllowVeryLargeObjects</th>
+                            <th>Concurrent</th>
+                            <th>CpuGroups</th>
+                            <th>Force</th>
+                            <th>HeapAffinitizeMask</th>
+                            <th>HeapCount</th>
+                            <th>NoAffinitize</th>
+                            <th>RetainVm</th>
+                            <th>Server</th>
+                            <th>Arguments</th>
+                            <th>BuildConfiguration</th>
+                            <th>Clock</th>
+                            <th>EngineFactory</th>
+                            <th>NuGetReferences</th>
+                            <th>Toolchain</th>
+                            <th>IsMutator</th>
+                            <th>InvocationCount</th>
+                            <th>IterationCount</th>
+                            <th>IterationTime</th>
+                            <th>LaunchCount</th>
+                            <th>MaxIterationCount</th>
+                            <th>MaxWarmupIterationCount</th>
+                            <th>MemoryRandomization</th>
+                            <th>MinIterationCount</th>
+                            <th>MinWarmupIterationCount</th>
+                            <th>RunStrategy</th>
+                            <th>UnrollFactor</th>
+                            <th>WarmupCount</th>
+                            <th>Mean</th>
+                            <th>Error</th>
+                            <th>StdDev</th>
+                            <th>Gen0</th>
+                            <th>Allocated</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="highlight">Gameplay_EcsUpdate</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>25.31 μs</td>
+                            <td>1.386 μs</td>
+                            <td>0.076 μs</td>
+                            <td>0 B</td>
+                        </tr>
+                        <tr>
+                            <td class="highlight">Gameplay_GridPathfinding</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>16.28 μs</td>
+                            <td>2.977 μs</td>
+                            <td>0.163 μs</td>
+                            <td>0 B</td>
+                        </tr>
+                        <tr>
+                            <td class="highlight">Gameplay_DialogueTree</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>88.56 μs</td>
+                            <td>5.323 μs</td>
+                            <td>0.292 μs</td>
+                            <td>0 B</td>
+                        </tr>
+                        <tr>
+                            <td class="highlight">Gameplay_InventorySort</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>58.63 μs</td>
+                            <td>3.968 μs</td>
+                            <td>0.217 μs</td>
+                            <td>0 B</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div id="suite-InstructionLatencyBenchmark" class="suite-card">
+            <h2>InstructionLatencyBenchmark Results</h2>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Method</th>
+                            <th>Job</th>
+                            <th>AnalyzeLaunchVariance</th>
+                            <th>EvaluateOverhead</th>
+                            <th>MaxAbsoluteError</th>
+                            <th>MaxRelativeError</th>
+                            <th>MinInvokeCount</th>
+                            <th>MinIterationTime</th>
+                            <th>OutlierMode</th>
+                            <th>Affinity</th>
+                            <th>EnvironmentVariables</th>
+                            <th>Jit</th>
+                            <th>LargeAddressAware</th>
+                            <th>Platform</th>
+                            <th>PowerPlanMode</th>
+                            <th>Runtime</th>
+                            <th>AllowVeryLargeObjects</th>
+                            <th>Concurrent</th>
+                            <th>CpuGroups</th>
+                            <th>Force</th>
+                            <th>HeapAffinitizeMask</th>
+                            <th>HeapCount</th>
+                            <th>NoAffinitize</th>
+                            <th>RetainVm</th>
+                            <th>Server</th>
+                            <th>Arguments</th>
+                            <th>BuildConfiguration</th>
+                            <th>Clock</th>
+                            <th>EngineFactory</th>
+                            <th>NuGetReferences</th>
+                            <th>Toolchain</th>
+                            <th>IsMutator</th>
+                            <th>InvocationCount</th>
+                            <th>IterationCount</th>
+                            <th>IterationTime</th>
+                            <th>LaunchCount</th>
+                            <th>MaxIterationCount</th>
+                            <th>MaxWarmupIterationCount</th>
+                            <th>MemoryRandomization</th>
+                            <th>MinIterationCount</th>
+                            <th>MinWarmupIterationCount</th>
+                            <th>RunStrategy</th>
+                            <th>UnrollFactor</th>
+                            <th>WarmupCount</th>
+                            <th>Mean</th>
+                            <th>Error</th>
+                            <th>StdDev</th>
+                            <th>Gen0</th>
+                            <th>Allocated</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="highlight">Benchmark_Baseline</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>153.2 μs</td>
+                            <td>5.09 μs</td>
+                            <td>0.28 μs</td>
+                            <td>1.00</td>
+                            <td>0.00</td>
+                            <td>0 B</td>
+                            <td>NA</td>
+                        </tr>
+                        <tr>
+                            <td class="highlight">Benchmark_Add</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>223.7 μs</td>
+                            <td>242.89 μs</td>
+                            <td>13.31 μs</td>
+                            <td>1.46</td>
+                            <td>0.08</td>
+                            <td>0 B</td>
+                            <td>NA</td>
+                        </tr>
+                        <tr>
+                            <td class="highlight">Benchmark_Sub</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>230.9 μs</td>
+                            <td>11.82 μs</td>
+                            <td>0.65 μs</td>
+                            <td>1.51</td>
+                            <td>0.00</td>
+                            <td>0 B</td>
+                            <td>NA</td>
+                        </tr>
+                        <tr>
+                            <td class="highlight">Benchmark_Mul</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>208.8 μs</td>
+                            <td>242.20 μs</td>
+                            <td>13.28 μs</td>
+                            <td>1.36</td>
+                            <td>0.08</td>
+                            <td>0 B</td>
+                            <td>NA</td>
+                        </tr>
+                        <tr>
+                            <td class="highlight">Benchmark_Div</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>225.1 μs</td>
+                            <td>295.69 μs</td>
+                            <td>16.21 μs</td>
+                            <td>1.47</td>
+                            <td>0.09</td>
+                            <td>0 B</td>
+                            <td>NA</td>
+                        </tr>
+                        <tr>
+                            <td class="highlight">Benchmark_Sqrt</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>210.4 μs</td>
+                            <td>313.91 μs</td>
+                            <td>17.21 μs</td>
+                            <td>1.37</td>
+                            <td>0.10</td>
+                            <td>0 B</td>
+                            <td>NA</td>
+                        </tr>
+                        <tr>
+                            <td class="highlight">Benchmark_Fisr</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>427.2 μs</td>
+                            <td>30.04 μs</td>
+                            <td>1.65 μs</td>
+                            <td>2.79</td>
+                            <td>0.01</td>
+                            <td>0 B</td>
+                            <td>NA</td>
+                        </tr>
+                        <tr>
+                            <td class="highlight">Benchmark_Rand</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>263.4 μs</td>
+                            <td>12.18 μs</td>
+                            <td>0.67 μs</td>
+                            <td>1.72</td>
+                            <td>0.00</td>
+                            <td>0 B</td>
+                            <td>NA</td>
+                        </tr>
+                        <tr>
+                            <td class="highlight">Benchmark_Loadc</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>181.1 μs</td>
+                            <td>24.50 μs</td>
+                            <td>1.34 μs</td>
+                            <td>1.18</td>
+                            <td>0.01</td>
+                            <td>0 B</td>
+                            <td>NA</td>
+                        </tr>
+                        <tr>
+                            <td class="highlight">Benchmark_Move</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>180.1 μs</td>
+                            <td>5.00 μs</td>
+                            <td>0.27 μs</td>
+                            <td>1.18</td>
+                            <td>0.00</td>
+                            <td>0 B</td>
+                            <td>NA</td>
+                        </tr>
+                        <tr>
+                            <td class="highlight">Benchmark_Jump</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>239.1 μs</td>
+                            <td>16.42 μs</td>
+                            <td>0.90 μs</td>
+                            <td>1.56</td>
+                            <td>0.01</td>
+                            <td>0 B</td>
+                            <td>NA</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div id="suite-LifecycleBenchmark" class="suite-card">
+            <h2>LifecycleBenchmark Results</h2>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Method</th>
+                            <th>Job</th>
+                            <th>AnalyzeLaunchVariance</th>
+                            <th>EvaluateOverhead</th>
+                            <th>MaxAbsoluteError</th>
+                            <th>MaxRelativeError</th>
+                            <th>MinInvokeCount</th>
+                            <th>MinIterationTime</th>
+                            <th>OutlierMode</th>
+                            <th>Affinity</th>
+                            <th>EnvironmentVariables</th>
+                            <th>Jit</th>
+                            <th>LargeAddressAware</th>
+                            <th>Platform</th>
+                            <th>PowerPlanMode</th>
+                            <th>Runtime</th>
+                            <th>AllowVeryLargeObjects</th>
+                            <th>Concurrent</th>
+                            <th>CpuGroups</th>
+                            <th>Force</th>
+                            <th>HeapAffinitizeMask</th>
+                            <th>HeapCount</th>
+                            <th>NoAffinitize</th>
+                            <th>RetainVm</th>
+                            <th>Server</th>
+                            <th>Arguments</th>
+                            <th>BuildConfiguration</th>
+                            <th>Clock</th>
+                            <th>EngineFactory</th>
+                            <th>NuGetReferences</th>
+                            <th>Toolchain</th>
+                            <th>IsMutator</th>
+                            <th>InvocationCount</th>
+                            <th>IterationCount</th>
+                            <th>IterationTime</th>
+                            <th>LaunchCount</th>
+                            <th>MaxIterationCount</th>
+                            <th>MaxWarmupIterationCount</th>
+                            <th>MemoryRandomization</th>
+                            <th>MinIterationCount</th>
+                            <th>MinWarmupIterationCount</th>
+                            <th>RunStrategy</th>
+                            <th>UnrollFactor</th>
+                            <th>WarmupCount</th>
+                            <th>Mean</th>
+                            <th>Error</th>
+                            <th>StdDev</th>
+                            <th>Gen0</th>
+                            <th>Allocated</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="highlight">Lifecycle_Compile</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>36,832.69 ns</td>
+                            <td>23,412.635 ns</td>
+                            <td>1,283.326 ns</td>
+                            <td>2.4414</td>
+                            <td>20920 B</td>
+                        </tr>
+                        <tr>
+                            <td class="highlight">Lifecycle_Verify</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>71.18 ns</td>
+                            <td>3.756 ns</td>
+                            <td>0.206 ns</td>
+                            <td>0.0114</td>
+                            <td>96 B</td>
+                        </tr>
+                        <tr>
+                            <td class="highlight">Lifecycle_Load</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>122.50 ns</td>
+                            <td>15.395 ns</td>
+                            <td>0.844 ns</td>
+                            <td>0.0000</td>
+                            <td>0 B</td>
+                        </tr>
+                        <tr>
+                            <td class="highlight">Lifecycle_Execute</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>178,801.94 ns</td>
+                            <td>179,836.145 ns</td>
+                            <td>9,857.426 ns</td>
+                            <td>0.0000</td>
+                            <td>0 B</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div id="suite-MemoryBenchmark" class="suite-card">
+            <h2>MemoryBenchmark Results</h2>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Method</th>
+                            <th>Job</th>
+                            <th>AnalyzeLaunchVariance</th>
+                            <th>EvaluateOverhead</th>
+                            <th>MaxAbsoluteError</th>
+                            <th>MaxRelativeError</th>
+                            <th>MinInvokeCount</th>
+                            <th>MinIterationTime</th>
+                            <th>OutlierMode</th>
+                            <th>Affinity</th>
+                            <th>EnvironmentVariables</th>
+                            <th>Jit</th>
+                            <th>LargeAddressAware</th>
+                            <th>Platform</th>
+                            <th>PowerPlanMode</th>
+                            <th>Runtime</th>
+                            <th>AllowVeryLargeObjects</th>
+                            <th>Concurrent</th>
+                            <th>CpuGroups</th>
+                            <th>Force</th>
+                            <th>HeapAffinitizeMask</th>
+                            <th>HeapCount</th>
+                            <th>NoAffinitize</th>
+                            <th>RetainVm</th>
+                            <th>Server</th>
+                            <th>Arguments</th>
+                            <th>BuildConfiguration</th>
+                            <th>Clock</th>
+                            <th>EngineFactory</th>
+                            <th>NuGetReferences</th>
+                            <th>Toolchain</th>
+                            <th>IsMutator</th>
+                            <th>InvocationCount</th>
+                            <th>IterationCount</th>
+                            <th>IterationTime</th>
+                            <th>LaunchCount</th>
+                            <th>MaxIterationCount</th>
+                            <th>MaxWarmupIterationCount</th>
+                            <th>MemoryRandomization</th>
+                            <th>MinIterationCount</th>
+                            <th>MinWarmupIterationCount</th>
+                            <th>RunStrategy</th>
+                            <th>UnrollFactor</th>
+                            <th>WarmupCount</th>
+                            <th>Mean</th>
+                            <th>Error</th>
+                            <th>StdDev</th>
+                            <th>Gen0</th>
+                            <th>Allocated</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="highlight">Memory_ArrayAccess</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>66.08 μs</td>
+                            <td>1.779 μs</td>
+                            <td>0.098 μs</td>
+                            <td>0 B</td>
+                        </tr>
+                        <tr>
+                            <td class="highlight">Memory_AllocDeallocClean</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>14.30 μs</td>
+                            <td>0.245 μs</td>
+                            <td>0.013 μs</td>
+                            <td>0 B</td>
+                        </tr>
+                        <tr>
+                            <td class="highlight">Memory_AllocDeallocChurn</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>17.60 μs</td>
+                            <td>2.613 μs</td>
+                            <td>0.143 μs</td>
+                            <td>0 B</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div id="suite-MultithreadedBenchmark" class="suite-card">
+            <h2>MultithreadedBenchmark Results</h2>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Method</th>
+                            <th>Job</th>
+                            <th>AnalyzeLaunchVariance</th>
+                            <th>EvaluateOverhead</th>
+                            <th>MaxAbsoluteError</th>
+                            <th>MaxRelativeError</th>
+                            <th>MinInvokeCount</th>
+                            <th>MinIterationTime</th>
+                            <th>OutlierMode</th>
+                            <th>Affinity</th>
+                            <th>EnvironmentVariables</th>
+                            <th>Jit</th>
+                            <th>LargeAddressAware</th>
+                            <th>Platform</th>
+                            <th>PowerPlanMode</th>
+                            <th>Runtime</th>
+                            <th>AllowVeryLargeObjects</th>
+                            <th>Concurrent</th>
+                            <th>CpuGroups</th>
+                            <th>Force</th>
+                            <th>HeapAffinitizeMask</th>
+                            <th>HeapCount</th>
+                            <th>NoAffinitize</th>
+                            <th>RetainVm</th>
+                            <th>Server</th>
+                            <th>Arguments</th>
+                            <th>BuildConfiguration</th>
+                            <th>Clock</th>
+                            <th>EngineFactory</th>
+                            <th>NuGetReferences</th>
+                            <th>Toolchain</th>
+                            <th>IsMutator</th>
+                            <th>InvocationCount</th>
+                            <th>IterationCount</th>
+                            <th>IterationTime</th>
+                            <th>LaunchCount</th>
+                            <th>MaxIterationCount</th>
+                            <th>MaxWarmupIterationCount</th>
+                            <th>MemoryRandomization</th>
+                            <th>MinIterationCount</th>
+                            <th>MinWarmupIterationCount</th>
+                            <th>RunStrategy</th>
+                            <th>UnrollFactor</th>
+                            <th>WarmupCount</th>
+                            <th>Mean</th>
+                            <th>Error</th>
+                            <th>StdDev</th>
+                            <th>Gen0</th>
+                            <th>Allocated</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="highlight">Multithreaded_Scale_1</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>184.5 μs</td>
+                            <td>3.31 μs</td>
+                            <td>0.18 μs</td>
+                            <td>0.0000</td>
+                            <td>0 B</td>
+                        </tr>
+                        <tr>
+                            <td class="highlight">Multithreaded_Scale_4</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>212.9 μs</td>
+                            <td>44.89 μs</td>
+                            <td>2.46 μs</td>
+                            <td>0.2441</td>
+                            <td>2386 B</td>
+                        </tr>
+                        <tr>
+                            <td class="highlight">Multithreaded_Scale_8</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>324.1 μs</td>
+                            <td>65.30 μs</td>
+                            <td>3.58 μs</td>
+                            <td>0.0000</td>
+                            <td>3296 B</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div id="suite-RegisterPressureBenchmark" class="suite-card">
+            <h2>RegisterPressureBenchmark Results</h2>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Method</th>
+                            <th>Job</th>
+                            <th>AnalyzeLaunchVariance</th>
+                            <th>EvaluateOverhead</th>
+                            <th>MaxAbsoluteError</th>
+                            <th>MaxRelativeError</th>
+                            <th>MinInvokeCount</th>
+                            <th>MinIterationTime</th>
+                            <th>OutlierMode</th>
+                            <th>Affinity</th>
+                            <th>EnvironmentVariables</th>
+                            <th>Jit</th>
+                            <th>LargeAddressAware</th>
+                            <th>Platform</th>
+                            <th>PowerPlanMode</th>
+                            <th>Runtime</th>
+                            <th>AllowVeryLargeObjects</th>
+                            <th>Concurrent</th>
+                            <th>CpuGroups</th>
+                            <th>Force</th>
+                            <th>HeapAffinitizeMask</th>
+                            <th>HeapCount</th>
+                            <th>NoAffinitize</th>
+                            <th>RetainVm</th>
+                            <th>Server</th>
+                            <th>Arguments</th>
+                            <th>BuildConfiguration</th>
+                            <th>Clock</th>
+                            <th>EngineFactory</th>
+                            <th>NuGetReferences</th>
+                            <th>Toolchain</th>
+                            <th>IsMutator</th>
+                            <th>InvocationCount</th>
+                            <th>IterationCount</th>
+                            <th>IterationTime</th>
+                            <th>LaunchCount</th>
+                            <th>MaxIterationCount</th>
+                            <th>MaxWarmupIterationCount</th>
+                            <th>MemoryRandomization</th>
+                            <th>MinIterationCount</th>
+                            <th>MinWarmupIterationCount</th>
+                            <th>RunStrategy</th>
+                            <th>UnrollFactor</th>
+                            <th>WarmupCount</th>
+                            <th>Mean</th>
+                            <th>Error</th>
+                            <th>StdDev</th>
+                            <th>Gen0</th>
+                            <th>Allocated</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="highlight">Registers_Pressure_4</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>976.2 μs</td>
+                            <td>84.72 μs</td>
+                            <td>4.64 μs</td>
+                            <td>0 B</td>
+                        </tr>
+                        <tr>
+                            <td class="highlight">Registers_Pressure_64</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>762.6 μs</td>
+                            <td>1,195.36 μs</td>
+                            <td>65.52 μs</td>
+                            <td>0 B</td>
+                        </tr>
+                        <tr>
+                            <td class="highlight">Registers_Pressure_128</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>771.7 μs</td>
+                            <td>1,088.65 μs</td>
+                            <td>59.67 μs</td>
+                            <td>0 B</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div id="suite-VerifierBenchmark" class="suite-card">
+            <h2>VerifierBenchmark Results</h2>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Method</th>
+                            <th>Job</th>
+                            <th>AnalyzeLaunchVariance</th>
+                            <th>EvaluateOverhead</th>
+                            <th>MaxAbsoluteError</th>
+                            <th>MaxRelativeError</th>
+                            <th>MinInvokeCount</th>
+                            <th>MinIterationTime</th>
+                            <th>OutlierMode</th>
+                            <th>Affinity</th>
+                            <th>EnvironmentVariables</th>
+                            <th>Jit</th>
+                            <th>LargeAddressAware</th>
+                            <th>Platform</th>
+                            <th>PowerPlanMode</th>
+                            <th>Runtime</th>
+                            <th>AllowVeryLargeObjects</th>
+                            <th>Concurrent</th>
+                            <th>CpuGroups</th>
+                            <th>Force</th>
+                            <th>HeapAffinitizeMask</th>
+                            <th>HeapCount</th>
+                            <th>NoAffinitize</th>
+                            <th>RetainVm</th>
+                            <th>Server</th>
+                            <th>Arguments</th>
+                            <th>BuildConfiguration</th>
+                            <th>Clock</th>
+                            <th>EngineFactory</th>
+                            <th>NuGetReferences</th>
+                            <th>Toolchain</th>
+                            <th>IsMutator</th>
+                            <th>InvocationCount</th>
+                            <th>IterationCount</th>
+                            <th>IterationTime</th>
+                            <th>LaunchCount</th>
+                            <th>MaxIterationCount</th>
+                            <th>MaxWarmupIterationCount</th>
+                            <th>MemoryRandomization</th>
+                            <th>MinIterationCount</th>
+                            <th>MinWarmupIterationCount</th>
+                            <th>RunStrategy</th>
+                            <th>UnrollFactor</th>
+                            <th>WarmupCount</th>
+                            <th>Mean</th>
+                            <th>Error</th>
+                            <th>StdDev</th>
+                            <th>Gen0</th>
+                            <th>Allocated</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="highlight">Verifier_Scale_100</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>290.2 ns</td>
+                            <td>61.82 ns</td>
+                            <td>3.39 ns</td>
+                            <td>0.0305</td>
+                            <td>0.0000</td>
+                            <td>256 B</td>
+                        </tr>
+                        <tr>
+                            <td class="highlight">Verifier_Scale_1000</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>2,679.4 ns</td>
+                            <td>52.47 ns</td>
+                            <td>2.88 ns</td>
+                            <td>0.2441</td>
+                            <td>0.0000</td>
+                            <td>2048 B</td>
+                        </tr>
+                        <tr>
+                            <td class="highlight">Verifier_Scale_10000</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>26,751.1 ns</td>
+                            <td>2,247.05 ns</td>
+                            <td>123.17 ns</td>
+                            <td>2.3804</td>
+                            <td>0.0305</td>
+                            <td>20048 B</td>
+                        </tr>
+                        <tr>
+                            <td class="highlight">Verifier_Safety_InvalidJump</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>1,368.0 ns</td>
+                            <td>237.20 ns</td>
+                            <td>13.00 ns</td>
+                            <td>0.0648</td>
+                            <td>0.0000</td>
+                            <td>552 B</td>
+                        </tr>
+                        <tr>
+                            <td class="highlight">Verifier_Safety_InvalidMemory</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>1,472.6 ns</td>
+                            <td>200.84 ns</td>
+                            <td>11.01 ns</td>
+                            <td>0.0820</td>
+                            <td>0.0000</td>
+                            <td>688 B</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div id="suite-VmBenchmarks" class="suite-card">
+            <h2>VmBenchmarks Results</h2>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Method</th>
+                            <th>Job</th>
+                            <th>AnalyzeLaunchVariance</th>
+                            <th>EvaluateOverhead</th>
+                            <th>MaxAbsoluteError</th>
+                            <th>MaxRelativeError</th>
+                            <th>MinInvokeCount</th>
+                            <th>MinIterationTime</th>
+                            <th>OutlierMode</th>
+                            <th>Affinity</th>
+                            <th>EnvironmentVariables</th>
+                            <th>Jit</th>
+                            <th>LargeAddressAware</th>
+                            <th>Platform</th>
+                            <th>PowerPlanMode</th>
+                            <th>Runtime</th>
+                            <th>AllowVeryLargeObjects</th>
+                            <th>Concurrent</th>
+                            <th>CpuGroups</th>
+                            <th>Force</th>
+                            <th>HeapAffinitizeMask</th>
+                            <th>HeapCount</th>
+                            <th>NoAffinitize</th>
+                            <th>RetainVm</th>
+                            <th>Server</th>
+                            <th>Arguments</th>
+                            <th>BuildConfiguration</th>
+                            <th>Clock</th>
+                            <th>EngineFactory</th>
+                            <th>NuGetReferences</th>
+                            <th>Toolchain</th>
+                            <th>IsMutator</th>
+                            <th>InvocationCount</th>
+                            <th>IterationCount</th>
+                            <th>IterationTime</th>
+                            <th>LaunchCount</th>
+                            <th>MaxIterationCount</th>
+                            <th>MaxWarmupIterationCount</th>
+                            <th>MemoryRandomization</th>
+                            <th>MinIterationCount</th>
+                            <th>MinWarmupIterationCount</th>
+                            <th>RunStrategy</th>
+                            <th>UnrollFactor</th>
+                            <th>WarmupCount</th>
+                            <th>Mean</th>
+                            <th>Error</th>
+                            <th>StdDev</th>
+                            <th>Gen0</th>
+                            <th>Allocated</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="highlight">Benchmark_Fibonacci</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>139.7 ns</td>
+                            <td>9.31 ns</td>
+                            <td>0.51 ns</td>
+                            <td>0.0000</td>
+                            <td>0 B</td>
+                        </tr>
+                        <tr>
+                            <td class="highlight">Benchmark_MonteCarlo</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>1,842,739.9 ns</td>
+                            <td>161,918.55 ns</td>
+                            <td>8,875.30 ns</td>
+                            <td>0.0000</td>
+                            <td>0 B</td>
+                        </tr>
+                        <tr>
+                            <td class="highlight">Benchmark_Perceptron</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>189,750.9 ns</td>
+                            <td>18,959.64 ns</td>
+                            <td>1,039.24 ns</td>
+                            <td>0.0000</td>
+                            <td>0 B</td>
+                        </tr>
+                        <tr>
+                            <td class="highlight">Benchmark_RayTracerSingleFrame</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>8,160.1 ns</td>
+                            <td>361.53 ns</td>
+                            <td>19.82 ns</td>
+                            <td>0.0000</td>
+                            <td>0 B</td>
+                        </tr>
+                        <tr>
+                            <td class="highlight">Benchmark_FfiDirectBind</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>49,977.5 ns</td>
+                            <td>4,917.51 ns</td>
+                            <td>269.55 ns</td>
+                            <td>0.0000</td>
+                            <td>0 B</td>
+                        </tr>
+                        <tr>
+                            <td class="highlight">Benchmark_FfiTypedWrapper</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>62,125.0 ns</td>
+                            <td>2,098.34 ns</td>
+                            <td>115.02 ns</td>
+                            <td>0.0000</td>
+                            <td>0 B</td>
+                        </tr>
+                        <tr>
+                            <td class="highlight">Benchmark_InternalCall</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>82,586.3 ns</td>
+                            <td>43,882.29 ns</td>
+                            <td>2,405.34 ns</td>
+                            <td>0.0000</td>
+                            <td>0 B</td>
+                        </tr>
+                        <tr>
+                            <td class="highlight">Benchmark_FfiFallback</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>759,439.5 ns</td>
+                            <td>72,407.36 ns</td>
+                            <td>3,968.89 ns</td>
+                            <td>171.8750</td>
+                            <td>1440001 B</td>
+                        </tr>
+                        <tr>
+                            <td class="highlight">Benchmark_PhysicsMovement</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>188,850.9 ns</td>
+                            <td>22,622.24 ns</td>
+                            <td>1,240.00 ns</td>
+                            <td>0.0000</td>
+                            <td>0 B</td>
+                        </tr>
+                        <tr>
+                            <td class="highlight">Benchmark_CombatDamage</td>
+                            <td>ShortRun</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>1111111111111111</td>
+                            <td>Empty</td>
+                            <td>RyuJit</td>
+                            <td>Default</td>
+                            <td>X64</td>
+                            <td>8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</td>
+                            <td>.NET 10.0</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>False</td>
+                            <td>True</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>False</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>3</td>
+                            <td>Default</td>
+                            <td>1</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>Default</td>
+                            <td>16</td>
+                            <td>3</td>
+                            <td>866.3 ns</td>
+                            <td>164.71 ns</td>
+                            <td>9.03 ns</td>
+                            <td>0.0000</td>
+                            <td>0 B</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script>
+        function showSuite(suiteId, btn) {
+            var cards = document.getElementsByClassName('suite-card');
+            for (var i = 0; i < cards.length; i++) {
+                cards[i].classList.remove('active');
+            }
+            var btns = document.getElementsByClassName('tab-btn');
+            for (var i = 0; i < btns.length; i++) {
+                btns[i].classList.remove('active');
+            }
+            document.getElementById('suite-' + suiteId).classList.add('active');
+            btn.classList.add('active');
+        }
+    </script>
+</body>
+</html>

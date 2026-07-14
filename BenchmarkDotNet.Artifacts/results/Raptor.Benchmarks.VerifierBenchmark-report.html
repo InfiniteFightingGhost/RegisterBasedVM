@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='utf-8' />
+<title>Raptor.Benchmarks.VerifierBenchmark-20260713-163144</title>
+
+<style type="text/css">
+	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
+	td, th { padding: 6px 13px; border: 1px solid #ddd; text-align: right; }
+	tr { background-color: #fff; border-top: 1px solid #ccc; }
+	tr:nth-child(even) { background: #f8f8f8; }
+</style>
+</head>
+<body>
+<pre><code>
+BenchmarkDotNet v0.14.0, Arch Linux
+AMD Ryzen 7 260 w/ Radeon 780M Graphics, 1 CPU, 16 logical and 8 physical cores
+.NET SDK 10.0.101
+  [Host]   : .NET 10.0.1 (10.0.125.57005), X64 RyuJIT AVX-512F+CD+BW+DQ+VL+VBMI
+  ShortRun : .NET 10.0.1 (10.0.125.57005), X64 RyuJIT AVX-512F+CD+BW+DQ+VL+VBMI
+</code></pre>
+<pre><code>Job=ShortRun  IterationCount=3  LaunchCount=1  
+WarmupCount=3  
+</code></pre>
+
+<table>
+<thead><tr><th>Method                 </th><th>Mean </th><th>Error</th><th>StdDev</th><th>Gen0</th><th>Gen1</th><th>Allocated</th>
+</tr>
+</thead><tbody><tr><td>Verifier_Scale_100</td><td>290.2 ns</td><td>61.82 ns</td><td>3.39 ns</td><td>0.0305</td><td>-</td><td>256 B</td>
+</tr><tr><td>Verifier_Scale_1000</td><td>2,679.4 ns</td><td>52.47 ns</td><td>2.88 ns</td><td>0.2441</td><td>-</td><td>2048 B</td>
+</tr><tr><td>Verifier_Scale_10000</td><td>26,751.1 ns</td><td>2,247.05 ns</td><td>123.17 ns</td><td>2.3804</td><td>0.0305</td><td>20048 B</td>
+</tr><tr><td>Verifier_Safety_InvalidJump</td><td>1,368.0 ns</td><td>237.20 ns</td><td>13.00 ns</td><td>0.0648</td><td>-</td><td>552 B</td>
+</tr><tr><td>Verifier_Safety_InvalidMemory</td><td>1,472.6 ns</td><td>200.84 ns</td><td>11.01 ns</td><td>0.0820</td><td>-</td><td>688 B</td>
+</tr></tbody></table>
+</body>
+</html>

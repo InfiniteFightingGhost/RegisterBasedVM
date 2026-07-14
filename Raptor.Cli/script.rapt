@@ -1,0 +1,3 @@
+var myVar = 1 + 1;
+myVar = myVar * 5;
+peri.print(myVar);

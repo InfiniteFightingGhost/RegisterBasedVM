@@ -32,6 +32,8 @@ public struct ExecutionResult
     public double[] RegistersSnapshot;
     public StackFrame[] CallStackSnapshot;
     public string? ErrorMessage;
+    public ulong[]? OpcodeCounters;
+    public ulong TotalInstructions;
 }
 
 ///<summary>

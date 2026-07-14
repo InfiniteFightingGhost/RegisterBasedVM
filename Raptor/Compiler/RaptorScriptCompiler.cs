@@ -618,10 +618,24 @@ public class Emitter
     private readonly ProgramNode _program;
     private readonly StringBuilder _sb = new();
     private readonly Dictionary<string, int> _variables = new();
+    private readonly Dictionary<string, int> _propertyMappings = new();
     private int _regCounter = 1; // Start allocating registers from r1 (r0 acts as result accumulator)
     private int _labelCounter = 0;
 
-    public Emitter(ProgramNode program) => _program = program;
+    public Emitter(ProgramNode program, Dictionary<string, int>? propertyMappings = null)
+    {
+        _program = program;
+        if (propertyMappings != null)
+        {
+            _propertyMappings = propertyMappings;
+            int maxPropertyReg = 0;
+            if (_propertyMappings.Count > 0)
+            {
+                maxPropertyReg = _propertyMappings.Values.Max();
+            }
+            _regCounter = maxPropertyReg + 1;
+        }
+    }
 
     public Dictionary<string, int> Variables => _variables;
 
@@ -687,8 +701,19 @@ public class Emitter
 
     private void EmitAssignment(AssignmentNode assign)
     {
-        if (!_variables.TryGetValue(assign.TargetName, out int regIndex))
+        int regIndex;
+        if (_propertyMappings.TryGetValue(assign.TargetName, out int propReg))
+        {
+            regIndex = propReg;
+        }
+        else if (!_variables.TryGetValue(assign.TargetName, out int varReg))
+        {
             throw new Exception($"Variable '{assign.TargetName}' is not declared.");
+        }
+        else
+        {
+            regIndex = varReg;
+        }
 
         _sb.AppendLine($"; {assign.TargetName} = <expr>");
         int valueReg = EmitExpression(assign.Value);
@@ -753,7 +778,7 @@ public class Emitter
             switch (bin.Op)
             {
                 case "<":
-                    _sb.AppendLine($"LT 0 r{leftReg} {rightStr}");
+                    _sb.AppendLine($"LT 1 r{leftReg} {rightStr}");
                     break;
                 case "<=":
                     _sb.AppendLine($"LE 1 r{leftReg} {rightStr}");
@@ -762,7 +787,7 @@ public class Emitter
                     // a > b -> b < a
                     // Note: Left operand of LT must be a register, so evaluate Right if it's a constant
                     int rightReg = EmitExpression(bin.Right);
-                    _sb.AppendLine($"LT 0 r{rightReg} r{leftReg}");
+                    _sb.AppendLine($"LT 1 r{rightReg} r{leftReg}");
                     break;
                 case ">=":
                     // a >= b -> b <= a
@@ -822,6 +847,8 @@ public class Emitter
                 return numReg;
 
             case IdentifierNode id:
+                if (_propertyMappings.TryGetValue(id.Name, out int propReg))
+                    return propReg;
                 if (!_variables.TryGetValue(id.Name, out int varReg))
                     throw new Exception($"Undefined identifier '{id.Name}'.");
                 return varReg;
@@ -910,10 +937,10 @@ public class Emitter
             argRegs[i] = EmitExpression(call.Arguments[i]);
         }
 
-        // 2. Move arguments into registers sequentially starting from callBase + 1
+        // 2. Move arguments into registers sequentially starting from callBase
         for (int i = 0; i < call.Arguments.Count; i++)
         {
-            _sb.AppendLine($"MOVE r{callBase + i + 1} r{argRegs[i]}");
+            _sb.AppendLine($"MOVE r{callBase + i} r{argRegs[i]}");
         }
 
         // 3. Call the method with callBase as return parameter window offset
@@ -933,12 +960,12 @@ public class Emitter
 
 public static class RaptorScriptCompiler
 {
-    public static string Compile(string sourceText)
+    public static string Compile(string sourceText, Dictionary<string, int>? propertyMappings = null)
     {
-        return Compile(sourceText, out _);
+        return Compile(sourceText, out _, propertyMappings);
     }
 
-    public static string Compile(string sourceText, out Dictionary<string, int> variables)
+    public static string Compile(string sourceText, out Dictionary<string, int> variables, Dictionary<string, int>? propertyMappings = null)
     {
         var lexer = new Lexer(sourceText);
         var tokens = lexer.ScanTokens();
@@ -946,7 +973,7 @@ public static class RaptorScriptCompiler
         var parser = new Parser(tokens);
         var program = parser.Parse();
 
-        var emitter = new Emitter(program);
+        var emitter = new Emitter(program, propertyMappings);
         string code = emitter.Emit();
         variables = emitter.Variables;
         return code;

@@ -1,10 +1,8 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
-using Raptor;
-using Raptor.Attributes;
 
 namespace Raptor.Benchmarks;
 
@@ -12,651 +10,754 @@ public class Program
 {
     public static void Main(string[] args)
     {
-        BenchmarkRunner.Run<VmBenchmarks>();
-    }
-}
-
-[MemoryDiagnoser]
-public class VmBenchmarks
-{
-    private VMChunk _fibChunk = null!;
-    private VMChunk _monteCarloChunk = null!;
-    private VMChunk _perceptronChunk = null!;
-    private VMChunk _rayTracerChunk = null!;
-    private VMChunk _ffiDirectChunk = null!;
-    private VMChunk _ffiTypedChunk = null!;
-    private VMChunk _ffiFallbackChunk = null!;
-    private VMChunk _internalCallChunk = null!;
-    private VirtualMachine _vm = null!;
-
-    [GlobalSetup]
-    public void Setup()
-    {
-        // Redirect Console.Out and Console.Error to avoid polluting output
-        Console.SetOut(TextWriter.Null);
-        Console.SetError(TextWriter.Null);
-
-        // Pre-allocate VirtualMachine instance to verify Zero-GC runtime execution
-        _vm = new VirtualMachine();
-
-        // Setup FFI host table for benchmarks
-        var table = new FFIHostTable();
-        table.Register("directAdd", 100, (ref VMState state) =>
+        if (args.Contains("--fast"))
         {
-            unsafe
+            // Restore stdout which might be redirected inside setups, and mute stderr logging
+            var stdout = new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true };
+            Console.SetOut(stdout);
+            Console.SetError(TextWriter.Null);
+
+            Console.WriteLine("[Raptor Fast VM Benchmark Suite - Release Mode]");
+            Console.WriteLine("=================================================");
+
+
+
+            // 1. Instruction Latency
+            Console.WriteLine("\n[Instruction Latency]");
+            var latency = new InstructionLatencyBenchmark();
+            latency.Setup();
+            // warmup
+            for (int i = 0; i < 100; i++)
+                latency.Benchmark_Baseline();
+            var sw = Stopwatch.StartNew();
+            for (int i = 0; i < 200; i++)
+                latency.Benchmark_Baseline();
+            sw.Stop();
+            double baselineMs = sw.Elapsed.TotalMilliseconds / 200.0;
+            Console.WriteLine($"Baseline Loop: {baselineMs * 1000.0:F2} us");
+
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 200; i++)
+                latency.Benchmark_Add();
+            sw.Stop();
+            double addMs = sw.Elapsed.TotalMilliseconds / 200.0;
+            Console.WriteLine($"ADD Latency: {((addMs - baselineMs) / 50000.0) * 1000000.0:F2} ns");
+
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 200; i++)
+                latency.Benchmark_Sub();
+            sw.Stop();
+            double subMs = sw.Elapsed.TotalMilliseconds / 200.0;
+            Console.WriteLine($"SUB Latency: {((subMs - baselineMs) / 50000.0) * 1000000.0:F2} ns");
+
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 200; i++)
+                latency.Benchmark_Mul();
+            sw.Stop();
+            double mulMs = sw.Elapsed.TotalMilliseconds / 200.0;
+            Console.WriteLine($"MUL Latency: {((mulMs - baselineMs) / 50000.0) * 1000000.0:F2} ns");
+
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 200; i++)
+                latency.Benchmark_Div();
+            sw.Stop();
+            double divMs = sw.Elapsed.TotalMilliseconds / 200.0;
+            Console.WriteLine($"DIV Latency: {((divMs - baselineMs) / 50000.0) * 1000000.0:F2} ns");
+
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 200; i++)
+                latency.Benchmark_Sqrt();
+            sw.Stop();
+            double sqrtMs = sw.Elapsed.TotalMilliseconds / 200.0;
+            Console.WriteLine(
+                $"SQRT Latency: {((sqrtMs - baselineMs) / 50000.0) * 1000000.0:F2} ns"
+            );
+
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 200; i++)
+                latency.Benchmark_Fisr();
+            sw.Stop();
+            double fisrMs = sw.Elapsed.TotalMilliseconds / 200.0;
+            Console.WriteLine(
+                $"FISR Latency: {((fisrMs - baselineMs) / 50000.0) * 1000000.0:F2} ns"
+            );
+
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 200; i++)
+                latency.Benchmark_Rand();
+            sw.Stop();
+            double randMs = sw.Elapsed.TotalMilliseconds / 200.0;
+            Console.WriteLine(
+                $"RAND Latency: {((randMs - baselineMs) / 50000.0) * 1000000.0:F2} ns"
+            );
+
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 200; i++)
+                latency.Benchmark_Loadc();
+            sw.Stop();
+            double loadcMs = sw.Elapsed.TotalMilliseconds / 200.0;
+            Console.WriteLine(
+                $"LOADC Latency: {((loadcMs - baselineMs) / 50000.0) * 1000000.0:F2} ns"
+            );
+
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 200; i++)
+                latency.Benchmark_Move();
+            sw.Stop();
+            double moveMs = sw.Elapsed.TotalMilliseconds / 200.0;
+            Console.WriteLine(
+                $"MOVE Latency: {((moveMs - baselineMs) / 50000.0) * 1000000.0:F2} ns"
+            );
+
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 200; i++)
+                latency.Benchmark_Jump();
+            sw.Stop();
+            double jumpMs = sw.Elapsed.TotalMilliseconds / 200.0;
+            Console.WriteLine(
+                $"JUMP Latency: {((jumpMs - baselineMs) / 50000.0) * 1000000.0:F2} ns"
+            );
+
+            // 2. Control Flow
+            Console.WriteLine("\n[Control Flow & Branch Prediction]");
+            var cf = new ControlFlowBenchmark();
+            cf.Setup();
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 100; i++)
+                cf.Benchmark_PredictableBranch();
+            sw.Stop();
+            double predMs = sw.Elapsed.TotalMilliseconds / 100.0;
+
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 100; i++)
+                cf.Benchmark_UnpredictableBranch();
+            sw.Stop();
+            double unpredMs = sw.Elapsed.TotalMilliseconds / 100.0;
+            Console.WriteLine($"Predictable:   {predMs:F4} ms");
+            Console.WriteLine($"Unpredictable: {unpredMs:F4} ms (diff: {unpredMs - predMs:F4} ms)");
+
+            // 3. Call Stack
+            Console.WriteLine("\n[Call Stack & FFI]");
+            var cs = new CallStackBenchmark();
+            cs.Setup();
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 200; i++)
+                cs.CallStack_Depth_10();
+            sw.Stop();
+            Console.WriteLine($"Recursion Depth 10: {sw.Elapsed.TotalMilliseconds / 200.0:F4} ms");
+
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 200; i++)
+                cs.CallStack_Depth_30();
+            sw.Stop();
+            Console.WriteLine($"Recursion Depth 30: {sw.Elapsed.TotalMilliseconds / 200.0:F4} ms");
+
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 200; i++)
+                cs.Ffi_DirectBind();
+            sw.Stop();
+            Console.WriteLine($"FFI Direct Bind:    {sw.Elapsed.TotalMilliseconds / 200.0:F4} ms");
+
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 200; i++)
+                cs.Ffi_TypedWrapper();
+            sw.Stop();
+            Console.WriteLine($"FFI Typed Wrapper:  {sw.Elapsed.TotalMilliseconds / 200.0:F4} ms");
+
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 200; i++)
+                cs.Ffi_Fallback();
+            sw.Stop();
+            Console.WriteLine($"FFI Reflection:     {sw.Elapsed.TotalMilliseconds / 200.0:F4} ms");
+
+            // 4. Memory
+            Console.WriteLine("\n[Memory & Allocator]");
+            var mem = new MemoryBenchmark();
+            mem.Setup();
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 100; i++)
+                mem.Memory_ArrayAccess();
+            sw.Stop();
+            Console.WriteLine($"Array Access:       {sw.Elapsed.TotalMilliseconds / 100.0:F4} ms");
+
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 200; i++)
+                mem.Memory_AllocDeallocClean();
+            sw.Stop();
+            Console.WriteLine($"Alloc/Free Clean:   {sw.Elapsed.TotalMilliseconds / 200.0:F4} ms");
+
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 200; i++)
+                mem.Memory_AllocDeallocChurn();
+            sw.Stop();
+            Console.WriteLine($"Alloc/Free Churn:   {sw.Elapsed.TotalMilliseconds / 200.0:F4} ms");
+
+            // 5. Register Pressure
+            Console.WriteLine("\n[Register Pressure]");
+            var rp = new RegisterPressureBenchmark();
+            rp.Setup();
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 200; i++)
+                rp.Registers_Pressure_4();
+            sw.Stop();
+            Console.WriteLine($"4 Registers:   {sw.Elapsed.TotalMilliseconds / 200.0:F4} ms");
+
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 200; i++)
+                rp.Registers_Pressure_64();
+            sw.Stop();
+            Console.WriteLine($"64 Registers:  {sw.Elapsed.TotalMilliseconds / 200.0:F4} ms");
+
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 200; i++)
+                rp.Registers_Pressure_128();
+            sw.Stop();
+            Console.WriteLine($"128 Registers: {sw.Elapsed.TotalMilliseconds / 200.0:F4} ms");
+
+            // 6. Lifecycle
+            Console.WriteLine("\n[Script Lifecycle Phases]");
+            var life = new LifecycleBenchmark();
+            life.Setup();
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 1000; i++)
+                life.Lifecycle_Compile();
+            sw.Stop();
+            Console.WriteLine(
+                $"Parse/Compile: {sw.Elapsed.TotalMilliseconds / 1000.0 * 1000.0:F2} us"
+            );
+
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 2000; i++)
+                life.Lifecycle_Verify();
+            sw.Stop();
+            Console.WriteLine(
+                $"Verify:        {sw.Elapsed.TotalMilliseconds / 2000.0 * 1000.0:F2} us"
+            );
+
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 2000; i++)
+                life.Lifecycle_Load();
+            sw.Stop();
+            Console.WriteLine(
+                $"Pin/Load:      {sw.Elapsed.TotalMilliseconds / 2000.0 * 1000.0:F2} us"
+            );
+
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 200; i++)
+                life.Lifecycle_Execute();
+            sw.Stop();
+            Console.WriteLine($"Execute:       {sw.Elapsed.TotalMilliseconds / 200.0:F4} ms");
+
+            // 7. Verifier
+            Console.WriteLine("\n[Verifier Scaling & Safety]");
+            var ver = new VerifierBenchmark();
+            ver.Setup();
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 1000; i++)
+                ver.Verifier_Scale_100();
+            sw.Stop();
+            Console.WriteLine(
+                $"Verify 100 Insts:  {sw.Elapsed.TotalMilliseconds / 1000.0 * 1000.0:F2} us"
+            );
+
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 500; i++)
+                ver.Verifier_Scale_1000();
+            sw.Stop();
+            Console.WriteLine(
+                $"Verify 1000 Insts: {sw.Elapsed.TotalMilliseconds / 500.0 * 1000.0:F2} us"
+            );
+
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 100; i++)
+                ver.Verifier_Scale_10000();
+            sw.Stop();
+            Console.WriteLine(
+                $"Verify 10000 Insts:{sw.Elapsed.TotalMilliseconds / 100.0 * 1000.0:F2} us"
+            );
+
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 1000; i++)
+                ver.Verifier_Safety_InvalidJump();
+            sw.Stop();
+            Console.WriteLine(
+                $"Reject InvalidJump:{sw.Elapsed.TotalMilliseconds / 1000.0 * 1000.0:F2} us"
+            );
+
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 1000; i++)
+                ver.Verifier_Safety_InvalidMemory();
+            sw.Stop();
+            Console.WriteLine(
+                $"Reject LargeAlloc: {sw.Elapsed.TotalMilliseconds / 1000.0 * 1000.0:F2} us"
+            );
+
+            // 8. Gameplay
+            Console.WriteLine("\n[Gameplay Systems]");
+            var game = new GameplayBenchmark();
+            game.Setup();
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 100; i++)
+                game.Gameplay_EcsUpdate();
+            sw.Stop();
+            Console.WriteLine(
+                $"ECS Update (1000 entities): {sw.Elapsed.TotalMilliseconds / 100.0:F4} ms"
+            );
+
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 100; i++)
+                game.Gameplay_GridPathfinding();
+            sw.Stop();
+            Console.WriteLine(
+                $"BFS wavefront path search:  {sw.Elapsed.TotalMilliseconds / 100.0:F4} ms"
+            );
+
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 100; i++)
+                game.Gameplay_DialogueTree();
+            sw.Stop();
+            Console.WriteLine(
+                $"Dialogue conditions check:  {sw.Elapsed.TotalMilliseconds / 100.0:F4} ms"
+            );
+
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 100; i++)
+                game.Gameplay_InventorySort();
+            sw.Stop();
+            Console.WriteLine(
+                $"Inventory Sort (100 items): {sw.Elapsed.TotalMilliseconds / 100.0:F4} ms"
+            );
+
+            // 9. Multithreaded
+            Console.WriteLine("\n[Multithreaded Scaling]");
+            var mt = new MultithreadedBenchmark();
+            mt.Setup();
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 200; i++)
+                mt.Multithreaded_Scale_1();
+            sw.Stop();
+            Console.WriteLine($"1 VM instance:  {sw.Elapsed.TotalMilliseconds / 200.0:F4} ms");
+
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 200; i++)
+                mt.Multithreaded_Scale_4();
+            sw.Stop();
+            Console.WriteLine($"4 VM instances: {sw.Elapsed.TotalMilliseconds / 200.0:F4} ms");
+
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 200; i++)
+                mt.Multithreaded_Scale_8();
+            sw.Stop();
+            Console.WriteLine($"8 VM instances: {sw.Elapsed.TotalMilliseconds / 200.0:F4} ms");
+
+            // 10. VM Consolidated Benchmarks (Original VmBenchmarks suite)
+            Console.WriteLine("\n[VM Consolidated Benchmarks]");
+            var vmBench = new VmBenchmarks();
+            vmBench.Setup();
+            Console.SetOut(stdout);
+
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 50; i++)
+                vmBench.Benchmark_Fibonacci();
+            sw.Stop();
+            Console.WriteLine($"Fibonacci (50k):      {sw.Elapsed.TotalMilliseconds / 50.0:F4} ms");
+
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 10; i++)
+                vmBench.Benchmark_MonteCarlo();
+            sw.Stop();
+            Console.WriteLine($"Monte Carlo (100k):   {sw.Elapsed.TotalMilliseconds / 10.0:F4} ms");
+
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 50; i++)
+                vmBench.Benchmark_Perceptron();
+            sw.Stop();
+            Console.WriteLine($"Perceptron (1k ep):   {sw.Elapsed.TotalMilliseconds / 50.0:F4} ms");
+
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 10; i++)
+                vmBench.Benchmark_RayTracerSingleFrame();
+            sw.Stop();
+            Console.WriteLine($"RayTracer (32x32):    {sw.Elapsed.TotalMilliseconds / 10.0:F4} ms");
+
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 50; i++)
+                vmBench.Benchmark_FfiDirectBind();
+            sw.Stop();
+            Console.WriteLine($"FFI Direct Bind:      {sw.Elapsed.TotalMilliseconds / 50.0:F4} ms");
+
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 50; i++)
+                vmBench.Benchmark_FfiTypedWrapper();
+            sw.Stop();
+            Console.WriteLine($"FFI Typed Wrapper:    {sw.Elapsed.TotalMilliseconds / 50.0:F4} ms");
+
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 50; i++)
+                vmBench.Benchmark_InternalCall();
+            sw.Stop();
+            Console.WriteLine($"Internal Call:        {sw.Elapsed.TotalMilliseconds / 50.0:F4} ms");
+
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 50; i++)
+                vmBench.Benchmark_FfiFallback();
+            sw.Stop();
+            Console.WriteLine($"FFI Fallback (Refl):  {sw.Elapsed.TotalMilliseconds / 50.0:F4} ms");
+
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 50; i++)
+                vmBench.Benchmark_PhysicsMovement();
+            sw.Stop();
+            Console.WriteLine($"Physics Movement:     {sw.Elapsed.TotalMilliseconds / 50.0:F4} ms");
+
+            sw = Stopwatch.StartNew();
+            for (int i = 0; i < 50; i++)
+                vmBench.Benchmark_CombatDamage();
+            sw.Stop();
+            Console.WriteLine($"Combat Damage:        {sw.Elapsed.TotalMilliseconds / 50.0:F4} ms");
+
+            Console.WriteLine("=================================================");
+            return;
+        }
+
+        BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
+
+        // After benchmarks finish, run post-processing consolidation!
+        ConsolidateReports();
+    }
+
+    private static void ConsolidateReports()
+    {
+        string artifactsDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "../../../BenchmarkDotNet.Artifacts/results");
+        if (!Directory.Exists(artifactsDir))
+        {
+            // Try workspace root
+            artifactsDir = Path.Combine(Directory.GetCurrentDirectory(), "BenchmarkDotNet.Artifacts/results");
+            if (!Directory.Exists(artifactsDir))
             {
-                state.RegPtr[0] = state.RegPtr[0] + state.RegPtr[0];
+                Console.WriteLine("[Raptor Consolidation Warning] BenchmarkDotNet.Artifacts/results directory not found. Skipping report merge.");
+                return;
             }
-        });
-        table.RegisterModule(typeof(FfiBenchmarkBindings));
-        table.RegisterModule(typeof(FallbackBenchmarkBindings));
+        }
 
-        _vm.RegisterHostTable(table);
+        Console.WriteLine("\n[Raptor Report Consolidation] Merging individual benchmark files...");
 
-        var engine = new ScriptEngine();
-        engine.RegisterHostTable(table);
+        var mdFiles = Directory.GetFiles(artifactsDir, "Raptor.Benchmarks.*-report-github.md");
+        var csvFiles = Directory.GetFiles(artifactsDir, "Raptor.Benchmarks.*-report.csv");
+        var htmlFiles = Directory.GetFiles(artifactsDir, "Raptor.Benchmarks.*-report.html");
 
-        _ffiDirectChunk = engine.Compile(FfiDirectBindAsm);
-        _ffiTypedChunk = engine.Compile(FfiTypedWrapperAsm);
-        _ffiFallbackChunk = engine.Compile(FfiFallbackAsm);
-        _internalCallChunk = engine.Compile(InternalCallAsm);
+        if (mdFiles.Length == 0)
+        {
+            Console.WriteLine("[Raptor Consolidation] No report files found to merge.");
+            return;
+        }
 
-        // Compile and verify Fibonacci
-        _fibChunk = new VMChunk();
-        new Assembler(_fibChunk).Parse(LinearFibAsm.Split('\n').ToList());
-        BytecodeVerifier.Verify(_fibChunk, 16 * 1024 * 1024);
+        // 1. Merge Markdown Reports
+        var mdOutput = new System.Text.StringBuilder();
+        mdOutput.AppendLine("# Raptor VM Benchmark Consolidated Report");
+        mdOutput.AppendLine($"Generated on: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+        mdOutput.AppendLine();
 
-        // Compile and verify Monte Carlo
-        _monteCarloChunk = new VMChunk();
-        new Assembler(_monteCarloChunk).Parse(MonteCarloAsm.Split('\n').ToList());
-        BytecodeVerifier.Verify(_monteCarloChunk, 16 * 1024 * 1024);
+        foreach (var file in mdFiles.OrderBy(f => f))
+        {
+            string suiteName = Path.GetFileNameWithoutExtension(file)
+                                   .Replace("Raptor.Benchmarks.", "")
+                                   .Replace("-report-github", "");
+            
+            mdOutput.AppendLine($"## {suiteName}");
+            mdOutput.AppendLine();
+            
+            var lines = File.ReadAllLines(file);
+            // Skip header info (first 10 lines or lines before the table)
+            bool tableStarted = false;
+            foreach (var line in lines)
+            {
+                if (line.StartsWith("|"))
+                {
+                    tableStarted = true;
+                }
+                if (tableStarted)
+                {
+                    mdOutput.AppendLine(line);
+                }
+            }
+            mdOutput.AppendLine();
+        }
+        string mdPath = Path.Combine(artifactsDir, "Consolidated-report.md");
+        File.WriteAllText(mdPath, mdOutput.ToString());
+        Console.WriteLine($"Merged Markdown saved to: {mdPath}");
 
-        // Compile and verify Perceptron
-        _perceptronChunk = new VMChunk();
-        new Assembler(_perceptronChunk).Parse(PerceptronAsm.Split('\n').ToList());
-        BytecodeVerifier.Verify(_perceptronChunk, 16 * 1024 * 1024);
+        // 2. Merge CSV Reports
+        var csvOutput = new System.Text.StringBuilder();
+        bool headerWritten = false;
+        foreach (var file in csvFiles.OrderBy(f => f))
+        {
+            var lines = File.ReadAllLines(file);
+            if (lines.Length == 0) continue;
 
-        // Compile and verify RayTracer
-        _rayTracerChunk = new VMChunk();
-        new Assembler(_rayTracerChunk).Parse(RayTracerAsm.Split('\n').ToList());
-        BytecodeVerifier.Verify(_rayTracerChunk, 16 * 1024 * 1024);
+            if (!headerWritten)
+            {
+                // Write header: Suite, Method, Mean, etc.
+                csvOutput.AppendLine($"\"Suite\",{lines[0]}");
+                headerWritten = true;
+            }
 
-        int sinIndex = Array.IndexOf(_rayTracerChunk.Constants, -999.123);
-        int cosIndex = Array.IndexOf(_rayTracerChunk.Constants, -999.456);
-        int camXIndex = Array.IndexOf(_rayTracerChunk.Constants, -999.789);
-        int camYIndex = Array.IndexOf(_rayTracerChunk.Constants, -999.012);
-        int camZIndex = Array.IndexOf(_rayTracerChunk.Constants, -999.345);
+            string suiteName = Path.GetFileNameWithoutExtension(file)
+                                   .Replace("Raptor.Benchmarks.", "")
+                                   .Replace("-report", "");
 
-        if (sinIndex != -1)
-            _rayTracerChunk.Constants[sinIndex] = 0.0;
-        if (cosIndex != -1)
-            _rayTracerChunk.Constants[cosIndex] = 1.0;
-        if (camXIndex != -1)
-            _rayTracerChunk.Constants[camXIndex] = 0.0;
-        if (camYIndex != -1)
-            _rayTracerChunk.Constants[camYIndex] = 0.0;
-        if (camZIndex != -1)
-            _rayTracerChunk.Constants[camZIndex] = 3.5;
+            for (int i = 1; i < lines.Length; i++)
+            {
+                if (!string.IsNullOrWhiteSpace(lines[i]))
+                {
+                    csvOutput.AppendLine($"\"{suiteName}\",{lines[i]}");
+                }
+            }
+        }
+        string csvPath = Path.Combine(artifactsDir, "Consolidated-report.csv");
+        File.WriteAllText(csvPath, csvOutput.ToString());
+        Console.WriteLine($"Merged CSV saved to: {csvPath}");
+
+        // 3. Generate Beautiful HTML Dashboard
+        GenerateHtmlDashboard(artifactsDir, htmlFiles);
     }
 
-    [Benchmark]
-    public void Benchmark_Fibonacci()
+    private static void GenerateHtmlDashboard(string artifactsDir, string[] htmlFiles)
     {
-        _vm.LoadProgram(_fibChunk);
-        _vm.RunFast();
+        string csvPath = Path.Combine(artifactsDir, "Consolidated-report.csv");
+        if (!File.Exists(csvPath)) return;
+
+        var lines = File.ReadAllLines(csvPath);
+        if (lines.Length <= 1) return;
+
+        // Group rows by suite name
+        var suites = new Dictionary<string, List<string[]>>();
+        var headers = lines[0].Split(',').Select(h => h.Trim('"')).ToArray();
+
+        for (int i = 1; i < lines.Length; i++)
+        {
+            var row = ParseCsvRow(lines[i]);
+            if (row.Length == 0) continue;
+            string suite = row[0];
+            if (!suites.ContainsKey(suite))
+            {
+                suites[suite] = new List<string[]>();
+            }
+            suites[suite].Add(row.Skip(1).ToArray());
+        }
+
+        // Build premium dark-mode dashboard HTML
+        var html = new System.Text.StringBuilder();
+        html.AppendLine("<!DOCTYPE html>");
+        html.AppendLine("<html>");
+        html.AppendLine("<head>");
+        html.AppendLine("    <title>Raptor VM Benchmark Consolidated Dashboard</title>");
+        html.AppendLine("    <meta charset=\"utf-8\" />");
+        html.AppendLine("    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />");
+        html.AppendLine("    <link href=\"https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap\" rel=\"stylesheet\" />");
+        html.AppendLine("    <style>");
+        html.AppendLine("        :root {");
+        html.AppendLine("            --bg: #0b0f19;");
+        html.AppendLine("            --card: #151b2c;");
+        html.AppendLine("            --primary: #6366f1;");
+        html.AppendLine("            --primary-glow: rgba(99, 102, 241, 0.15);");
+        html.AppendLine("            --text: #f3f4f6;");
+        html.AppendLine("            --text-muted: #9ca3af;");
+        html.AppendLine("            --border: #222d44;");
+        html.AppendLine("            --success: #10b981;");
+        html.AppendLine("            --accent: #a855f7;");
+        html.AppendLine("        }");
+        html.AppendLine("        * { box-sizing: border-box; margin: 0; padding: 0; }");
+        html.AppendLine("        body {");
+        html.AppendLine("            font-family: 'Outfit', sans-serif;");
+        html.AppendLine("            background: var(--bg);");
+        html.AppendLine("            color: var(--text);");
+        html.AppendLine("            line-height: 1.5;");
+        html.AppendLine("            padding: 40px 20px;");
+        html.AppendLine("        }");
+        html.AppendLine("        .container {");
+        html.AppendLine("            max-width: 1200px;");
+        html.AppendLine("            margin: 0 auto;");
+        html.AppendLine("        }");
+        html.AppendLine("        header {");
+        html.AppendLine("            margin-bottom: 40px;");
+        html.AppendLine("            border-bottom: 1px solid var(--border);");
+        html.AppendLine("            padding-bottom: 24px;");
+        html.AppendLine("        }");
+        html.AppendLine("        h1 {");
+        html.AppendLine("            font-size: 2.5rem;");
+        html.AppendLine("            font-weight: 700;");
+        html.AppendLine("            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);");
+        html.AppendLine("            -webkit-background-clip: text;");
+        html.AppendLine("            -webkit-text-fill-color: transparent;");
+        html.AppendLine("            margin-bottom: 8px;");
+        html.AppendLine("        }");
+        html.AppendLine("        .meta { color: var(--text-muted); font-size: 0.95rem; }");
+        html.AppendLine("        .tabs {");
+        html.AppendLine("            display: flex;");
+        html.AppendLine("            flex-wrap: wrap;");
+        html.AppendLine("            gap: 12px;");
+        html.AppendLine("            margin-bottom: 30px;");
+        html.AppendLine("        }");
+        html.AppendLine("        .tab-btn {");
+        html.AppendLine("            background: var(--card);");
+        html.AppendLine("            border: 1px solid var(--border);");
+        html.AppendLine("            color: var(--text-muted);");
+        html.AppendLine("            padding: 12px 20px;");
+        html.AppendLine("            border-radius: 8px;");
+        html.AppendLine("            cursor: pointer;");
+        html.AppendLine("            font-weight: 500;");
+        html.AppendLine("            transition: all 0.25s ease;");
+        html.AppendLine("        }");
+        html.AppendLine("        .tab-btn:hover {");
+        html.AppendLine("            border-color: var(--primary);");
+        html.AppendLine("            color: var(--text);");
+        html.AppendLine("            background: var(--primary-glow);");
+        html.AppendLine("        }");
+        html.AppendLine("        .tab-btn.active {");
+        html.AppendLine("            border-color: var(--primary);");
+        html.AppendLine("            color: var(--text);");
+        html.AppendLine("            background: var(--primary);");
+        html.AppendLine("            box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);");
+        html.AppendLine("        }");
+        html.AppendLine("        .suite-card {");
+        html.AppendLine("            display: none;");
+        html.AppendLine("            background: var(--card);");
+        html.AppendLine("            border: 1px solid var(--border);");
+        html.AppendLine("            border-radius: 12px;");
+        html.AppendLine("            padding: 30px;");
+        html.AppendLine("            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);");
+        html.AppendLine("            animation: fadeIn 0.4s ease forwards;");
+        html.AppendLine("        }");
+        html.AppendLine("        .suite-card.active { display: block; }");
+        html.AppendLine("        @keyframes fadeIn {");
+        html.AppendLine("            from { opacity: 0; transform: translateY(10px); }");
+        html.AppendLine("            to { opacity: 1; transform: translateY(0); }");
+        html.AppendLine("        }");
+        html.AppendLine("        h2 { margin-bottom: 20px; font-weight: 600; font-size: 1.5rem; }");
+        html.AppendLine("        .table-wrapper { overflow-x: auto; }");
+        html.AppendLine("        table {");
+        html.AppendLine("            width: 100%;");
+        html.AppendLine("            border-collapse: collapse;");
+        html.AppendLine("            text-align: left;");
+        html.AppendLine("        }");
+        html.AppendLine("        th, td { padding: 14px 18px; border-bottom: 1px solid var(--border); }");
+        html.AppendLine("        th {");
+        html.AppendLine("            color: var(--text-muted);");
+        html.AppendLine("            font-weight: 600;");
+        html.AppendLine("            text-transform: uppercase;");
+        html.AppendLine("            font-size: 0.8rem;");
+        html.AppendLine("            letter-spacing: 0.05em;");
+        html.AppendLine("        }");
+        html.AppendLine("        td { font-size: 0.95rem; }");
+        html.AppendLine("        tr:hover td { background: rgba(255, 255, 255, 0.02); }");
+        html.AppendLine("        .highlight { color: var(--success); font-weight: 600; }");
+        html.AppendLine("    </style>");
+        html.AppendLine("</head>");
+        html.AppendLine("<body>");
+        html.AppendLine("    <div class=\"container\">");
+        html.AppendLine("        <header>");
+        html.AppendLine("            <h1>Raptor VM Consolidated Dashboard</h1>");
+        html.AppendLine($"            <p class=\"meta\">Generated on {DateTime.Now:yyyy-MM-dd HH:mm:ss} | BenchmarkDotNet Test Suite</p>");
+        html.AppendLine("        </header>");
+        html.AppendLine("        <div class=\"tabs\">");
+
+        // Tabs
+        int idx = 0;
+        foreach (var suite in suites.Keys)
+        {
+            string activeClass = idx == 0 ? " active" : "";
+            html.AppendLine($"            <button class=\"tab-btn{activeClass}\" onclick=\"showSuite('{suite}', this)\">{suite}</button>");
+            idx++;
+        }
+        html.AppendLine("        </div>");
+
+        // Suite cards
+        idx = 0;
+        foreach (var pair in suites)
+        {
+            string activeClass = idx == 0 ? " active" : "";
+            html.AppendLine($"        <div id=\"suite-{pair.Key}\" class=\"suite-card{activeClass}\">");
+            html.AppendLine($"            <h2>{pair.Key} Results</h2>");
+            html.AppendLine("            <div class=\"table-wrapper\">");
+            html.AppendLine("                <table>");
+            html.AppendLine("                    <thead>");
+            html.AppendLine("                        <tr>");
+            
+            // th headers (skip the first "Suite" header)
+            for (int h = 1; h < headers.Length; h++)
+            {
+                html.AppendLine($"                            <th>{headers[h]}</th>");
+            }
+            html.AppendLine("                        </tr>");
+            html.AppendLine("                    </thead>");
+            html.AppendLine("                    <tbody>");
+            
+            foreach (var row in pair.Value)
+            {
+                html.AppendLine("                        <tr>");
+                for (int col = 0; col < row.Length; col++)
+                {
+                    string cellVal = row[col];
+                    string tdClass = col == 0 ? " class=\"highlight\"" : "";
+                    html.AppendLine($"                            <td{tdClass}>{cellVal}</td>");
+                }
+                html.AppendLine("                        </tr>");
+            }
+            html.AppendLine("                    </tbody>");
+            html.AppendLine("                </table>");
+            html.AppendLine("            </div>");
+            html.AppendLine("        </div>");
+            idx++;
+        }
+
+        html.AppendLine("    </div>");
+        html.AppendLine("    <script>");
+        html.AppendLine("        function showSuite(suiteId, btn) {");
+        html.AppendLine("            var cards = document.getElementsByClassName('suite-card');");
+        html.AppendLine("            for (var i = 0; i < cards.length; i++) {");
+        html.AppendLine("                cards[i].classList.remove('active');");
+        html.AppendLine("            }");
+        html.AppendLine("            var btns = document.getElementsByClassName('tab-btn');");
+        html.AppendLine("            for (var i = 0; i < btns.length; i++) {");
+        html.AppendLine("                btns[i].classList.remove('active');");
+        html.AppendLine("            }");
+        html.AppendLine("            document.getElementById('suite-' + suiteId).classList.add('active');");
+        html.AppendLine("            btn.classList.add('active');");
+        html.AppendLine("        }");
+        html.AppendLine("    </script>");
+        html.AppendLine("</body>");
+        html.AppendLine("</html>");
+
+        string htmlPath = Path.Combine(artifactsDir, "Consolidated-report.html");
+        File.WriteAllText(htmlPath, html.ToString());
+        Console.WriteLine($"Dashboard HTML saved to: {htmlPath}");
     }
 
-    [Benchmark]
-    public void Benchmark_MonteCarlo()
+    private static string[] ParseCsvRow(string line)
     {
-        _vm.LoadProgram(_monteCarloChunk);
-        _vm.RunFast();
+        var result = new List<string>();
+        bool inQuotes = false;
+        var currentToken = new System.Text.StringBuilder();
+
+        for (int i = 0; i < line.Length; i++)
+        {
+            char c = line[i];
+            if (c == '"')
+            {
+                inQuotes = !inQuotes;
+            }
+            else if (c == ',' && !inQuotes)
+            {
+                result.Add(currentToken.ToString().Trim(' ', '"'));
+                currentToken.Clear();
+            }
+            else
+            {
+                currentToken.Append(c);
+            }
+        }
+        result.Add(currentToken.ToString().Trim(' ', '"'));
+        return result.ToArray();
     }
-
-    [Benchmark]
-    public void Benchmark_Perceptron()
-    {
-        _vm.LoadProgram(_perceptronChunk);
-        _vm.RunFast();
-    }
-
-    [Benchmark]
-    public void Benchmark_RayTracerSingleFrame()
-    {
-        _vm.LoadProgram(_rayTracerChunk);
-        _vm.RunFast();
-    }
-
-    [Benchmark]
-    public void Benchmark_FfiDirectBind()
-    {
-        _vm.LoadProgram(_ffiDirectChunk);
-        _vm.RunFast();
-    }
-
-    [Benchmark]
-    public void Benchmark_FfiTypedWrapper()
-    {
-        _vm.LoadProgram(_ffiTypedChunk);
-        _vm.RunFast();
-    }
-
-    [Benchmark]
-    public void Benchmark_InternalCall()
-    {
-        _vm.LoadProgram(_internalCallChunk);
-        _vm.RunFast();
-    }
-
-    [Benchmark]
-    public void Benchmark_FfiFallback()
-    {
-        _vm.LoadProgram(_ffiFallbackChunk);
-        _vm.RunFast();
-    }
-
-    // --- WORKLOAD SPECIFICATIONS ---
-
-    private const string LinearFibAsm =
-        @"
-DEFINE result r0
-DEFINE last r1
-DEFINE lastlast r2
-DEFINE counter r4
-DEFINE n 50000
-LOADC result 1
-LOADC counter 1
-loop:
-    MOVE lastlast last
-    MOVE last result
-    ADD result last lastlast
-    ADD counter counter 1
-    LT 1 counter n
-    JUMP loop
-HALT";
-
-    private const string MonteCarloAsm =
-        @"
-DEFINE epochs 100000
-DEFINE x r1
-DEFINE y r2
-DEFINE hits r4
-DEFINE i r5
-loop:
-    RAND x
-    RAND y
-    MUL x x x
-    MUL y y y
-    ADD y y x
-    LE 0 y 1
-    ADD hits hits 1
-    FOR i epochs 1 < loop
-DEFINE result r6
-DIV result hits epochs
-HALT";
-
-    private const string PerceptronAsm =
-        @"
-DEFINE x1 r0
-DEFINE x2 r1
-DEFINE w1 r2
-DEFINE w2 r3
-DEFINE b r4
-DEFINE expected r5
-DEFINE result r6
-DEFINE error r7
-DEFINE epochs r8
-DEFINE i r10
-DEFINE temp1 r21
-DEFINE temp2 r22
-
-LOADC epochs 1000
-LOADC w1 1
-LOADC w2 1
-LOADC b 0
-
-loop:
-    LOADC x1 0
-    LOADC x2 0
-    LOADC expected 0
-    CALL error() x1
-    CALL update() x1
-
-    LOADC x1 1
-    LOADC x2 0
-    LOADC expected 0
-    CALL error() x1
-    CALL update() x1
-
-    LOADC x1 0
-    LOADC x2 1
-    LOADC expected 0
-    CALL error() x1
-    CALL update() x1
-
-    LOADC x1 1
-    LOADC x2 1
-    LOADC expected 1
-    CALL error() x1
-    CALL update() x1
-    FOR i epochs 1 < loop
-HALT
-
-dot()
-    MUL temp1 x1 w1
-    MUL temp2 x2 w2
-    ADD result temp1 temp2
-    RETURN r0 r0
-
-perceive()
-    CALL dot() x1
-    ADD result result b
-    LE 1 result 0
-    JUMP perceive_if
-    LOADC result 0
-    JUMP perceive_return
-perceive_if:
-    LOADC result 1
-perceive_return:
-    RETURN r0 r0
-
-error()
-    CALL perceive() x1
-    SUB error expected result
-    RETURN r0 r0
-
-update()
-    MUL temp1 error x1
-    ADD w1 w1 temp1
-    MUL temp2 error x2
-    ADD w2 w2 temp2
-    ADD b b error
-    RETURN r0 r0";
-
-    private const string RayTracerAsm =
-        @"
-DEFINE width r1
-DEFINE height r2
-DEFINE i r3
-DEFINE j r4
-DEFINE spheres r5
-DEFINE t_min r6
-DEFINE hit_idx r7
-DEFINE rx r8
-DEFINE ry r9
-DEFINE rz r10
-DEFINE dx r11
-DEFINE dy r12
-DEFINE dz r13
-DEFINE len_sq r14
-DEFINE inv_len r15
-DEFINE sp_x r16
-DEFINE sp_y r17
-DEFINE sp_z r18
-DEFINE sp_r r19
-DEFINE sp_cr r20
-DEFINE sp_cg r21
-DEFINE sp_cb r22
-DEFINE b_coeff r23
-DEFINE c r24
-DEFINE disc r25
-DEFINE t r26
-DEFINE vx r27
-DEFINE vy r28
-DEFINE vz r29
-DEFINE vv r30
-DEFINE r_sq r31
-DEFINE px r32
-DEFINE py r33
-DEFINE pz r34
-DEFINE nx r35
-DEFINE ny r36
-DEFINE nz r37
-DEFINE lx r38
-DEFINE ly r39
-DEFINE lz r40
-DEFINE diffuse r41
-DEFINE temp1 r42
-DEFINE temp2 r43
-DEFINE temp3 r44
-DEFINE r r45
-DEFINE g r46
-DEFINE b_val r47
-DEFINE sky_t r48
-DEFINE noise r49
-DEFINE cx r50
-DEFINE cy r51
-DEFINE cz r52
-DEFINE rad r53
-DEFINE offset r54
-DEFINE b_neg r55
-DEFINE sq_disc r56
-DEFINE header_ptr r57
-DEFINE one_minus_sky_t r58
-DEFINE zero r59
-DEFINE max_val r60
-DEFINE one_val r61
-DEFINE r_temp r62
-DEFINE g_temp r63
-DEFINE b_temp r64
-DEFINE sin_theta r65
-DEFINE cos_theta r66
-DEFINE cam_x r67
-DEFINE cam_y r68
-DEFINE cam_z r69
-DEFINE step r70
-
-LOADC width 32
-LOADC height 32
-LOADC zero 0.0
-LOADC max_val 255.0
-LOADC one_val 1.0
-LOADC sin_theta -999.123
-LOADC cos_theta -999.456
-LOADC cam_x -999.789
-LOADC cam_y -999.012
-LOADC cam_z -999.345
-SUB temp1 width one_val
-LOADC temp2 2.0
-DIV step temp2 temp1
-
-NEWARR spheres 14
-SETARR spheres 0 0
-SETARR spheres 1 0
-SETARR spheres 2 3
-SETARR spheres 3 1
-SETARR spheres 4 255
-SETARR spheres 5 100
-SETARR spheres 6 20
-SETARR spheres 7 0
-SETARR spheres 8 -100.5
-SETARR spheres 9 3
-SETARR spheres 10 100
-SETARR spheres 11 20
-SETARR spheres 12 200
-SETARR spheres 13 20
-
-LOADC j 0
-LOADC ry 1.0
-
-y_loop:
-    LOADC i 0
-    LOADC rx -1.0
-x_loop:
-    MUL dx rx cos_theta
-    SUB dx dx sin_theta
-    MOVE dy ry
-    MUL dz rx sin_theta
-    ADD dz dz cos_theta
-    MUL len_sq rx rx
-    MUL temp1 ry ry
-    ADD len_sq len_sq temp1
-    ADD len_sq len_sq 1.0
-    MOVE inv_len len_sq
-    FISR inv_len inv_len
-    MUL dx dx inv_len
-    MUL dy dy inv_len
-    MUL dz dz inv_len
-
-    LOADC t_min 999999.0
-    LOADC hit_idx -1
-
-    LOADC r0 0
-    GETARR sp_x spheres
-    LOADC r0 1
-    GETARR sp_y spheres
-    LOADC r0 2
-    GETARR sp_z spheres
-    LOADC r0 3
-    GETARR sp_r spheres
-    CALL intersect() r0
-    LE 0 t zero
-    JUMP check_sp2
-    LT 1 t t_min
-    JUMP set_sp1
-    JUMP check_sp2
-set_sp1:
-    MOVE t_min t
-    LOADC hit_idx 0
-
-check_sp2:
-    LOADC r0 7
-    GETARR sp_x spheres
-    LOADC r0 8
-    GETARR sp_y spheres
-    LOADC r0 9
-    GETARR sp_z spheres
-    LOADC r0 10
-    GETARR sp_r spheres
-    CALL intersect() r0
-    LE 0 t zero
-    JUMP end_check
-    LT 1 t t_min
-    JUMP set_sp2
-    JUMP end_check
-set_sp2:
-    MOVE t_min t
-    LOADC hit_idx 1
-
-end_check:
-    EQ 0 hit_idx -1
-    JUMP render_sky
-
-    MUL px dx t_min
-    ADD px px cam_x
-    MUL py dy t_min
-    ADD py py cam_y
-    MUL pz dz t_min
-    ADD pz pz cam_z
-
-    EQ 0 hit_idx zero
-    JUMP hit_sphere1
-    JUMP hit_sphere2
-
-hit_sphere1:
-    LOADC cx 0.0
-    LOADC cy 0.0
-    LOADC cz 3.0
-    LOADC rad 1.0
-    LOADC r0 4
-    GETARR sp_cr spheres
-    LOADC r0 5
-    GETARR sp_cg spheres
-    LOADC r0 6
-    GETARR sp_cb spheres
-    JUMP compute_shading
-
-hit_sphere2:
-    LOADC cx 0.0
-    LOADC cy -100.5
-    LOADC cz 3.0
-    LOADC rad 100.0
-    LOADC sp_cr 10.0
-    LOADC sp_cg 80.0
-    LOADC sp_cb 10.0
-
-compute_shading:
-    SUB nx px cx
-    SUB ny py cy
-    SUB nz pz cz
-    DIV nx nx rad
-    DIV ny ny rad
-    DIV nz nz rad
-
-    LOADC lx 0.57735
-    LOADC ly 0.57735
-    LOADC lz -0.57735
-
-    MUL diffuse nx lx
-    MUL temp1 ny ly
-    ADD diffuse diffuse temp1
-    MUL temp1 nz lz
-    ADD diffuse diffuse temp1
-
-    LE 0 diffuse zero
-    JUMP set_ambient
-    JUMP apply_diffuse
-set_ambient:
-    LOADC diffuse 0
-apply_diffuse:
-    ADD diffuse diffuse 0.15
-    LE 0 diffuse one_val
-    JUMP output_color
-    LOADC diffuse 1.0
-
-output_color:
-    MUL r sp_cr diffuse
-    MUL g sp_cg diffuse
-    MUL b_val sp_cb diffuse
-    JUMP print_pixel
-
-render_sky:
-    MUL sky_t dy 0.5
-    ADD sky_t sky_t 0.5
-    SUB one_minus_sky_t 1.0 sky_t
-    MUL r one_minus_sky_t 255.0
-    MUL temp1 sky_t 128.0
-    ADD r r temp1
-    MUL g one_minus_sky_t 255.0
-    MUL temp1 sky_t 178.0
-    ADD g g temp1
-    MUL b_val one_minus_sky_t 255.0
-    MUL temp1 sky_t 255.0
-    ADD b_val b_val temp1
-
-    RAND noise
-    MUL noise noise 15.0
-    ADD r r noise
-    ADD g g noise
-    ADD b_val b_val noise
-
-print_pixel:
-    LT 0 r zero
-    JUMP r_not_neg
-    LOADC r 0.0
-r_not_neg:
-    LT 0 max_val r
-    JUMP r_not_high
-    LOADC r 255.0
-r_not_high:
-    BINAND r r r
-    LT 0 g zero
-    JUMP g_not_neg
-    LOADC g 0.0
-g_not_neg:
-    LT 0 max_val g
-    JUMP g_not_high
-    LOADC g 255.0
-g_not_high:
-    BINAND g g g
-    LT 0 b_val zero
-    JUMP b_not_neg
-    LOADC b_val 0.0
-b_not_neg:
-    LT 0 max_val b_val
-    JUMP b_not_high
-    LOADC b_val 255.0
-b_not_high:
-    BINAND b_val b_val b_val
-
-    ADD rx rx step
-    ADD i i 1
-    LT 1 i width
-    JUMP x_loop
-
-    SUB ry ry step
-    FOR j height 1 < y_loop
-
-FREEARR spheres
-HALT
-
-intersect()
-    SUB vx cam_x sp_x
-    SUB vy cam_y sp_y
-    SUB vz cam_z sp_z
-    MUL temp1 vx vx
-    MUL temp2 vy vy
-    MUL temp3 vz vz
-    ADD vv temp1 temp2
-    ADD vv vv temp3
-    MUL r_sq sp_r sp_r
-    SUB c vv r_sq
-    MUL b_coeff vx dx
-    MUL temp1 vy dy
-    ADD b_coeff b_coeff temp1
-    MUL temp1 vz dz
-    ADD b_coeff b_coeff temp1
-    MUL temp1 b_coeff b_coeff
-    SUB disc temp1 c
-    LT 1 disc zero
-    JUMP no_hit
-    SQRT sq_disc disc
-    UNM b_neg b_coeff
-    SUB t b_neg sq_disc
-    RETURN r0 r0
-no_hit:
-    LOADC t -1.0
-    RETURN r0 r0";
-
-    private const string FfiDirectBindAsm =
-        @"
-DEFINE epochs 10000
-DEFINE i r2
-LOADC r1 2.0
-loop:
-    CALL directAdd() r1
-    FOR i epochs 1 < loop
-HALT";
-
-    private const string FfiTypedWrapperAsm =
-        @"
-DEFINE epochs 10000
-DEFINE i r2
-LOADC r1 2.0
-loop:
-    CALL typedAdd() r1
-    FOR i epochs 1 < loop
-HALT";
-
-    private const string FfiFallbackAsm =
-        @"
-DEFINE epochs 10000
-DEFINE i r2
-LOADC r1 1.0
-LOADC r2 2.0
-LOADC r3 3.0
-LOADC r4 4.0
-LOADC r5 5.0
-loop:
-    CALL sumFive() r1
-    FOR i epochs 1 < loop
-HALT";
-
-    private const string InternalCallAsm =
-        @"
-DEFINE epochs 10000
-DEFINE i r2
-LOADC r1 2.0
-loop:
-    CALL internalAdd() r1
-    FOR i epochs 1 < loop
-HALT
-
-internalAdd()
-    ADD r0 r0 r0
-    RETURN r0 r0";
-}
-
-[RaptorModule]
-public static class FfiBenchmarkBindings
-{
-    [RaptorMethod("typedAdd", 101)]
-    public static double TypedAdd(double a) => a + a;
-}
-
-[RaptorModule]
-public static class FallbackBenchmarkBindings
-{
-    [RaptorMethod("sumFive", 200)]
-    public static double SumFive(double a, double b, double c, double d, double e) => a + b + c + d + e;
 }

@@ -18,17 +18,67 @@ public unsafe class VirtualMachine
     private uint[] _instructions = null!;
     private double[] _constants = null!;
     private uint[] _methods = null!;
-    private static readonly int _heapSize = 16 * 1024 * 1024;
+    private static readonly int _heapSize = 512 * 1024;
     private uint _heapHeader = 0;
     private byte[] _heap = new byte[_heapSize];
     private uint _rngState = 2463534215; // RNG seed
-    private char[] _outBuffer = new char[65536];
+    private char[] _outBuffer = new char[256];
 
     private readonly Dictionary<ushort, HostFFIDelegate> _registeredHostMethods = new();
+    private HostFFIDelegate[] _registeredHostMethodsArray = new HostFFIDelegate[1024];
+    private readonly double[] _registers = new double[256];
+
+    // GCHandles for pinning arrays to avoid hot-path fixed blocks
+    private System.Runtime.InteropServices.GCHandle _instHandle;
+    private System.Runtime.InteropServices.GCHandle _constHandle;
+    private System.Runtime.InteropServices.GCHandle _methodsHandle;
+    private System.Runtime.InteropServices.GCHandle _heapHandle;
+    private System.Runtime.InteropServices.GCHandle _outBufferHandle;
+    private System.Runtime.InteropServices.GCHandle _regHandle;
+
+    private uint* _instPtr;
+    private double* _constPtr;
+    private uint* _methodsPtr;
+    private byte* _heapPtr;
+    private char* _outBufferPtr;
+    private double* _regPtr;
+
+    private void FreeHandles()
+    {
+        if (_instHandle.IsAllocated) _instHandle.Free();
+        if (_constHandle.IsAllocated) _constHandle.Free();
+        if (_methodsHandle.IsAllocated) _methodsHandle.Free();
+        if (_heapHandle.IsAllocated) _heapHandle.Free();
+        if (_outBufferHandle.IsAllocated) _outBufferHandle.Free();
+        if (_regHandle.IsAllocated) _regHandle.Free();
+    }
+
+    ~VirtualMachine()
+    {
+        FreeHandles();
+    }
+
+    public void SetRegister(int index, double value)
+    {
+        _registers[index] = value;
+    }
+
+    public double GetRegister(int index)
+    {
+        return _registers[index];
+    }
 
     public void RegisterHostMethod(ushort methodIndex, HostFFIDelegate del)
     {
         _registeredHostMethods[methodIndex] = del;
+        if (methodIndex >= _registeredHostMethodsArray.Length)
+        {
+            int newSize = Math.Max(methodIndex + 1, _registeredHostMethodsArray.Length * 2);
+            var newArray = new HostFFIDelegate[newSize];
+            _registeredHostMethodsArray.CopyTo(newArray, 0);
+            _registeredHostMethodsArray = newArray;
+        }
+        _registeredHostMethodsArray[methodIndex] = del;
     }
 
     /// <summary>
@@ -67,6 +117,9 @@ public unsafe class VirtualMachine
     ///</summary>
     public void LoadProgram(VMChunk chunk)
     {
+        FreeHandles();
+        Array.Clear(_registers, 0, _registers.Length);
+
         _instructions = chunk.Instructions;
         _constants = chunk.Constants;
         _methods = chunk.MethodTable;
@@ -79,6 +132,19 @@ public unsafe class VirtualMachine
             }
         }
 
+        _instHandle = System.Runtime.InteropServices.GCHandle.Alloc(_instructions, System.Runtime.InteropServices.GCHandleType.Pinned);
+        _constHandle = System.Runtime.InteropServices.GCHandle.Alloc(_constants, System.Runtime.InteropServices.GCHandleType.Pinned);
+        _methodsHandle = System.Runtime.InteropServices.GCHandle.Alloc(_methods, System.Runtime.InteropServices.GCHandleType.Pinned);
+        _heapHandle = System.Runtime.InteropServices.GCHandle.Alloc(_heap, System.Runtime.InteropServices.GCHandleType.Pinned);
+        _outBufferHandle = System.Runtime.InteropServices.GCHandle.Alloc(_outBuffer, System.Runtime.InteropServices.GCHandleType.Pinned);
+        _regHandle = System.Runtime.InteropServices.GCHandle.Alloc(_registers, System.Runtime.InteropServices.GCHandleType.Pinned);
+
+        _instPtr = (uint*)_instHandle.AddrOfPinnedObject();
+        _constPtr = (double*)_constHandle.AddrOfPinnedObject();
+        _methodsPtr = (uint*)_methodsHandle.AddrOfPinnedObject();
+        _heapPtr = (byte*)_heapHandle.AddrOfPinnedObject();
+        _outBufferPtr = (char*)_outBufferHandle.AddrOfPinnedObject();
+        _regPtr = (double*)_regHandle.AddrOfPinnedObject();
     }
 
     ///<summary>
@@ -89,33 +155,25 @@ public unsafe class VirtualMachine
     ///</remarks>
     public unsafe ExecutionResult RunFast()
     {
-        double* RegPtr = stackalloc double[256];
-        Unsafe.InitBlockUnaligned(RegPtr, 0, 256 * sizeof(double));
-
+        double* RegPtr = _regPtr;
         StackFrame* framePtr = stackalloc StackFrame[32];
-        fixed (uint* instPtr = _instructions)
-        fixed (double* constPtr = _constants)
-        fixed (uint* methodTablePtr = _methods)
-        fixed (byte* heapPtr = _heap)
-        fixed (char* outBufferPtr = _outBuffer)
         {
-            *(uint*)heapPtr = 0xFFFFFFFF;
-            *(uint*)(heapPtr + 4) = (uint)_heapSize;
-            Console.Error.WriteLine("Starting VM...");
+            *(uint*)_heapPtr = 0xFFFFFFFF;
+            *(uint*)(_heapPtr + 4) = (uint)_heapSize;
             VMState state = new VMState
             {
                 RegPtr = RegPtr,
-                ConstPtr = constPtr,
-                MethodTablePtr = methodTablePtr,
-                InstPtr = instPtr,
-                Ip = instPtr,
-                HeapPtr = heapPtr,
+                ConstPtr = _constPtr,
+                MethodTablePtr = _methodsPtr,
+                InstPtr = _instPtr,
+                Ip = _instPtr,
+                HeapPtr = _heapPtr,
                 FreeBlockHeaderPointer = _heapHeader,
                 BasePtr = 0,
                 CallStackPtr = framePtr,
                 CallStackLimit = framePtr + 32,
                 RngState = _rngState,
-                OutBufferPtr = outBufferPtr,
+                OutBufferPtr = _outBufferPtr,
                 OutBufferCapacity = _outBuffer.Length,
                 OutBufferOffset = 0,
             };
@@ -187,22 +245,12 @@ public unsafe class VirtualMachine
                             ExecuteHalt(instruction, ref state);
                             _rngState = state.RngState;
 
-                            double[] regSnapshot = new double[256];
-                            new ReadOnlySpan<double>(RegPtr, 256).CopyTo(regSnapshot);
-
-                            int stackCount = (int)(state.CallStackPtr - framePtr);
-                            StackFrame[] stackSnapshot = new StackFrame[stackCount];
-                            for (int i = 0; i < stackCount; i++)
-                            {
-                                stackSnapshot[i] = framePtr[i];
-                            }
-
                             return new ExecutionResult
                             {
                                 Status = VMStatus.Halted,
                                 IpOffset = (int)(state.Ip - state.InstPtr - 1),
-                                RegistersSnapshot = regSnapshot,
-                                CallStackSnapshot = stackSnapshot,
+                                RegistersSnapshot = _registers,
+                                CallStackSnapshot = Array.Empty<StackFrame>(),
                                 ErrorMessage = null,
                             };
                         case OpCode.RAND:
@@ -273,6 +321,186 @@ public unsafe class VirtualMachine
         }
     }
 
+    ///<summary>
+    ///This is the execution method used for profiling purposes.
+    ///</summary>
+    public unsafe ExecutionResult RunProfile(ulong[] opcodeCounters, out ulong totalInstructions)
+    {
+        Array.Clear(opcodeCounters, 0, opcodeCounters.Length);
+        totalInstructions = 0;
+        double* RegPtr = _regPtr;
+        StackFrame* framePtr = stackalloc StackFrame[32];
+        {
+            *(uint*)_heapPtr = 0xFFFFFFFF;
+            *(uint*)(_heapPtr + 4) = (uint)_heapSize;
+            VMState state = new VMState
+            {
+                RegPtr = RegPtr,
+                ConstPtr = _constPtr,
+                MethodTablePtr = _methodsPtr,
+                InstPtr = _instPtr,
+                Ip = _instPtr,
+                HeapPtr = _heapPtr,
+                FreeBlockHeaderPointer = _heapHeader,
+                BasePtr = 0,
+                CallStackPtr = framePtr,
+                CallStackLimit = framePtr + 32,
+                RngState = _rngState,
+                OutBufferPtr = _outBufferPtr,
+                OutBufferCapacity = _outBuffer.Length,
+                OutBufferOffset = 0,
+            };
+            try
+            {
+                while (true)
+                {
+                    uint instVal = *state.Ip++;
+                    Instruction instruction = new Instruction(instVal);
+                    opcodeCounters[(int)instruction.Op]++;
+                    totalInstructions++;
+                    switch (instruction.Op)
+                    {
+                        case OpCode.LOADC:
+                            ExecuteLoadC(instruction, ref state);
+                            break;
+                        case OpCode.MOVE:
+                            ExecuteMove(instruction, ref state);
+                            break;
+                        case OpCode.UNM:
+                            ExecuteUnm(instruction, ref state);
+                            break;
+                        case OpCode.SWAP:
+                            ExecuteSwap(instruction, ref state);
+                            break;
+                        case OpCode.ADD:
+                            ExecuteAdd(instruction, ref state);
+                            break;
+                        case OpCode.SUB:
+                            ExecuteSub(instruction, ref state);
+                            break;
+                        case OpCode.MUL:
+                            ExecuteMul(instruction, ref state);
+                            break;
+                        case OpCode.DIV:
+                            ExecuteDiv(instruction, ref state);
+                            break;
+                        case OpCode.POW:
+                            ExecutePow(instruction, ref state);
+                            break;
+                        case OpCode.SQRT:
+                            ExecuteSqrt(instruction, ref state);
+                            break;
+                        case OpCode.FISR:
+                            ExecuteFisr(instruction, ref state);
+                            break;
+                        case OpCode.JUMP:
+                            ExecuteJump(instruction, ref state);
+                            break;
+                        case OpCode.CALL:
+                            ExecuteCallOrFFI(instruction, ref state, this);
+                            break;
+                        case OpCode.RETURN:
+                            ExecuteReturn(instruction, ref state);
+                            break;
+                        case OpCode.PRINT:
+                            ExecutePrint(instruction, ref state);
+                            break;
+                        case OpCode.PRINTA:
+                            ExecutePrintA(instruction, ref state);
+                            break;
+                        case OpCode.EQ:
+                            ExecuteEq(instruction, ref state);
+                            break;
+                        case OpCode.LT:
+                            ExecuteLt(instruction, ref state);
+                            break;
+                        case OpCode.LE:
+                            ExecuteLe(instruction, ref state);
+                            break;
+                        case OpCode.HALT:
+                            ExecuteHalt(instruction, ref state);
+                            _rngState = state.RngState;
+
+                            return new ExecutionResult
+                            {
+                                Status = VMStatus.Halted,
+                                IpOffset = (int)(state.Ip - state.InstPtr - 1),
+                                RegistersSnapshot = _registers,
+                                CallStackSnapshot = Array.Empty<StackFrame>(),
+                                ErrorMessage = null,
+                                OpcodeCounters = opcodeCounters,
+                                TotalInstructions = totalInstructions,
+                            };
+                        case OpCode.RAND:
+                            ExecuteRand(instruction, ref state);
+                            break;
+                        case OpCode.FOR:
+                            ExecuteFor(instruction, ref state);
+                            break;
+                        case OpCode.NEWARR:
+                            ExecuteNewArray(instruction, ref state);
+                            break;
+                        case OpCode.SETARR:
+                            ExecuteSetArray(instruction, ref state);
+                            break;
+                        case OpCode.SETARRA:
+                            ExecuteSetArrayASCII(instruction, ref state);
+                            break;
+                        case OpCode.GETARR:
+                            ExecuteGetArray(instruction, ref state);
+                            break;
+                        case OpCode.GETARRA:
+                            ExecuteGetArrayASCII(instruction, ref state);
+                            break;
+                        case OpCode.FREEARR:
+                            ExecuteFreeArray(instruction, ref state);
+                            break;
+                        case OpCode.BINAND:
+                            ExecuteBinaryAnd(instruction, ref state);
+                            break;
+                        case OpCode.BINOR:
+                            ExecuteBinaryOr(instruction, ref state);
+                            break;
+                        case OpCode.BINXOR:
+                            ExecuteBinaryXor(instruction, ref state);
+                            break;
+                        case OpCode.BINLSH:
+                            ExecuteBinaryLeftShift(instruction, ref state);
+                            break;
+                        case OpCode.BINRSH:
+                            ExecuteBinaryRightShift(instruction, ref state);
+                            break;
+                    }
+                }
+            }
+            catch (VMPanicException ex)
+            {
+                _rngState = state.RngState;
+
+                double[] regSnapshot = new double[256];
+                new ReadOnlySpan<double>(RegPtr, 256).CopyTo(regSnapshot);
+
+                int stackCount = (int)(state.CallStackPtr - framePtr);
+                StackFrame[] stackSnapshot = new StackFrame[stackCount];
+                for (int i = 0; i < stackCount; i++)
+                {
+                    stackSnapshot[i] = framePtr[i];
+                }
+
+                return new ExecutionResult
+                {
+                    Status = ex.Status,
+                    IpOffset = ex.IpOffset,
+                    RegistersSnapshot = regSnapshot,
+                    CallStackSnapshot = stackSnapshot,
+                    ErrorMessage = ex.Message,
+                    OpcodeCounters = opcodeCounters,
+                    TotalInstructions = totalInstructions,
+                };
+            }
+        }
+    }
+
     public delegate void DebugHook(ref VMState state, Instruction instruction);
 
     ///<summary>
@@ -284,33 +512,26 @@ public unsafe class VirtualMachine
     ///</remarks>
     public unsafe ExecutionResult RunDebug(DebugHook onInstructionExecuted)
     {
-        double* RegPtr = stackalloc double[256];
-        Unsafe.InitBlockUnaligned(RegPtr, 0, 256 * sizeof(double));
-
+        double* RegPtr = _regPtr;
         StackFrame* framePtr = stackalloc StackFrame[32];
-        fixed (uint* instPtr = _instructions)
-        fixed (double* constPtr = _constants)
-        fixed (uint* methodTablePtr = _methods)
-        fixed (byte* heapPtr = _heap)
-        fixed (char* outBufferPtr = _outBuffer)
         {
-            *(uint*)heapPtr = 0xFFFFFFFF;
-            *(uint*)(heapPtr + 4) = (uint)_heapSize;
+            *(uint*)_heapPtr = 0xFFFFFFFF;
+            *(uint*)(_heapPtr + 4) = (uint)_heapSize;
             Console.Error.WriteLine("Starting VM in Debug Mode...");
             VMState state = new VMState
             {
                 RegPtr = RegPtr,
-                ConstPtr = constPtr,
-                MethodTablePtr = methodTablePtr,
-                InstPtr = instPtr,
-                Ip = instPtr,
-                HeapPtr = heapPtr,
+                ConstPtr = _constPtr,
+                MethodTablePtr = _methodsPtr,
+                InstPtr = _instPtr,
+                Ip = _instPtr,
+                HeapPtr = _heapPtr,
                 FreeBlockHeaderPointer = _heapHeader,
                 BasePtr = 0,
                 CallStackPtr = framePtr,
                 CallStackLimit = framePtr + 32,
                 RngState = _rngState,
-                OutBufferPtr = outBufferPtr,
+                OutBufferPtr = _outBufferPtr,
                 OutBufferCapacity = _outBuffer.Length,
                 OutBufferOffset = 0,
             };
@@ -390,22 +611,12 @@ public unsafe class VirtualMachine
                                 $"Debug Execution time:{stopwatch.ElapsedMilliseconds} ms ({stopwatch.ElapsedTicks} ticks, {(stopwatch.Elapsed.Ticks / 10.0):F1} us)"
                             );
 
-                            double[] regSnapshot = new double[256];
-                            new ReadOnlySpan<double>(RegPtr, 256).CopyTo(regSnapshot);
-
-                            int stackCount = (int)(state.CallStackPtr - framePtr);
-                            StackFrame[] stackSnapshot = new StackFrame[stackCount];
-                            for (int i = 0; i < stackCount; i++)
-                            {
-                                stackSnapshot[i] = framePtr[i];
-                            }
-
                             return new ExecutionResult
                             {
                                 Status = VMStatus.Halted,
                                 IpOffset = (int)(state.Ip - state.InstPtr - 1),
-                                RegistersSnapshot = regSnapshot,
-                                CallStackSnapshot = stackSnapshot,
+                                RegistersSnapshot = _registers,
+                                CallStackSnapshot = Array.Empty<StackFrame>(),
                                 ErrorMessage = null,
                             };
                         case OpCode.RAND:
@@ -557,9 +768,9 @@ public unsafe class VirtualMachine
         {
             byte start = instruction.A;
             state.BasePtr += start;
-            state.RegPtr += state.BasePtr;
-            vm._registeredHostMethods[methodIndex](ref state);
-            state.RegPtr -= state.BasePtr;
+            state.RegPtr += start;
+            vm._registeredHostMethodsArray[methodIndex](ref state);
+            state.RegPtr -= start;
             state.BasePtr -= start;
         }
         else
@@ -584,8 +795,8 @@ public unsafe class VirtualMachine
         int currentPcIndex = (int)(state.Ip - state.InstPtr);
         StackFrame frame = new StackFrame(currentPcIndex, state.BasePtr);
         CallStackPush(ref state.CallStackPtr, frame);
+        state.RegPtr += start;
         state.BasePtr += start;
-        state.RegPtr += state.BasePtr;
 
         state.Ip = state.InstPtr + (int)state.MethodTablePtr[methodIndex];
         return true;
@@ -603,7 +814,7 @@ public unsafe class VirtualMachine
         }
         StackFrame frame = CallStackPop(ref state.CallStackPtr);
         int target = frame.ReturnPC;
-        state.RegPtr -= state.BasePtr;
+        state.RegPtr = state.RegPtr - state.BasePtr + frame.PreviousBase;
         state.BasePtr = frame.PreviousBase;
         state.Ip = state.InstPtr + target;
 
@@ -718,7 +929,7 @@ public unsafe class VirtualMachine
         bool comparison = valB < valC;
 
         bool expected = (a != 0);
-        if (comparison != expected)
+        if (comparison == expected)
         {
             state.Ip++;
         }
@@ -931,6 +1142,9 @@ public unsafe class VirtualMachine
         uint valSize = (uint)(
             size < 256 ? Reg(state.RegPtr, state.BasePtr, size) : state.ConstPtr[size - 256]
         );
+        uint valSizeBytes = valSize * 8;
+        uint requiredBytes = valSizeBytes + 4;
+
         uint prevAddress = 0xFFFFFFFF;
         uint currAddress = 0xFFFFFFFF;
         uint nextAddress = state.FreeBlockHeaderPointer;
@@ -941,10 +1155,10 @@ public unsafe class VirtualMachine
             currAddress = nextAddress;
             nextAddress = *(uint*)(state.HeapPtr + nextAddress);
             blockSize = *(uint*)(state.HeapPtr + currAddress + 4);
-            if (blockSize >= valSize)
+            if (blockSize >= requiredBytes)
                 break;
         }
-        if (currAddress == 0xFFFFFFFF || blockSize < valSize)
+        if (currAddress == 0xFFFFFFFF || blockSize < requiredBytes)
         {
             throw new VMPanicException(
                 VMStatus.OutOfMemory,
@@ -953,18 +1167,22 @@ public unsafe class VirtualMachine
             );
         }
 
-        if (blockSize > valSize)
+        if (blockSize >= requiredBytes + 8)
         {
+            uint remainingFreeAddress = currAddress + requiredBytes;
+            uint remainingFreeSize = blockSize - requiredBytes;
+
             if (prevAddress != 0xFFFFFFFF)
-                *(uint*)(state.HeapPtr + prevAddress) = nextAddress;
+                *(uint*)(state.HeapPtr + prevAddress) = remainingFreeAddress;
             else
             {
-                state.FreeBlockHeaderPointer = currAddress + valSize + 4;
+                state.FreeBlockHeaderPointer = remainingFreeAddress;
             }
 
-            *(uint*)(state.HeapPtr + currAddress) = valSize;
-            *(uint*)(state.HeapPtr + currAddress + valSize) = nextAddress;
-            *(uint*)(state.HeapPtr + currAddress + valSize + 4) = blockSize - valSize;
+            *(uint*)(state.HeapPtr + remainingFreeAddress) = nextAddress;
+            *(uint*)(state.HeapPtr + remainingFreeAddress + 4) = remainingFreeSize;
+
+            *(uint*)(state.HeapPtr + currAddress) = requiredBytes;
             Reg(state.RegPtr, state.BasePtr, pointerAddress) = (double)
                 (ulong)(state.HeapPtr + currAddress + 4);
         }
@@ -973,10 +1191,15 @@ public unsafe class VirtualMachine
             if (prevAddress != 0xFFFFFFFF)
                 *(uint*)(state.HeapPtr + prevAddress) = nextAddress;
             else
-                state.FreeBlockHeaderPointer = 0xFFFFFFFF;
-            *(uint*)(state.HeapPtr + currAddress) = valSize;
-            Reg(state.RegPtr, state.BasePtr, pointerAddress) = (double)
-                (ulong)(state.HeapPtr + currAddress + 4);
+                state.FreeBlockHeaderPointer = nextAddress;
+
+            *(uint*)(state.HeapPtr + currAddress) = blockSize;
+            Reg(state.RegPtr, state.BasePtr, pointerAddress) = (double)(ulong)(state.HeapPtr + currAddress + 4);
+        }
+        double* bodyPtr = (double*)(state.HeapPtr + currAddress + 4);
+        for (uint i = 0; i < valSize; i++)
+        {
+            bodyPtr[i] = 0.0;
         }
         return true;
     }
@@ -989,7 +1212,7 @@ public unsafe class VirtualMachine
         if (arrayPtr == null)
             return true;
         uint realAddress = (uint)(arrayPtr - state.HeapPtr) - 4;
-        uint freedSize = *(uint*)(state.HeapPtr + realAddress);
+        uint freedSizeBytes = *(uint*)(state.HeapPtr + realAddress);
         uint leftBlock = 0xFFFFFFFF;
         uint rightBlock = state.FreeBlockHeaderPointer;
         while (rightBlock != 0xFFFFFFFF && rightBlock < realAddress)
@@ -998,18 +1221,18 @@ public unsafe class VirtualMachine
             rightBlock = *(uint*)(state.HeapPtr + rightBlock); // Read the Next pointer
         }
         *(uint*)(state.HeapPtr + realAddress) = rightBlock;
-        *(uint*)(state.HeapPtr + realAddress + 4) = freedSize;
+        *(uint*)(state.HeapPtr + realAddress + 4) = freedSizeBytes;
         if (leftBlock == 0xFFFFFFFF)
             state.FreeBlockHeaderPointer = realAddress;
         else
             *(uint*)(state.HeapPtr + leftBlock) = realAddress;
 
-        if (rightBlock != 0xFFFFFFFF && realAddress + freedSize == rightBlock)
+        if (rightBlock != 0xFFFFFFFF && realAddress + freedSizeBytes == rightBlock)
         {
             uint rightSize = *(uint*)(state.HeapPtr + rightBlock + 4);
 
-            freedSize += rightSize;
-            *(uint*)(state.HeapPtr + realAddress + 4) = freedSize;
+            freedSizeBytes += rightSize;
+            *(uint*)(state.HeapPtr + realAddress + 4) = freedSizeBytes;
 
             uint blockAfterRight = *(uint*)(state.HeapPtr + rightBlock);
             *(uint*)(state.HeapPtr + realAddress) = blockAfterRight;
@@ -1022,10 +1245,8 @@ public unsafe class VirtualMachine
 
             if (leftBlock + leftSize == realAddress)
             {
-                *(uint*)(state.HeapPtr + leftBlock + 4) = leftSize + freedSize;
-
-                uint ourNext = *(uint*)(state.HeapPtr + realAddress);
-                *(uint*)(state.HeapPtr + leftBlock) = ourNext;
+                *(uint*)(state.HeapPtr + leftBlock + 4) = leftSize + freedSizeBytes;
+                *(uint*)(state.HeapPtr + leftBlock) = rightBlock;
             }
         }
         Reg(state.RegPtr, state.BasePtr, registerAddress) = 0;

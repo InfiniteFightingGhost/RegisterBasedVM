@@ -1,0 +1,740 @@
+// Validating benchmarks:
+// ***** BenchmarkRunner: Start   *****
+// ***** Found 7 benchmark(s) in total *****
+// ***** Building 1 exe(s) in Parallel: Start   *****
+// start dotnet  restore /p:UseSharedCompilation=false /p:BuildInParallel=false /m:1 /p:Deterministic=true /p:Optimize=true /p:IntermediateOutputPath="/home/andy/Projects/Raptor/build/Raptor.Benchmarks/bin/Release/net10.0/2dc70b1f-2c89-4231-9adc-43f11fcdb00f/obj/Release/net10.0/" /p:OutDir="/home/andy/Projects/Raptor/build/Raptor.Benchmarks/bin/Release/net10.0/2dc70b1f-2c89-4231-9adc-43f11fcdb00f/bin/Release/net10.0/" /p:OutputPath="/home/andy/Projects/Raptor/build/Raptor.Benchmarks/bin/Release/net10.0/2dc70b1f-2c89-4231-9adc-43f11fcdb00f/bin/Release/net10.0/" in /home/andy/Projects/Raptor/build/Raptor.Benchmarks/bin/Release/net10.0/2dc70b1f-2c89-4231-9adc-43f11fcdb00f
+// command took 1.14 sec and exited with 0
+// start dotnet  build -c Release --no-restore /p:UseSharedCompilation=false /p:BuildInParallel=false /m:1 /p:Deterministic=true /p:Optimize=true /p:IntermediateOutputPath="/home/andy/Projects/Raptor/build/Raptor.Benchmarks/bin/Release/net10.0/2dc70b1f-2c89-4231-9adc-43f11fcdb00f/obj/Release/net10.0/" /p:OutDir="/home/andy/Projects/Raptor/build/Raptor.Benchmarks/bin/Release/net10.0/2dc70b1f-2c89-4231-9adc-43f11fcdb00f/bin/Release/net10.0/" /p:OutputPath="/home/andy/Projects/Raptor/build/Raptor.Benchmarks/bin/Release/net10.0/2dc70b1f-2c89-4231-9adc-43f11fcdb00f/bin/Release/net10.0/" --output "/home/andy/Projects/Raptor/build/Raptor.Benchmarks/bin/Release/net10.0/2dc70b1f-2c89-4231-9adc-43f11fcdb00f/bin/Release/net10.0/" in /home/andy/Projects/Raptor/build/Raptor.Benchmarks/bin/Release/net10.0/2dc70b1f-2c89-4231-9adc-43f11fcdb00f
+// command took 5.3 sec and exited with 0
+// ***** Done, took 00:00:06 (6.49 sec)   *****
+// Found 7 benchmarks:
+//   CallStackBenchmark.CallStack_Depth_10: ShortRun(IterationCount=3, LaunchCount=1, WarmupCount=3)
+//   CallStackBenchmark.CallStack_Depth_30: ShortRun(IterationCount=3, LaunchCount=1, WarmupCount=3)
+//   CallStackBenchmark.Ffi_InternalCall: ShortRun(IterationCount=3, LaunchCount=1, WarmupCount=3)
+//   CallStackBenchmark.Ffi_DirectBind: ShortRun(IterationCount=3, LaunchCount=1, WarmupCount=3)
+//   CallStackBenchmark.Ffi_TypedWrapper: ShortRun(IterationCount=3, LaunchCount=1, WarmupCount=3)
+//   CallStackBenchmark.Ffi_Fallback: ShortRun(IterationCount=3, LaunchCount=1, WarmupCount=3)
+//   CallStackBenchmark.Ffi_NoWorkDoneCall: ShortRun(IterationCount=3, LaunchCount=1, WarmupCount=3)
+
+// **************************
+// Benchmark: CallStackBenchmark.CallStack_Depth_10: ShortRun(IterationCount=3, LaunchCount=1, WarmupCount=3)
+// *** Execute ***
+// Launch: 1 / 1
+// Execute: dotnet 2dc70b1f-2c89-4231-9adc-43f11fcdb00f.dll --anonymousPipes 120 121 --benchmarkName Raptor.Benchmarks.CallStackBenchmark.CallStack_Depth_10 --job ShortRun --benchmarkId 0 in /home/andy/Projects/Raptor/build/Raptor.Benchmarks/bin/Release/net10.0/2dc70b1f-2c89-4231-9adc-43f11fcdb00f/bin/Release/net10.0
+// Failed to set up high priority (Permission denied). In order to run benchmarks with high priority, make sure you have the right permissions.
+// BeforeAnythingElse
+
+// Benchmark Process Environment Information:
+// BenchmarkDotNet v0.14.0
+// Runtime=.NET 10.0.1 (10.0.125.57005), X64 RyuJIT AVX-512F+CD+BW+DQ+VL+VBMI
+// GC=Concurrent Workstation
+// HardwareIntrinsics=AVX-512F+CD+BW+DQ+VL+VBMI,AES,BMI1,BMI2,FMA,LZCNT,PCLMUL,POPCNT VectorSize=256
+// Job: ShortRun(IterationCount=3, LaunchCount=1, WarmupCount=3)
+
+[Raptor FFI Debug] Method 'TypedAdd' successfully bound to zero-allocation FAST-PATH delegate.
+OverheadJitting  1: 1 op, 196659.00 ns, 196.6590 us/op
+WorkloadJitting  1: 1 op, 8281333.00 ns, 8.2813 ms/op
+
+OverheadJitting  2: 16 op, 113303.00 ns, 7.0814 us/op
+WorkloadJitting  2: 16 op, 13995107.00 ns, 874.6942 us/op
+
+WorkloadPilot    1: 16 op, 13967295.00 ns, 872.9559 us/op
+WorkloadPilot    2: 32 op, 27570925.00 ns, 861.5914 us/op
+WorkloadPilot    3: 64 op, 54683178.00 ns, 854.4247 us/op
+WorkloadPilot    4: 128 op, 107865343.00 ns, 842.6980 us/op
+WorkloadPilot    5: 256 op, 222456295.00 ns, 868.9699 us/op
+WorkloadPilot    6: 512 op, 438575415.00 ns, 856.5926 us/op
+WorkloadPilot    7: 1024 op, 894668145.00 ns, 873.6994 us/op
+
+OverheadWarmup   1: 1024 op, 21911.00 ns, 21.3975 ns/op
+OverheadWarmup   2: 1024 op, 1784.00 ns, 1.7422 ns/op
+OverheadWarmup   3: 1024 op, 1673.00 ns, 1.6338 ns/op
+OverheadWarmup   4: 1024 op, 1523.00 ns, 1.4873 ns/op
+OverheadWarmup   5: 1024 op, 1633.00 ns, 1.5947 ns/op
+OverheadWarmup   6: 1024 op, 1593.00 ns, 1.5557 ns/op
+OverheadWarmup   7: 1024 op, 1503.00 ns, 1.4678 ns/op
+OverheadWarmup   8: 1024 op, 1513.00 ns, 1.4775 ns/op
+OverheadWarmup   9: 1024 op, 1573.00 ns, 1.5361 ns/op
+OverheadWarmup  10: 1024 op, 1603.00 ns, 1.5654 ns/op
+
+OverheadActual   1: 1024 op, 1633.00 ns, 1.5947 ns/op
+OverheadActual   2: 1024 op, 1643.00 ns, 1.6045 ns/op
+OverheadActual   3: 1024 op, 1663.00 ns, 1.6240 ns/op
+OverheadActual   4: 1024 op, 1603.00 ns, 1.5654 ns/op
+OverheadActual   5: 1024 op, 1633.00 ns, 1.5947 ns/op
+OverheadActual   6: 1024 op, 1563.00 ns, 1.5264 ns/op
+OverheadActual   7: 1024 op, 1523.00 ns, 1.4873 ns/op
+OverheadActual   8: 1024 op, 1583.00 ns, 1.5459 ns/op
+OverheadActual   9: 1024 op, 1492.00 ns, 1.4570 ns/op
+OverheadActual  10: 1024 op, 1603.00 ns, 1.5654 ns/op
+OverheadActual  11: 1024 op, 1502.00 ns, 1.4668 ns/op
+OverheadActual  12: 1024 op, 1513.00 ns, 1.4775 ns/op
+OverheadActual  13: 1024 op, 1533.00 ns, 1.4971 ns/op
+OverheadActual  14: 1024 op, 2465.00 ns, 2.4072 ns/op
+OverheadActual  15: 1024 op, 1563.00 ns, 1.5264 ns/op
+
+WorkloadWarmup   1: 1024 op, 900104274.00 ns, 879.0081 us/op
+WorkloadWarmup   2: 1024 op, 885908883.00 ns, 865.1454 us/op
+WorkloadWarmup   3: 1024 op, 899686620.00 ns, 878.6002 us/op
+
+// BeforeActualRun
+WorkloadActual   1: 1024 op, 891062353.00 ns, 870.1781 us/op
+WorkloadActual   2: 1024 op, 886634537.00 ns, 865.8540 us/op
+WorkloadActual   3: 1024 op, 898277541.00 ns, 877.2242 us/op
+
+// AfterActualRun
+WorkloadResult   1: 1024 op, 891060770.00 ns, 870.1765 us/op
+WorkloadResult   2: 1024 op, 886632954.00 ns, 865.8525 us/op
+WorkloadResult   3: 1024 op, 898275958.00 ns, 877.2226 us/op
+// GC:  0 0 0 736 1024
+// Threading:  0 0 1024
+
+// AfterAll
+// Benchmark Process 1381344 has exited with code 0.
+
+Mean = 871.084 μs, StdErr = 3.313 μs (0.38%), N = 3, StdDev = 5.739 μs
+Min = 865.852 μs, Q1 = 868.015 μs, Median = 870.177 μs, Q3 = 873.700 μs, Max = 877.223 μs
+IQR = 5.685 μs, LowerFence = 859.487 μs, UpperFence = 882.227 μs
+ConfidenceInterval = [766.381 μs; 975.787 μs] (CI 99.9%), Margin = 104.703 μs (12.02% of Mean)
+Skewness = 0.15, Kurtosis = 0.67, MValue = 2
+
+// ** Remained 6 (85.7%) benchmark(s) to run. Estimated finish 2026-07-13 17:18 (0h 0m from now) **
+// **************************
+// Benchmark: CallStackBenchmark.CallStack_Depth_30: ShortRun(IterationCount=3, LaunchCount=1, WarmupCount=3)
+// *** Execute ***
+// Launch: 1 / 1
+// Execute: dotnet 2dc70b1f-2c89-4231-9adc-43f11fcdb00f.dll --anonymousPipes 120 121 --benchmarkName Raptor.Benchmarks.CallStackBenchmark.CallStack_Depth_30 --job ShortRun --benchmarkId 1 in /home/andy/Projects/Raptor/build/Raptor.Benchmarks/bin/Release/net10.0/2dc70b1f-2c89-4231-9adc-43f11fcdb00f/bin/Release/net10.0
+// Failed to set up high priority (Permission denied). In order to run benchmarks with high priority, make sure you have the right permissions.
+// BeforeAnythingElse
+
+// Benchmark Process Environment Information:
+// BenchmarkDotNet v0.14.0
+// Runtime=.NET 10.0.1 (10.0.125.57005), X64 RyuJIT AVX-512F+CD+BW+DQ+VL+VBMI
+// GC=Concurrent Workstation
+// HardwareIntrinsics=AVX-512F+CD+BW+DQ+VL+VBMI,AES,BMI1,BMI2,FMA,LZCNT,PCLMUL,POPCNT VectorSize=256
+// Job: ShortRun(IterationCount=3, LaunchCount=1, WarmupCount=3)
+
+[Raptor FFI Debug] Method 'TypedAdd' successfully bound to zero-allocation FAST-PATH delegate.
+OverheadJitting  1: 1 op, 185459.00 ns, 185.4590 us/op
+WorkloadJitting  1: 1 op, 9269932.00 ns, 9.2699 ms/op
+
+OverheadJitting  2: 16 op, 117551.00 ns, 7.3469 us/op
+WorkloadJitting  2: 16 op, 37019463.00 ns, 2.3137 ms/op
+
+WorkloadPilot    1: 16 op, 37599383.00 ns, 2.3500 ms/op
+WorkloadPilot    2: 32 op, 73848447.00 ns, 2.3078 ms/op
+WorkloadPilot    3: 64 op, 148098500.00 ns, 2.3140 ms/op
+WorkloadPilot    4: 128 op, 295408656.00 ns, 2.3079 ms/op
+WorkloadPilot    5: 256 op, 591684594.00 ns, 2.3113 ms/op
+
+OverheadWarmup   1: 256 op, 1573.00 ns, 6.1445 ns/op
+OverheadWarmup   2: 256 op, 701.00 ns, 2.7383 ns/op
+OverheadWarmup   3: 256 op, 631.00 ns, 2.4648 ns/op
+OverheadWarmup   4: 256 op, 642.00 ns, 2.5078 ns/op
+OverheadWarmup   5: 256 op, 621.00 ns, 2.4258 ns/op
+OverheadWarmup   6: 256 op, 591.00 ns, 2.3086 ns/op
+OverheadWarmup   7: 256 op, 611.00 ns, 2.3867 ns/op
+OverheadWarmup   8: 256 op, 602.00 ns, 2.3516 ns/op
+
+OverheadActual   1: 256 op, 631.00 ns, 2.4648 ns/op
+OverheadActual   2: 256 op, 631.00 ns, 2.4648 ns/op
+OverheadActual   3: 256 op, 641.00 ns, 2.5039 ns/op
+OverheadActual   4: 256 op, 641.00 ns, 2.5039 ns/op
+OverheadActual   5: 256 op, 651.00 ns, 2.5430 ns/op
+OverheadActual   6: 256 op, 601.00 ns, 2.3477 ns/op
+OverheadActual   7: 256 op, 591.00 ns, 2.3086 ns/op
+OverheadActual   8: 256 op, 602.00 ns, 2.3516 ns/op
+OverheadActual   9: 256 op, 621.00 ns, 2.4258 ns/op
+OverheadActual  10: 256 op, 611.00 ns, 2.3867 ns/op
+OverheadActual  11: 256 op, 581.00 ns, 2.2695 ns/op
+OverheadActual  12: 256 op, 581.00 ns, 2.2695 ns/op
+OverheadActual  13: 256 op, 611.00 ns, 2.3867 ns/op
+OverheadActual  14: 256 op, 621.00 ns, 2.4258 ns/op
+OverheadActual  15: 256 op, 622.00 ns, 2.4297 ns/op
+
+WorkloadWarmup   1: 256 op, 588727854.00 ns, 2.2997 ms/op
+WorkloadWarmup   2: 256 op, 595655561.00 ns, 2.3268 ms/op
+WorkloadWarmup   3: 256 op, 586212975.00 ns, 2.2899 ms/op
+
+// BeforeActualRun
+WorkloadActual   1: 256 op, 587574014.00 ns, 2.2952 ms/op
+WorkloadActual   2: 256 op, 589110093.00 ns, 2.3012 ms/op
+WorkloadActual   3: 256 op, 587248492.00 ns, 2.2939 ms/op
+
+// AfterActualRun
+WorkloadResult   1: 256 op, 587573393.00 ns, 2.2952 ms/op
+WorkloadResult   2: 256 op, 589109472.00 ns, 2.3012 ms/op
+WorkloadResult   3: 256 op, 587247871.00 ns, 2.2939 ms/op
+// GC:  0 0 0 736 256
+// Threading:  0 0 256
+
+// AfterAll
+// Benchmark Process 1381577 has exited with code 0.
+
+Mean = 2.297 ms, StdErr = 0.002 ms (0.10%), N = 3, StdDev = 0.004 ms
+Min = 2.294 ms, Q1 = 2.295 ms, Median = 2.295 ms, Q3 = 2.298 ms, Max = 2.301 ms
+IQR = 0.004 ms, LowerFence = 2.289 ms, UpperFence = 2.304 ms
+ConfidenceInterval = [2.226 ms; 2.368 ms] (CI 99.9%), Margin = 0.071 ms (3.08% of Mean)
+Skewness = 0.34, Kurtosis = 0.67, MValue = 2
+
+// ** Remained 5 (71.4%) benchmark(s) to run. Estimated finish 2026-07-13 17:17 (0h 0m from now) **
+// **************************
+// Benchmark: CallStackBenchmark.Ffi_InternalCall: ShortRun(IterationCount=3, LaunchCount=1, WarmupCount=3)
+// *** Execute ***
+// Launch: 1 / 1
+// Execute: dotnet 2dc70b1f-2c89-4231-9adc-43f11fcdb00f.dll --anonymousPipes 120 121 --benchmarkName Raptor.Benchmarks.CallStackBenchmark.Ffi_InternalCall --job ShortRun --benchmarkId 2 in /home/andy/Projects/Raptor/build/Raptor.Benchmarks/bin/Release/net10.0/2dc70b1f-2c89-4231-9adc-43f11fcdb00f/bin/Release/net10.0
+// Failed to set up high priority (Permission denied). In order to run benchmarks with high priority, make sure you have the right permissions.
+// BeforeAnythingElse
+
+// Benchmark Process Environment Information:
+// BenchmarkDotNet v0.14.0
+// Runtime=.NET 10.0.1 (10.0.125.57005), X64 RyuJIT AVX-512F+CD+BW+DQ+VL+VBMI
+// GC=Concurrent Workstation
+// HardwareIntrinsics=AVX-512F+CD+BW+DQ+VL+VBMI,AES,BMI1,BMI2,FMA,LZCNT,PCLMUL,POPCNT VectorSize=256
+// Job: ShortRun(IterationCount=3, LaunchCount=1, WarmupCount=3)
+
+[Raptor FFI Debug] Method 'TypedAdd' successfully bound to zero-allocation FAST-PATH delegate.
+OverheadJitting  1: 1 op, 169399.00 ns, 169.3990 us/op
+WorkloadJitting  1: 1 op, 6734303.00 ns, 6.7343 ms/op
+
+OverheadJitting  2: 16 op, 118162.00 ns, 7.3851 us/op
+WorkloadJitting  2: 16 op, 1411524.00 ns, 88.2203 us/op
+
+WorkloadPilot    1: 16 op, 1269809.00 ns, 79.3631 us/op
+WorkloadPilot    2: 32 op, 2548993.00 ns, 79.6560 us/op
+WorkloadPilot    3: 64 op, 5176263.00 ns, 80.8791 us/op
+WorkloadPilot    4: 128 op, 10391541.00 ns, 81.1839 us/op
+WorkloadPilot    5: 256 op, 20632347.00 ns, 80.5951 us/op
+WorkloadPilot    6: 512 op, 41193602.00 ns, 80.4563 us/op
+WorkloadPilot    7: 1024 op, 82370212.00 ns, 80.4397 us/op
+WorkloadPilot    8: 2048 op, 165558011.00 ns, 80.8389 us/op
+WorkloadPilot    9: 4096 op, 365979600.00 ns, 89.3505 us/op
+WorkloadPilot   10: 8192 op, 673306588.00 ns, 82.1907 us/op
+
+OverheadWarmup   1: 8192 op, 13816.00 ns, 1.6865 ns/op
+OverheadWarmup   2: 8192 op, 111980.00 ns, 13.6694 ns/op
+OverheadWarmup   3: 8192 op, 12704.00 ns, 1.5508 ns/op
+OverheadWarmup   4: 8192 op, 12684.00 ns, 1.5483 ns/op
+OverheadWarmup   5: 8192 op, 12704.00 ns, 1.5508 ns/op
+OverheadWarmup   6: 8192 op, 12644.00 ns, 1.5435 ns/op
+
+OverheadActual   1: 8192 op, 11081.00 ns, 1.3527 ns/op
+OverheadActual   2: 8192 op, 17302.00 ns, 2.1121 ns/op
+OverheadActual   3: 8192 op, 13075.00 ns, 1.5961 ns/op
+OverheadActual   4: 8192 op, 10931.00 ns, 1.3344 ns/op
+OverheadActual   5: 8192 op, 10901.00 ns, 1.3307 ns/op
+OverheadActual   6: 8192 op, 10901.00 ns, 1.3307 ns/op
+OverheadActual   7: 8192 op, 10941.00 ns, 1.3356 ns/op
+OverheadActual   8: 8192 op, 10900.00 ns, 1.3306 ns/op
+OverheadActual   9: 8192 op, 10881.00 ns, 1.3282 ns/op
+OverheadActual  10: 8192 op, 11141.00 ns, 1.3600 ns/op
+OverheadActual  11: 8192 op, 12835.00 ns, 1.5668 ns/op
+OverheadActual  12: 8192 op, 12583.00 ns, 1.5360 ns/op
+OverheadActual  13: 8192 op, 12644.00 ns, 1.5435 ns/op
+OverheadActual  14: 8192 op, 12604.00 ns, 1.5386 ns/op
+OverheadActual  15: 8192 op, 12614.00 ns, 1.5398 ns/op
+OverheadActual  16: 8192 op, 12593.00 ns, 1.5372 ns/op
+OverheadActual  17: 8192 op, 12614.00 ns, 1.5398 ns/op
+OverheadActual  18: 8192 op, 10961.00 ns, 1.3380 ns/op
+OverheadActual  19: 8192 op, 12944.00 ns, 1.5801 ns/op
+OverheadActual  20: 8192 op, 12593.00 ns, 1.5372 ns/op
+
+WorkloadWarmup   1: 8192 op, 713780277.00 ns, 87.1314 us/op
+WorkloadWarmup   2: 8192 op, 747956433.00 ns, 91.3033 us/op
+WorkloadWarmup   3: 8192 op, 702306552.00 ns, 85.7308 us/op
+
+// BeforeActualRun
+WorkloadActual   1: 8192 op, 667845681.00 ns, 81.5241 us/op
+WorkloadActual   2: 8192 op, 671692455.00 ns, 81.9937 us/op
+WorkloadActual   3: 8192 op, 667143831.00 ns, 81.4385 us/op
+
+// AfterActualRun
+WorkloadResult   1: 8192 op, 667833093.00 ns, 81.5226 us/op
+WorkloadResult   2: 8192 op, 671679867.00 ns, 81.9922 us/op
+WorkloadResult   3: 8192 op, 667131243.00 ns, 81.4369 us/op
+// GC:  0 0 0 736 8192
+// Threading:  0 0 8192
+
+// AfterAll
+// Benchmark Process 1381732 has exited with code 0.
+
+Mean = 81.651 μs, StdErr = 0.173 μs (0.21%), N = 3, StdDev = 0.299 μs
+Min = 81.437 μs, Q1 = 81.480 μs, Median = 81.523 μs, Q3 = 81.757 μs, Max = 81.992 μs
+IQR = 0.278 μs, LowerFence = 81.063 μs, UpperFence = 82.174 μs
+ConfidenceInterval = [76.197 μs; 87.104 μs] (CI 99.9%), Margin = 5.454 μs (6.68% of Mean)
+Skewness = 0.35, Kurtosis = 0.67, MValue = 2
+
+// ** Remained 4 (57.1%) benchmark(s) to run. Estimated finish 2026-07-13 17:17 (0h 0m from now) **
+// **************************
+// Benchmark: CallStackBenchmark.Ffi_DirectBind: ShortRun(IterationCount=3, LaunchCount=1, WarmupCount=3)
+// *** Execute ***
+// Launch: 1 / 1
+// Execute: dotnet 2dc70b1f-2c89-4231-9adc-43f11fcdb00f.dll --anonymousPipes 120 121 --benchmarkName Raptor.Benchmarks.CallStackBenchmark.Ffi_DirectBind --job ShortRun --benchmarkId 3 in /home/andy/Projects/Raptor/build/Raptor.Benchmarks/bin/Release/net10.0/2dc70b1f-2c89-4231-9adc-43f11fcdb00f/bin/Release/net10.0
+// Failed to set up high priority (Permission denied). In order to run benchmarks with high priority, make sure you have the right permissions.
+// BeforeAnythingElse
+
+// Benchmark Process Environment Information:
+// BenchmarkDotNet v0.14.0
+// Runtime=.NET 10.0.1 (10.0.125.57005), X64 RyuJIT AVX-512F+CD+BW+DQ+VL+VBMI
+// GC=Concurrent Workstation
+// HardwareIntrinsics=AVX-512F+CD+BW+DQ+VL+VBMI,AES,BMI1,BMI2,FMA,LZCNT,PCLMUL,POPCNT VectorSize=256
+// Job: ShortRun(IterationCount=3, LaunchCount=1, WarmupCount=3)
+
+[Raptor FFI Debug] Method 'TypedAdd' successfully bound to zero-allocation FAST-PATH delegate.
+OverheadJitting  1: 1 op, 165872.00 ns, 165.8720 us/op
+WorkloadJitting  1: 1 op, 6908310.00 ns, 6.9083 ms/op
+
+OverheadJitting  2: 16 op, 113804.00 ns, 7.1128 us/op
+WorkloadJitting  2: 16 op, 1046619.00 ns, 65.4137 us/op
+
+WorkloadPilot    1: 16 op, 883240.00 ns, 55.2025 us/op
+WorkloadPilot    2: 32 op, 1779436.00 ns, 55.6074 us/op
+WorkloadPilot    3: 64 op, 3567579.00 ns, 55.7434 us/op
+WorkloadPilot    4: 128 op, 7105832.00 ns, 55.5143 us/op
+WorkloadPilot    5: 256 op, 14234737.00 ns, 55.6044 us/op
+WorkloadPilot    6: 512 op, 28444578.00 ns, 55.5558 us/op
+WorkloadPilot    7: 1024 op, 58308987.00 ns, 56.9424 us/op
+WorkloadPilot    8: 2048 op, 113930208.00 ns, 55.6300 us/op
+WorkloadPilot    9: 4096 op, 206066465.00 ns, 50.3092 us/op
+WorkloadPilot   10: 8192 op, 404575910.00 ns, 49.3867 us/op
+WorkloadPilot   11: 16384 op, 806019298.00 ns, 49.1955 us/op
+
+OverheadWarmup   1: 16384 op, 25599.00 ns, 1.5624 ns/op
+OverheadWarmup   2: 16384 op, 24306.00 ns, 1.4835 ns/op
+OverheadWarmup   3: 16384 op, 24897.00 ns, 1.5196 ns/op
+OverheadWarmup   4: 16384 op, 24837.00 ns, 1.5159 ns/op
+OverheadWarmup   5: 16384 op, 24897.00 ns, 1.5196 ns/op
+OverheadWarmup   6: 16384 op, 24787.00 ns, 1.5129 ns/op
+
+OverheadActual   1: 16384 op, 21771.00 ns, 1.3288 ns/op
+OverheadActual   2: 16384 op, 21881.00 ns, 1.3355 ns/op
+OverheadActual   3: 16384 op, 25278.00 ns, 1.5428 ns/op
+OverheadActual   4: 16384 op, 21761.00 ns, 1.3282 ns/op
+OverheadActual   5: 16384 op, 21921.00 ns, 1.3380 ns/op
+OverheadActual   6: 16384 op, 21931.00 ns, 1.3386 ns/op
+OverheadActual   7: 16384 op, 24917.00 ns, 1.5208 ns/op
+OverheadActual   8: 16384 op, 24766.00 ns, 1.5116 ns/op
+OverheadActual   9: 16384 op, 24536.00 ns, 1.4976 ns/op
+OverheadActual  10: 16384 op, 24717.00 ns, 1.5086 ns/op
+OverheadActual  11: 16384 op, 24856.00 ns, 1.5171 ns/op
+OverheadActual  12: 16384 op, 24596.00 ns, 1.5012 ns/op
+OverheadActual  13: 16384 op, 24606.00 ns, 1.5018 ns/op
+OverheadActual  14: 16384 op, 24497.00 ns, 1.4952 ns/op
+OverheadActual  15: 16384 op, 24896.00 ns, 1.5195 ns/op
+OverheadActual  16: 16384 op, 30277.00 ns, 1.8480 ns/op
+OverheadActual  17: 16384 op, 24666.00 ns, 1.5055 ns/op
+OverheadActual  18: 16384 op, 21681.00 ns, 1.3233 ns/op
+OverheadActual  19: 16384 op, 24697.00 ns, 1.5074 ns/op
+OverheadActual  20: 16384 op, 30267.00 ns, 1.8474 ns/op
+
+WorkloadWarmup   1: 16384 op, 799636505.00 ns, 48.8059 us/op
+WorkloadWarmup   2: 16384 op, 808019900.00 ns, 49.3176 us/op
+WorkloadWarmup   3: 16384 op, 809670915.00 ns, 49.4184 us/op
+
+// BeforeActualRun
+WorkloadActual   1: 16384 op, 802161113.00 ns, 48.9600 us/op
+WorkloadActual   2: 16384 op, 814086478.00 ns, 49.6879 us/op
+WorkloadActual   3: 16384 op, 807582127.00 ns, 49.2909 us/op
+
+// AfterActualRun
+WorkloadResult   1: 16384 op, 802136477.00 ns, 48.9585 us/op
+WorkloadResult   2: 16384 op, 814061842.00 ns, 49.6864 us/op
+WorkloadResult   3: 16384 op, 807557491.00 ns, 49.2894 us/op
+// GC:  0 0 0 736 16384
+// Threading:  0 0 16384
+
+// AfterAll
+// Benchmark Process 1381894 has exited with code 0.
+
+Mean = 49.311 μs, StdErr = 0.210 μs (0.43%), N = 3, StdDev = 0.364 μs
+Min = 48.959 μs, Q1 = 49.124 μs, Median = 49.289 μs, Q3 = 49.488 μs, Max = 49.686 μs
+IQR = 0.364 μs, LowerFence = 48.578 μs, UpperFence = 50.034 μs
+ConfidenceInterval = [42.663 μs; 55.960 μs] (CI 99.9%), Margin = 6.649 μs (13.48% of Mean)
+Skewness = 0.06, Kurtosis = 0.67, MValue = 2
+
+// ** Remained 3 (42.9%) benchmark(s) to run. Estimated finish 2026-07-13 17:17 (0h 0m from now) **
+// **************************
+// Benchmark: CallStackBenchmark.Ffi_TypedWrapper: ShortRun(IterationCount=3, LaunchCount=1, WarmupCount=3)
+// *** Execute ***
+// Launch: 1 / 1
+// Execute: dotnet 2dc70b1f-2c89-4231-9adc-43f11fcdb00f.dll --anonymousPipes 120 121 --benchmarkName Raptor.Benchmarks.CallStackBenchmark.Ffi_TypedWrapper --job ShortRun --benchmarkId 4 in /home/andy/Projects/Raptor/build/Raptor.Benchmarks/bin/Release/net10.0/2dc70b1f-2c89-4231-9adc-43f11fcdb00f/bin/Release/net10.0
+// Failed to set up high priority (Permission denied). In order to run benchmarks with high priority, make sure you have the right permissions.
+// BeforeAnythingElse
+
+// Benchmark Process Environment Information:
+// BenchmarkDotNet v0.14.0
+// Runtime=.NET 10.0.1 (10.0.125.57005), X64 RyuJIT AVX-512F+CD+BW+DQ+VL+VBMI
+// GC=Concurrent Workstation
+// HardwareIntrinsics=AVX-512F+CD+BW+DQ+VL+VBMI,AES,BMI1,BMI2,FMA,LZCNT,PCLMUL,POPCNT VectorSize=256
+// Job: ShortRun(IterationCount=3, LaunchCount=1, WarmupCount=3)
+
+[Raptor FFI Debug] Method 'TypedAdd' successfully bound to zero-allocation FAST-PATH delegate.
+OverheadJitting  1: 1 op, 168928.00 ns, 168.9280 us/op
+WorkloadJitting  1: 1 op, 7457984.00 ns, 7.4580 ms/op
+
+OverheadJitting  2: 16 op, 144282.00 ns, 9.0176 us/op
+WorkloadJitting  2: 16 op, 1398380.00 ns, 87.3988 us/op
+
+WorkloadPilot    1: 16 op, 1118924.00 ns, 69.9328 us/op
+WorkloadPilot    2: 32 op, 2248688.00 ns, 70.2715 us/op
+WorkloadPilot    3: 64 op, 4526973.00 ns, 70.7340 us/op
+WorkloadPilot    4: 128 op, 9043897.00 ns, 70.6554 us/op
+WorkloadPilot    5: 256 op, 18139400.00 ns, 70.8570 us/op
+WorkloadPilot    6: 512 op, 36404616.00 ns, 71.1028 us/op
+WorkloadPilot    7: 1024 op, 73265161.00 ns, 71.5480 us/op
+WorkloadPilot    8: 2048 op, 145203827.00 ns, 70.9003 us/op
+WorkloadPilot    9: 4096 op, 242865924.00 ns, 59.2934 us/op
+WorkloadPilot   10: 8192 op, 481828738.00 ns, 58.8170 us/op
+WorkloadPilot   11: 16384 op, 945713806.00 ns, 57.7218 us/op
+
+OverheadWarmup   1: 16384 op, 26239.00 ns, 1.6015 ns/op
+OverheadWarmup   2: 16384 op, 195557.00 ns, 11.9359 ns/op
+OverheadWarmup   3: 16384 op, 22182.00 ns, 1.3539 ns/op
+OverheadWarmup   4: 16384 op, 21791.00 ns, 1.3300 ns/op
+OverheadWarmup   5: 16384 op, 25447.00 ns, 1.5532 ns/op
+OverheadWarmup   6: 16384 op, 24967.00 ns, 1.5239 ns/op
+
+OverheadActual   1: 16384 op, 21680.00 ns, 1.3232 ns/op
+OverheadActual   2: 16384 op, 34084.00 ns, 2.0803 ns/op
+OverheadActual   3: 16384 op, 25268.00 ns, 1.5422 ns/op
+OverheadActual   4: 16384 op, 24886.00 ns, 1.5189 ns/op
+OverheadActual   5: 16384 op, 21701.00 ns, 1.3245 ns/op
+OverheadActual   6: 16384 op, 21620.00 ns, 1.3196 ns/op
+OverheadActual   7: 16384 op, 25048.00 ns, 1.5288 ns/op
+OverheadActual   8: 16384 op, 24846.00 ns, 1.5165 ns/op
+OverheadActual   9: 16384 op, 24857.00 ns, 1.5172 ns/op
+OverheadActual  10: 16384 op, 24837.00 ns, 1.5159 ns/op
+OverheadActual  11: 16384 op, 24977.00 ns, 1.5245 ns/op
+OverheadActual  12: 16384 op, 24837.00 ns, 1.5159 ns/op
+OverheadActual  13: 16384 op, 24817.00 ns, 1.5147 ns/op
+OverheadActual  14: 16384 op, 24887.00 ns, 1.5190 ns/op
+OverheadActual  15: 16384 op, 25057.00 ns, 1.5294 ns/op
+OverheadActual  16: 16384 op, 24887.00 ns, 1.5190 ns/op
+OverheadActual  17: 16384 op, 24837.00 ns, 1.5159 ns/op
+OverheadActual  18: 16384 op, 31059.00 ns, 1.8957 ns/op
+OverheadActual  19: 16384 op, 25017.00 ns, 1.5269 ns/op
+OverheadActual  20: 16384 op, 25808.00 ns, 1.5752 ns/op
+
+WorkloadWarmup   1: 16384 op, 975755197.00 ns, 59.5554 us/op
+WorkloadWarmup   2: 16384 op, 959964403.00 ns, 58.5916 us/op
+WorkloadWarmup   3: 16384 op, 931403076.00 ns, 56.8483 us/op
+
+// BeforeActualRun
+WorkloadActual   1: 16384 op, 936433134.00 ns, 57.1553 us/op
+WorkloadActual   2: 16384 op, 967396248.00 ns, 59.0452 us/op
+WorkloadActual   3: 16384 op, 964650676.00 ns, 58.8776 us/op
+
+// AfterActualRun
+WorkloadResult   1: 16384 op, 936408247.50 ns, 57.1538 us/op
+WorkloadResult   2: 16384 op, 967371361.50 ns, 59.0437 us/op
+WorkloadResult   3: 16384 op, 964625789.50 ns, 58.8761 us/op
+// GC:  0 0 0 736 16384
+// Threading:  0 0 16384
+
+// AfterAll
+// Benchmark Process 1382084 has exited with code 0.
+
+Mean = 58.358 μs, StdErr = 0.604 μs (1.03%), N = 3, StdDev = 1.046 μs
+Min = 57.154 μs, Q1 = 58.015 μs, Median = 58.876 μs, Q3 = 58.960 μs, Max = 59.044 μs
+IQR = 0.945 μs, LowerFence = 56.598 μs, UpperFence = 60.377 μs
+ConfidenceInterval = [39.273 μs; 77.442 μs] (CI 99.9%), Margin = 19.084 μs (32.70% of Mean)
+Skewness = -0.37, Kurtosis = 0.67, MValue = 2
+
+// ** Remained 2 (28.6%) benchmark(s) to run. Estimated finish 2026-07-13 17:17 (0h 0m from now) **
+// **************************
+// Benchmark: CallStackBenchmark.Ffi_Fallback: ShortRun(IterationCount=3, LaunchCount=1, WarmupCount=3)
+// *** Execute ***
+// Launch: 1 / 1
+// Execute: dotnet 2dc70b1f-2c89-4231-9adc-43f11fcdb00f.dll --anonymousPipes 120 121 --benchmarkName Raptor.Benchmarks.CallStackBenchmark.Ffi_Fallback --job ShortRun --benchmarkId 5 in /home/andy/Projects/Raptor/build/Raptor.Benchmarks/bin/Release/net10.0/2dc70b1f-2c89-4231-9adc-43f11fcdb00f/bin/Release/net10.0
+// Failed to set up high priority (Permission denied). In order to run benchmarks with high priority, make sure you have the right permissions.
+// BeforeAnythingElse
+
+// Benchmark Process Environment Information:
+// BenchmarkDotNet v0.14.0
+// Runtime=.NET 10.0.1 (10.0.125.57005), X64 RyuJIT AVX-512F+CD+BW+DQ+VL+VBMI
+// GC=Concurrent Workstation
+// HardwareIntrinsics=AVX-512F+CD+BW+DQ+VL+VBMI,AES,BMI1,BMI2,FMA,LZCNT,PCLMUL,POPCNT VectorSize=256
+// Job: ShortRun(IterationCount=3, LaunchCount=1, WarmupCount=3)
+
+[Raptor FFI Debug] Method 'TypedAdd' successfully bound to zero-allocation FAST-PATH delegate.
+OverheadJitting  1: 1 op, 189486.00 ns, 189.4860 us/op
+WorkloadJitting  1: 1 op, 10839784.00 ns, 10.8398 ms/op
+
+OverheadJitting  2: 16 op, 120967.00 ns, 7.5604 us/op
+WorkloadJitting  2: 16 op, 40471143.00 ns, 2.5294 ms/op
+
+WorkloadPilot    1: 16 op, 38509184.00 ns, 2.4068 ms/op
+WorkloadPilot    2: 32 op, 72094178.00 ns, 2.2529 ms/op
+WorkloadPilot    3: 64 op, 86158896.00 ns, 1.3462 ms/op
+WorkloadPilot    4: 128 op, 92279366.00 ns, 720.9325 us/op
+WorkloadPilot    5: 256 op, 173951405.00 ns, 679.4977 us/op
+WorkloadPilot    6: 512 op, 356274312.00 ns, 695.8483 us/op
+WorkloadPilot    7: 1024 op, 715835164.00 ns, 699.0578 us/op
+
+OverheadWarmup   1: 1024 op, 3396.00 ns, 3.3164 ns/op
+OverheadWarmup   2: 1024 op, 1814.00 ns, 1.7715 ns/op
+OverheadWarmup   3: 1024 op, 1753.00 ns, 1.7119 ns/op
+OverheadWarmup   4: 1024 op, 1704.00 ns, 1.6641 ns/op
+OverheadWarmup   5: 1024 op, 1603.00 ns, 1.5654 ns/op
+OverheadWarmup   6: 1024 op, 1523.00 ns, 1.4873 ns/op
+OverheadWarmup   7: 1024 op, 1483.00 ns, 1.4482 ns/op
+OverheadWarmup   8: 1024 op, 1483.00 ns, 1.4482 ns/op
+OverheadWarmup   9: 1024 op, 1503.00 ns, 1.4678 ns/op
+OverheadWarmup  10: 1024 op, 1513.00 ns, 1.4775 ns/op
+
+OverheadActual   1: 1024 op, 1653.00 ns, 1.6143 ns/op
+OverheadActual   2: 1024 op, 1623.00 ns, 1.5850 ns/op
+OverheadActual   3: 1024 op, 1603.00 ns, 1.5654 ns/op
+OverheadActual   4: 1024 op, 1553.00 ns, 1.5166 ns/op
+OverheadActual   5: 1024 op, 1603.00 ns, 1.5654 ns/op
+OverheadActual   6: 1024 op, 1493.00 ns, 1.4580 ns/op
+OverheadActual   7: 1024 op, 1512.00 ns, 1.4766 ns/op
+OverheadActual   8: 1024 op, 1483.00 ns, 1.4482 ns/op
+OverheadActual   9: 1024 op, 1473.00 ns, 1.4385 ns/op
+OverheadActual  10: 1024 op, 1483.00 ns, 1.4482 ns/op
+OverheadActual  11: 1024 op, 1503.00 ns, 1.4678 ns/op
+OverheadActual  12: 1024 op, 1493.00 ns, 1.4580 ns/op
+OverheadActual  13: 1024 op, 1553.00 ns, 1.5166 ns/op
+OverheadActual  14: 1024 op, 1512.00 ns, 1.4766 ns/op
+OverheadActual  15: 1024 op, 2154.00 ns, 2.1035 ns/op
+
+WorkloadWarmup   1: 1024 op, 751492637.00 ns, 733.8795 us/op
+WorkloadWarmup   2: 1024 op, 740329564.00 ns, 722.9781 us/op
+WorkloadWarmup   3: 1024 op, 728099978.00 ns, 711.0351 us/op
+
+// BeforeActualRun
+WorkloadActual   1: 1024 op, 699284312.00 ns, 682.8948 us/op
+WorkloadActual   2: 1024 op, 695494946.00 ns, 679.1943 us/op
+WorkloadActual   3: 1024 op, 729016452.00 ns, 711.9301 us/op
+
+// AfterActualRun
+WorkloadResult   1: 1024 op, 699282800.00 ns, 682.8934 us/op
+WorkloadResult   2: 1024 op, 695493434.00 ns, 679.1928 us/op
+WorkloadResult   3: 1024 op, 729014940.00 ns, 711.9287 us/op
+// GC:  176 0 0 1474561072 1024
+// Threading:  0 0 1024
+
+// AfterAll
+// Benchmark Process 1382349 has exited with code 0.
+
+Mean = 691.338 μs, StdErr = 10.350 μs (1.50%), N = 3, StdDev = 17.928 μs
+Min = 679.193 μs, Q1 = 681.043 μs, Median = 682.893 μs, Q3 = 697.411 μs, Max = 711.929 μs
+IQR = 16.368 μs, LowerFence = 656.491 μs, UpperFence = 721.963 μs
+ConfidenceInterval = [364.273 μs; 1,018.403 μs] (CI 99.9%), Margin = 327.065 μs (47.31% of Mean)
+Skewness = 0.37, Kurtosis = 0.67, MValue = 2
+
+// ** Remained 1 (14.3%) benchmark(s) to run. Estimated finish 2026-07-13 17:17 (0h 0m from now) **
+// **************************
+// Benchmark: CallStackBenchmark.Ffi_NoWorkDoneCall: ShortRun(IterationCount=3, LaunchCount=1, WarmupCount=3)
+// *** Execute ***
+// Launch: 1 / 1
+// Execute: dotnet 2dc70b1f-2c89-4231-9adc-43f11fcdb00f.dll --anonymousPipes 120 121 --benchmarkName Raptor.Benchmarks.CallStackBenchmark.Ffi_NoWorkDoneCall --job ShortRun --benchmarkId 6 in /home/andy/Projects/Raptor/build/Raptor.Benchmarks/bin/Release/net10.0/2dc70b1f-2c89-4231-9adc-43f11fcdb00f/bin/Release/net10.0
+// Failed to set up high priority (Permission denied). In order to run benchmarks with high priority, make sure you have the right permissions.
+// BeforeAnythingElse
+
+// Benchmark Process Environment Information:
+// BenchmarkDotNet v0.14.0
+// Runtime=.NET 10.0.1 (10.0.125.57005), X64 RyuJIT AVX-512F+CD+BW+DQ+VL+VBMI
+// GC=Concurrent Workstation
+// HardwareIntrinsics=AVX-512F+CD+BW+DQ+VL+VBMI,AES,BMI1,BMI2,FMA,LZCNT,PCLMUL,POPCNT VectorSize=256
+// Job: ShortRun(IterationCount=3, LaunchCount=1, WarmupCount=3)
+
+[Raptor FFI Debug] Method 'TypedAdd' successfully bound to zero-allocation FAST-PATH delegate.
+OverheadJitting  1: 1 op, 219543.00 ns, 219.5430 us/op
+WorkloadJitting  1: 1 op, 7107064.00 ns, 7.1071 ms/op
+
+OverheadJitting  2: 16 op, 131397.00 ns, 8.2123 us/op
+WorkloadJitting  2: 16 op, 1027953.00 ns, 64.2471 us/op
+
+WorkloadPilot    1: 16 op, 957772.00 ns, 59.8608 us/op
+WorkloadPilot    2: 32 op, 1648159.00 ns, 51.5050 us/op
+WorkloadPilot    3: 64 op, 3249851.00 ns, 50.7789 us/op
+WorkloadPilot    4: 128 op, 6618245.00 ns, 51.7050 us/op
+WorkloadPilot    5: 256 op, 14361727.00 ns, 56.1005 us/op
+WorkloadPilot    6: 512 op, 26326024.00 ns, 51.4180 us/op
+WorkloadPilot    7: 1024 op, 54181215.00 ns, 52.9113 us/op
+WorkloadPilot    8: 2048 op, 106159777.00 ns, 51.8358 us/op
+WorkloadPilot    9: 4096 op, 193449841.00 ns, 47.2290 us/op
+WorkloadPilot   10: 8192 op, 386278333.00 ns, 47.1531 us/op
+WorkloadPilot   11: 16384 op, 770136175.00 ns, 47.0054 us/op
+
+OverheadWarmup   1: 16384 op, 25388.00 ns, 1.5496 ns/op
+OverheadWarmup   2: 16384 op, 34354.00 ns, 2.0968 ns/op
+OverheadWarmup   3: 16384 op, 33743.00 ns, 2.0595 ns/op
+OverheadWarmup   4: 16384 op, 33493.00 ns, 2.0443 ns/op
+OverheadWarmup   5: 16384 op, 25799.00 ns, 1.5746 ns/op
+OverheadWarmup   6: 16384 op, 24967.00 ns, 1.5239 ns/op
+OverheadWarmup   7: 16384 op, 24967.00 ns, 1.5239 ns/op
+OverheadWarmup   8: 16384 op, 34064.00 ns, 2.0791 ns/op
+
+OverheadActual   1: 16384 op, 25488.00 ns, 1.5557 ns/op
+OverheadActual   2: 16384 op, 21751.00 ns, 1.3276 ns/op
+OverheadActual   3: 16384 op, 21791.00 ns, 1.3300 ns/op
+OverheadActual   4: 16384 op, 33072.00 ns, 2.0186 ns/op
+OverheadActual   5: 16384 op, 25728.00 ns, 1.5703 ns/op
+OverheadActual   6: 16384 op, 33353.00 ns, 2.0357 ns/op
+OverheadActual   7: 16384 op, 32891.00 ns, 2.0075 ns/op
+OverheadActual   8: 16384 op, 21741.00 ns, 1.3270 ns/op
+OverheadActual   9: 16384 op, 26139.00 ns, 1.5954 ns/op
+OverheadActual  10: 16384 op, 24847.00 ns, 1.5165 ns/op
+OverheadActual  11: 16384 op, 24856.00 ns, 1.5171 ns/op
+OverheadActual  12: 16384 op, 24977.00 ns, 1.5245 ns/op
+OverheadActual  13: 16384 op, 25178.00 ns, 1.5367 ns/op
+OverheadActual  14: 16384 op, 33613.00 ns, 2.0516 ns/op
+OverheadActual  15: 16384 op, 34224.00 ns, 2.0889 ns/op
+OverheadActual  16: 16384 op, 33012.00 ns, 2.0149 ns/op
+OverheadActual  17: 16384 op, 33603.00 ns, 2.0510 ns/op
+OverheadActual  18: 16384 op, 28724.00 ns, 1.7532 ns/op
+OverheadActual  19: 16384 op, 33653.00 ns, 2.0540 ns/op
+OverheadActual  20: 16384 op, 25187.00 ns, 1.5373 ns/op
+
+WorkloadWarmup   1: 16384 op, 767401643.00 ns, 46.8385 us/op
+WorkloadWarmup   2: 16384 op, 769353072.00 ns, 46.9576 us/op
+WorkloadWarmup   3: 16384 op, 772117151.00 ns, 47.1263 us/op
+
+// BeforeActualRun
+WorkloadActual   1: 16384 op, 845842788.00 ns, 51.6261 us/op
+WorkloadActual   2: 16384 op, 854358821.00 ns, 52.1459 us/op
+WorkloadActual   3: 16384 op, 852502471.00 ns, 52.0326 us/op
+
+// AfterActualRun
+WorkloadResult   1: 16384 op, 845816854.50 ns, 51.6246 us/op
+WorkloadResult   2: 16384 op, 854332887.50 ns, 52.1443 us/op
+WorkloadResult   3: 16384 op, 852476537.50 ns, 52.0310 us/op
+// GC:  0 0 0 736 16384
+// Threading:  0 0 16384
+
+// AfterAll
+// Benchmark Process 1382541 has exited with code 0.
+
+Mean = 51.933 μs, StdErr = 0.158 μs (0.30%), N = 3, StdDev = 0.273 μs
+Min = 51.625 μs, Q1 = 51.828 μs, Median = 52.031 μs, Q3 = 52.088 μs, Max = 52.144 μs
+IQR = 0.260 μs, LowerFence = 51.438 μs, UpperFence = 52.478 μs
+ConfidenceInterval = [46.947 μs; 56.920 μs] (CI 99.9%), Margin = 4.986 μs (9.60% of Mean)
+Skewness = -0.31, Kurtosis = 0.67, MValue = 2
+
+// ** Remained 0 (0.0%) benchmark(s) to run. Estimated finish 2026-07-13 17:17 (0h 0m from now) **
+// ***** BenchmarkRunner: Finish  *****
+
+// * Export *
+  BenchmarkDotNet.Artifacts/results/Raptor.Benchmarks.CallStackBenchmark-report.csv
+  BenchmarkDotNet.Artifacts/results/Raptor.Benchmarks.CallStackBenchmark-report-github.md
+  BenchmarkDotNet.Artifacts/results/Raptor.Benchmarks.CallStackBenchmark-report.html
+
+// * Detailed results *
+CallStackBenchmark.CallStack_Depth_10: ShortRun(IterationCount=3, LaunchCount=1, WarmupCount=3)
+Runtime = .NET 10.0.1 (10.0.125.57005), X64 RyuJIT AVX-512F+CD+BW+DQ+VL+VBMI; GC = Concurrent Workstation
+Mean = 871.084 μs, StdErr = 3.313 μs (0.38%), N = 3, StdDev = 5.739 μs
+Min = 865.852 μs, Q1 = 868.015 μs, Median = 870.177 μs, Q3 = 873.700 μs, Max = 877.223 μs
+IQR = 5.685 μs, LowerFence = 859.487 μs, UpperFence = 882.227 μs
+ConfidenceInterval = [766.381 μs; 975.787 μs] (CI 99.9%), Margin = 104.703 μs (12.02% of Mean)
+Skewness = 0.15, Kurtosis = 0.67, MValue = 2
+-------------------- Histogram --------------------
+[860.630 μs ; 882.445 μs) | @@@
+---------------------------------------------------
+
+CallStackBenchmark.CallStack_Depth_30: ShortRun(IterationCount=3, LaunchCount=1, WarmupCount=3)
+Runtime = .NET 10.0.1 (10.0.125.57005), X64 RyuJIT AVX-512F+CD+BW+DQ+VL+VBMI; GC = Concurrent Workstation
+Mean = 2.297 ms, StdErr = 0.002 ms (0.10%), N = 3, StdDev = 0.004 ms
+Min = 2.294 ms, Q1 = 2.295 ms, Median = 2.295 ms, Q3 = 2.298 ms, Max = 2.301 ms
+IQR = 0.004 ms, LowerFence = 2.289 ms, UpperFence = 2.304 ms
+ConfidenceInterval = [2.226 ms; 2.368 ms] (CI 99.9%), Margin = 0.071 ms (3.08% of Mean)
+Skewness = 0.34, Kurtosis = 0.67, MValue = 2
+-------------------- Histogram --------------------
+[2.290 ms ; 2.305 ms) | @@@
+---------------------------------------------------
+
+CallStackBenchmark.Ffi_InternalCall: ShortRun(IterationCount=3, LaunchCount=1, WarmupCount=3)
+Runtime = .NET 10.0.1 (10.0.125.57005), X64 RyuJIT AVX-512F+CD+BW+DQ+VL+VBMI; GC = Concurrent Workstation
+Mean = 81.651 μs, StdErr = 0.173 μs (0.21%), N = 3, StdDev = 0.299 μs
+Min = 81.437 μs, Q1 = 81.480 μs, Median = 81.523 μs, Q3 = 81.757 μs, Max = 81.992 μs
+IQR = 0.278 μs, LowerFence = 81.063 μs, UpperFence = 82.174 μs
+ConfidenceInterval = [76.197 μs; 87.104 μs] (CI 99.9%), Margin = 5.454 μs (6.68% of Mean)
+Skewness = 0.35, Kurtosis = 0.67, MValue = 2
+-------------------- Histogram --------------------
+[81.165 μs ; 82.264 μs) | @@@
+---------------------------------------------------
+
+CallStackBenchmark.Ffi_DirectBind: ShortRun(IterationCount=3, LaunchCount=1, WarmupCount=3)
+Runtime = .NET 10.0.1 (10.0.125.57005), X64 RyuJIT AVX-512F+CD+BW+DQ+VL+VBMI; GC = Concurrent Workstation
+Mean = 49.311 μs, StdErr = 0.210 μs (0.43%), N = 3, StdDev = 0.364 μs
+Min = 48.959 μs, Q1 = 49.124 μs, Median = 49.289 μs, Q3 = 49.488 μs, Max = 49.686 μs
+IQR = 0.364 μs, LowerFence = 48.578 μs, UpperFence = 50.034 μs
+ConfidenceInterval = [42.663 μs; 55.960 μs] (CI 99.9%), Margin = 6.649 μs (13.48% of Mean)
+Skewness = 0.06, Kurtosis = 0.67, MValue = 2
+-------------------- Histogram --------------------
+[48.627 μs ; 50.018 μs) | @@@
+---------------------------------------------------
+
+CallStackBenchmark.Ffi_TypedWrapper: ShortRun(IterationCount=3, LaunchCount=1, WarmupCount=3)
+Runtime = .NET 10.0.1 (10.0.125.57005), X64 RyuJIT AVX-512F+CD+BW+DQ+VL+VBMI; GC = Concurrent Workstation
+Mean = 58.358 μs, StdErr = 0.604 μs (1.03%), N = 3, StdDev = 1.046 μs
+Min = 57.154 μs, Q1 = 58.015 μs, Median = 58.876 μs, Q3 = 58.960 μs, Max = 59.044 μs
+IQR = 0.945 μs, LowerFence = 56.598 μs, UpperFence = 60.377 μs
+ConfidenceInterval = [39.273 μs; 77.442 μs] (CI 99.9%), Margin = 19.084 μs (32.70% of Mean)
+Skewness = -0.37, Kurtosis = 0.67, MValue = 2
+-------------------- Histogram --------------------
+[57.147 μs ; 59.051 μs) | @@@
+---------------------------------------------------
+
+CallStackBenchmark.Ffi_Fallback: ShortRun(IterationCount=3, LaunchCount=1, WarmupCount=3)
+Runtime = .NET 10.0.1 (10.0.125.57005), X64 RyuJIT AVX-512F+CD+BW+DQ+VL+VBMI; GC = Concurrent Workstation
+Mean = 691.338 μs, StdErr = 10.350 μs (1.50%), N = 3, StdDev = 17.928 μs
+Min = 679.193 μs, Q1 = 681.043 μs, Median = 682.893 μs, Q3 = 697.411 μs, Max = 711.929 μs
+IQR = 16.368 μs, LowerFence = 656.491 μs, UpperFence = 721.963 μs
+ConfidenceInterval = [364.273 μs; 1,018.403 μs] (CI 99.9%), Margin = 327.065 μs (47.31% of Mean)
+Skewness = 0.37, Kurtosis = 0.67, MValue = 2
+-------------------- Histogram --------------------
+[662.878 μs ; 697.358 μs) | @@
+[697.358 μs ; 728.243 μs) | @
+---------------------------------------------------
+
+CallStackBenchmark.Ffi_NoWorkDoneCall: ShortRun(IterationCount=3, LaunchCount=1, WarmupCount=3)
+Runtime = .NET 10.0.1 (10.0.125.57005), X64 RyuJIT AVX-512F+CD+BW+DQ+VL+VBMI; GC = Concurrent Workstation
+Mean = 51.933 μs, StdErr = 0.158 μs (0.30%), N = 3, StdDev = 0.273 μs
+Min = 51.625 μs, Q1 = 51.828 μs, Median = 52.031 μs, Q3 = 52.088 μs, Max = 52.144 μs
+IQR = 0.260 μs, LowerFence = 51.438 μs, UpperFence = 52.478 μs
+ConfidenceInterval = [46.947 μs; 56.920 μs] (CI 99.9%), Margin = 4.986 μs (9.60% of Mean)
+Skewness = -0.31, Kurtosis = 0.67, MValue = 2
+-------------------- Histogram --------------------
+[51.376 μs ; 52.393 μs) | @@@
+---------------------------------------------------
+
+// * Summary *
+
+BenchmarkDotNet v0.14.0, Arch Linux
+AMD Ryzen 7 260 w/ Radeon 780M Graphics, 1 CPU, 16 logical and 8 physical cores
+.NET SDK 10.0.101
+  [Host]   : .NET 10.0.1 (10.0.125.57005), X64 RyuJIT AVX-512F+CD+BW+DQ+VL+VBMI
+  ShortRun : .NET 10.0.1 (10.0.125.57005), X64 RyuJIT AVX-512F+CD+BW+DQ+VL+VBMI
+
+Job=ShortRun  IterationCount=3  LaunchCount=1  
+WarmupCount=3  
+
+| Method             | Mean        | Error      | StdDev    | Gen0     | Allocated |
+|------------------- |------------:|-----------:|----------:|---------:|----------:|
+| CallStack_Depth_10 |   871.08 μs | 104.703 μs |  5.739 μs |        - |         - |
+| CallStack_Depth_30 | 2,296.78 μs |  70.854 μs |  3.884 μs |        - |         - |
+| Ffi_InternalCall   |    81.65 μs |   5.454 μs |  0.299 μs |        - |         - |
+| Ffi_DirectBind     |    49.31 μs |   6.649 μs |  0.364 μs |        - |         - |
+| Ffi_TypedWrapper   |    58.36 μs |  19.084 μs |  1.046 μs |        - |         - |
+| Ffi_Fallback       |   691.34 μs | 327.065 μs | 17.928 μs | 171.8750 | 1440001 B |
+| Ffi_NoWorkDoneCall |    51.93 μs |   4.986 μs |  0.273 μs |        - |         - |
+
+// * Legends *
+  Mean      : Arithmetic mean of all measurements
+  Error     : Half of 99.9% confidence interval
+  StdDev    : Standard deviation of all measurements
+  Gen0      : GC Generation 0 collects per 1000 operations
+  Allocated : Allocated memory per single operation (managed only, inclusive, 1KB = 1024B)
+  1 μs      : 1 Microsecond (0.000001 sec)
+
+// * Diagnostic Output - MemoryDiagnoser *
+
+
+// ***** BenchmarkRunner: End *****
+Run time: 00:00:50 (50.79 sec), executed benchmarks: 7
+
+Global total time: 00:00:57 (57.35 sec), executed benchmarks: 7
+// * Artifacts cleanup *
+Artifacts cleanup is finished

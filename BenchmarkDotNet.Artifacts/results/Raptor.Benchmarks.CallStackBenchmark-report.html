@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='utf-8' />
+<title>Raptor.Benchmarks.CallStackBenchmark-20260713-172252</title>
+
+<style type="text/css">
+	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
+	td, th { padding: 6px 13px; border: 1px solid #ddd; text-align: right; }
+	tr { background-color: #fff; border-top: 1px solid #ccc; }
+	tr:nth-child(even) { background: #f8f8f8; }
+</style>
+</head>
+<body>
+<pre><code>
+BenchmarkDotNet v0.14.0, Arch Linux
+AMD Ryzen 7 260 w/ Radeon 780M Graphics, 1 CPU, 16 logical and 8 physical cores
+.NET SDK 10.0.101
+  [Host]     : .NET 10.0.1 (10.0.125.57005), X64 RyuJIT AVX-512F+CD+BW+DQ+VL+VBMI
+  DefaultJob : .NET 10.0.1 (10.0.125.57005), X64 RyuJIT AVX-512F+CD+BW+DQ+VL+VBMI
+</code></pre>
+<pre><code></code></pre>
+
+<table>
+<thead><tr><th>Method      </th><th>Mean </th><th>Error</th><th>StdDev</th><th>Gen0</th><th>Allocated</th>
+</tr>
+</thead><tbody><tr><td>CallStack_Depth_10</td><td>871.68 &mu;s</td><td>5.095 &mu;s</td><td>4.766 &mu;s</td><td>-</td><td>-</td>
+</tr><tr><td>CallStack_Depth_30</td><td>2,318.44 &mu;s</td><td>15.071 &mu;s</td><td>14.097 &mu;s</td><td>-</td><td>-</td>
+</tr><tr><td>Ffi_InternalCall</td><td>83.96 &mu;s</td><td>1.661 &mu;s</td><td>3.318 &mu;s</td><td>-</td><td>-</td>
+</tr><tr><td>Ffi_DirectBind</td><td>49.78 &mu;s</td><td>0.193 &mu;s</td><td>0.181 &mu;s</td><td>-</td><td>-</td>
+</tr><tr><td>Ffi_TypedWrapper</td><td>61.52 &mu;s</td><td>0.329 &mu;s</td><td>0.308 &mu;s</td><td>-</td><td>-</td>
+</tr><tr><td>Ffi_Fallback</td><td>850.82 &mu;s</td><td>16.915 &mu;s</td><td>16.613 &mu;s</td><td>171.8750</td><td>1440001 B</td>
+</tr><tr><td>Ffi_NoWorkDoneCall</td><td>49.56 &mu;s</td><td>0.207 &mu;s</td><td>0.173 &mu;s</td><td>-</td><td>-</td>
+</tr></tbody></table>
+</body>
+</html>

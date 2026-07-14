@@ -350,4 +350,41 @@ if (targetDistance < 5.0) {
         VMChunk chunk = engine.Compile(rasm);
         Assert.NotEmpty(chunk.Instructions);
     }
+
+    [Fact]
+    public void RaptorScriptCompiler_PropertyMappingTest()
+    {
+        string raptorScript = @"
+var val = enemy.x + enemy.y;
+enemy.z = val * 2.0;
+";
+        var propertyMappings = new Dictionary<string, int>
+        {
+            { "enemy.x", 1 },
+            { "enemy.y", 2 },
+            { "enemy.z", 3 }
+        };
+
+        string rasmCode = Raptor.Compiler.RaptorScriptCompiler.Compile(raptorScript, out var variables, propertyMappings);
+
+        ScriptEngine engine = new ScriptEngine();
+        VMChunk chunk = engine.Compile(rasmCode);
+
+        // Create VM state and set registers 1 and 2 manually from C#
+        var vm = new VirtualMachine();
+        vm.LoadProgram(chunk);
+        
+        vm.SetRegister(1, 10.0); // enemy.x
+        vm.SetRegister(2, 20.0); // enemy.y
+        
+        vm.RunFast();
+
+        // Read register 3 (enemy.z) directly from C#
+        double zVal = vm.GetRegister(3);
+        Assert.Equal(60.0, zVal);
+
+        // Check that temp variable 'val' got allocated in a safe register (index >= 4)
+        int valReg = variables["val"];
+        Assert.True(valReg >= 4);
+    }
 }

@@ -2,7 +2,7 @@
 <html lang='en'>
 <head>
 <meta charset='utf-8' />
-<title>Raptor.Benchmarks.VmBenchmarks-20260712-124150</title>
+<title>Raptor.Benchmarks.VmBenchmarks-20260713-163220</title>
 
 <style type="text/css">
 	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
@@ -16,22 +16,26 @@
 BenchmarkDotNet v0.14.0, Arch Linux
 AMD Ryzen 7 260 w/ Radeon 780M Graphics, 1 CPU, 16 logical and 8 physical cores
 .NET SDK 10.0.101
-  [Host]     : .NET 10.0.1 (10.0.125.57005), X64 RyuJIT AVX-512F+CD+BW+DQ+VL+VBMI
-  DefaultJob : .NET 10.0.1 (10.0.125.57005), X64 RyuJIT AVX-512F+CD+BW+DQ+VL+VBMI
+  [Host]   : .NET 10.0.1 (10.0.125.57005), X64 RyuJIT AVX-512F+CD+BW+DQ+VL+VBMI
+  ShortRun : .NET 10.0.1 (10.0.125.57005), X64 RyuJIT AVX-512F+CD+BW+DQ+VL+VBMI
 </code></pre>
-<pre><code></code></pre>
+<pre><code>Job=ShortRun  IterationCount=3  LaunchCount=1  
+WarmupCount=3  
+</code></pre>
 
 <table>
-<thead><tr><th>Method                  </th><th>Mean </th><th>Error</th><th>StdDev</th><th>Gen0</th><th>Allocated</th>
+<thead><tr><th>Method                  </th><th>Mean    </th><th>Error  </th><th>StdDev</th><th>Gen0</th><th>Allocated</th>
 </tr>
-</thead><tbody><tr><td>Benchmark_Fibonacci</td><td>565.22 &mu;s</td><td>11.017 &mu;s</td><td>9.766 &mu;s</td><td>-</td><td>2.2 KB</td>
-</tr><tr><td>Benchmark_MonteCarlo</td><td>1,898.82 &mu;s</td><td>17.326 &mu;s</td><td>16.207 &mu;s</td><td>-</td><td>2.21 KB</td>
-</tr><tr><td>Benchmark_Perceptron</td><td>197.21 &mu;s</td><td>2.228 &mu;s</td><td>2.084 &mu;s</td><td>0.2441</td><td>2.2 KB</td>
-</tr><tr><td>Benchmark_RayTracerSingleFrame</td><td>281.96 &mu;s</td><td>5.173 &mu;s</td><td>4.839 &mu;s</td><td>-</td><td>2.2 KB</td>
-</tr><tr><td>Benchmark_FfiDirectBind</td><td>75.88 &mu;s</td><td>0.177 &mu;s</td><td>0.138 &mu;s</td><td>0.2441</td><td>2.2 KB</td>
-</tr><tr><td>Benchmark_FfiTypedWrapper</td><td>94.71 &mu;s</td><td>0.655 &mu;s</td><td>0.547 &mu;s</td><td>0.2441</td><td>2.2 KB</td>
-</tr><tr><td>Benchmark_InternalCall</td><td>92.57 &mu;s</td><td>1.808 &mu;s</td><td>1.935 &mu;s</td><td>0.2441</td><td>2.2 KB</td>
-</tr><tr><td>Benchmark_FfiFallback</td><td>781.91 &mu;s</td><td>15.578 &mu;s</td><td>19.131 &mu;s</td><td>171.8750</td><td>1408.17 KB</td>
+</thead><tbody><tr><td>Benchmark_Fibonacci</td><td>139.7 ns</td><td>9.31 ns</td><td>0.51 ns</td><td>-</td><td>-</td>
+</tr><tr><td>Benchmark_MonteCarlo</td><td>1,842,739.9 ns</td><td>161,918.55 ns</td><td>8,875.30 ns</td><td>-</td><td>-</td>
+</tr><tr><td>Benchmark_Perceptron</td><td>189,750.9 ns</td><td>18,959.64 ns</td><td>1,039.24 ns</td><td>-</td><td>-</td>
+</tr><tr><td>Benchmark_RayTracerSingleFrame</td><td>8,160.1 ns</td><td>361.53 ns</td><td>19.82 ns</td><td>-</td><td>-</td>
+</tr><tr><td>Benchmark_FfiDirectBind</td><td>49,977.5 ns</td><td>4,917.51 ns</td><td>269.55 ns</td><td>-</td><td>-</td>
+</tr><tr><td>Benchmark_FfiTypedWrapper</td><td>62,125.0 ns</td><td>2,098.34 ns</td><td>115.02 ns</td><td>-</td><td>-</td>
+</tr><tr><td>Benchmark_InternalCall</td><td>82,586.3 ns</td><td>43,882.29 ns</td><td>2,405.34 ns</td><td>-</td><td>-</td>
+</tr><tr><td>Benchmark_FfiFallback</td><td>759,439.5 ns</td><td>72,407.36 ns</td><td>3,968.89 ns</td><td>171.8750</td><td>1440001 B</td>
+</tr><tr><td>Benchmark_PhysicsMovement</td><td>188,850.9 ns</td><td>22,622.24 ns</td><td>1,240.00 ns</td><td>-</td><td>-</td>
+</tr><tr><td>Benchmark_CombatDamage</td><td>866.3 ns</td><td>164.71 ns</td><td>9.03 ns</td><td>-</td><td>-</td>
 </tr></tbody></table>
 </body>
 </html>
