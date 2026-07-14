@@ -22,10 +22,13 @@ public class RunCommand : Command<RunCommand.Settings>
     }
 
     private readonly ScriptEngine _engine;
+    private readonly FFIHostTable _hostTable;
 
-    public RunCommand(ScriptEngine engine)
+    public RunCommand(FFIHostTable table)
     {
-        _engine = engine;
+        _hostTable = table;
+        _engine = new ScriptEngine();
+        _engine.RegisterHostTable(_hostTable);
     }
 
     protected override int Execute(
@@ -47,6 +50,11 @@ public class RunCommand : Command<RunCommand.Settings>
             {
                 Directory.CreateDirectory("build");
             }
+            string apiPath = Path.Combine(
+                "build",
+                Path.GetFileNameWithoutExtension(settings.ScriptPath) + "-api.json"
+            );
+            File.WriteAllText(apiPath, _hostTable.GenerateAutocompleteDeclarations());
             string targetPath = Path.Combine("build", settings.ScriptPath);
             if (settings.OmitRaptorAssembly)
                 File.WriteAllText(Path.ChangeExtension(targetPath, "rasm"), asm);

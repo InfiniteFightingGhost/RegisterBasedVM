@@ -60,7 +60,6 @@ namespace Raptor
         )
         {
             _hostMethods.Add(name, (index, callback));
-            Console.WriteLine("Host method count is somehow " + _hostMethods.Count);
             _vm.RegisterHostMethod(index, callback);
         }
 

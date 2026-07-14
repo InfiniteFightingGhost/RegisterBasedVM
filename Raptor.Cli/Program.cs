@@ -7,11 +7,9 @@ using Spectre.Console.Cli;
 var table = new FFIHostTable();
 table.RegisterModule(typeof(RaptorMath));
 table.RegisterModule(typeof(RaptorPeriferals));
-var engine = new ScriptEngine();
-engine.RegisterHostTable(table);
 
 var services = new ServiceCollection();
-services.AddSingleton(engine);
+services.AddSingleton(table);
 
 var registrar = new TypeRegistrar(services);
 var app = new CommandApp(registrar);
@@ -19,6 +17,8 @@ var app = new CommandApp(registrar);
 app.Configure(config =>
 {
     config.AddCommand<RunCommand>("run");
+    config.AddCommand<DocsCommand>("docs");
+    config.AddCommand<BuildCommand>("build");
 });
 
 return app.Run(args);

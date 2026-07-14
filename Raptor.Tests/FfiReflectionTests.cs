@@ -5,9 +5,9 @@ using Xunit;
 
 namespace Raptor.Tests;
 
-// ──────────────────────────────────────────────────────────────
+// --------------------------------------------------------------
 //  Test Modules (used by multiple tests)
-// ──────────────────────────────────────────────────────────────
+// --------------------------------------------------------------
 
 [RaptorModule]
 public class StaticDirectBindModule
@@ -15,7 +15,10 @@ public class StaticDirectBindModule
     [RaptorMethod("doubleR0", 100)]
     public static void DoubleR0(ref VMState state)
     {
-        unsafe { state.RegPtr[0] = state.RegPtr[0] * 2.0; }
+        unsafe
+        {
+            state.RegPtr[0] = state.RegPtr[0] * 2.0;
+        }
     }
 }
 
@@ -23,12 +26,16 @@ public class StaticDirectBindModule
 public class InstanceDirectBindModule
 {
     private readonly double _multiplier;
+
     public InstanceDirectBindModule(double multiplier) => _multiplier = multiplier;
 
     [RaptorMethod("multiply", 101)]
     public void Multiply(ref VMState state)
     {
-        unsafe { state.RegPtr[0] = state.RegPtr[0] * _multiplier; }
+        unsafe
+        {
+            state.RegPtr[0] = state.RegPtr[0] * _multiplier;
+        }
     }
 }
 
@@ -38,7 +45,10 @@ public class PrefixedModule
     [RaptorMethod]
     public static void Add(ref VMState state)
     {
-        unsafe { state.RegPtr[0] = state.RegPtr[0] + state.RegPtr[1]; }
+        unsafe
+        {
+            state.RegPtr[0] = state.RegPtr[0] + state.RegPtr[1];
+        }
     }
 }
 
@@ -48,7 +58,10 @@ public class AutoNameModule
     [RaptorMethod]
     public static void SpawnEnemy(ref VMState state)
     {
-        unsafe { state.RegPtr[0] = 999.0; }
+        unsafe
+        {
+            state.RegPtr[0] = 999.0;
+        }
     }
 }
 
@@ -58,14 +71,20 @@ public class IgnoreModule
     [RaptorMethod]
     public static void Visible(ref VMState state)
     {
-        unsafe { state.RegPtr[0] = 1.0; }
+        unsafe
+        {
+            state.RegPtr[0] = 1.0;
+        }
     }
 
     [RaptorIgnore]
     [RaptorMethod]
     public static void Hidden(ref VMState state)
     {
-        unsafe { state.RegPtr[0] = -1.0; }
+        unsafe
+        {
+            state.RegPtr[0] = -1.0;
+        }
     }
 }
 
@@ -75,11 +94,12 @@ public class MetadataModule
     [RaptorMethod("documented")]
     [RaptorDescription("Adds r0 and r1, stores result in r0")]
     [RaptorPure]
-    public static void DocumentedAdd(
-        [RaptorParam("First operand")] ref VMState state
-    )
+    public static void DocumentedAdd([RaptorParam("First operand")] ref VMState state)
     {
-        unsafe { state.RegPtr[0] = state.RegPtr[0] + state.RegPtr[1]; }
+        unsafe
+        {
+            state.RegPtr[0] = state.RegPtr[0] + state.RegPtr[1];
+        }
     }
 }
 
@@ -166,7 +186,8 @@ public class UnsupportedParamModule
 public class FallbackPathModule
 {
     [RaptorMethod("sumFive", 200)]
-    public static double SumFive(double a, double b, double c, double d, double e) => a + b + c + d + e;
+    public static double SumFive(double a, double b, double c, double d, double e) =>
+        a + b + c + d + e;
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -188,12 +209,14 @@ public class FfiReflectionTests
 
         ScriptEngine engine = new ScriptEngine();
         engine.RegisterHostTable(table);
-        ExecutionResult result = engine.Run(@"
+        ExecutionResult result = engine.Run(
+            @"
 LOADC r1 21.0
 CALL doubleR0() r1
 MOVE r2 r1
 HALT
-");
+"
+        );
         Assert.Equal(VMStatus.Halted, result.Status);
         Assert.Equal(42.0, result.RegistersSnapshot[2]);
     }
@@ -209,12 +232,14 @@ HALT
 
         ScriptEngine engine = new ScriptEngine();
         engine.RegisterHostTable(table);
-        ExecutionResult result = engine.Run(@"
+        ExecutionResult result = engine.Run(
+            @"
 LOADC r1 10.0
 CALL multiply() r1
 MOVE r2 r1
 HALT
-");
+"
+        );
         Assert.Equal(VMStatus.Halted, result.Status);
         Assert.Equal(30.0, result.RegistersSnapshot[2]);
     }
@@ -229,13 +254,15 @@ HALT
 
         ScriptEngine engine = new ScriptEngine();
         engine.RegisterHostTable(table);
-        ExecutionResult result = engine.Run(@"
+        ExecutionResult result = engine.Run(
+            @"
 LOADC r1 21.0
 LOADC r2 21.0
 CALL addDoubles() r1
 MOVE r3 r1
 HALT
-");
+"
+        );
         Assert.Equal(VMStatus.Halted, result.Status);
         Assert.Equal(42.0, result.RegistersSnapshot[3]);
     }
@@ -248,13 +275,15 @@ HALT
 
         ScriptEngine engine = new ScriptEngine();
         engine.RegisterHostTable(table);
-        ExecutionResult result = engine.Run(@"
+        ExecutionResult result = engine.Run(
+            @"
 LOADC r1 6.0
 LOADC r2 7.0
 CALL multiplyInts() r1
 MOVE r3 r1
 HALT
-");
+"
+        );
         Assert.Equal(VMStatus.Halted, result.Status);
         Assert.Equal(42.0, result.RegistersSnapshot[3]);
     }
@@ -267,12 +296,14 @@ HALT
 
         ScriptEngine engine = new ScriptEngine();
         engine.RegisterHostTable(table);
-        ExecutionResult result = engine.Run(@"
+        ExecutionResult result = engine.Run(
+            @"
 LOADC r1 5.0
 CALL isPositive() r1
 MOVE r2 r1
 HALT
-");
+"
+        );
         Assert.Equal(VMStatus.Halted, result.Status);
         Assert.Equal(1.0, result.RegistersSnapshot[2]); // true → 1.0
     }
@@ -286,11 +317,13 @@ HALT
 
         ScriptEngine engine = new ScriptEngine();
         engine.RegisterHostTable(table);
-        ExecutionResult result = engine.Run(@"
+        ExecutionResult result = engine.Run(
+            @"
 LOADC r1 123.0
 CALL setFlag() r1
 HALT
-");
+"
+        );
         Assert.Equal(VMStatus.Halted, result.Status);
         Assert.Equal(123.0, TypedWrapperVoidModule.CapturedValue);
     }
@@ -304,13 +337,15 @@ HALT
 
         ScriptEngine engine = new ScriptEngine();
         engine.RegisterHostTable(table);
-        ExecutionResult result = engine.Run(@"
+        ExecutionResult result = engine.Run(
+            @"
 LOADC r1 6.0
 LOADC r2 7.0
 CALL computeInstance() r1
 MOVE r3 r1
 HALT
-");
+"
+        );
         Assert.Equal(VMStatus.Halted, result.Status);
         Assert.Equal(42.0, result.RegistersSnapshot[3]);
         Assert.Equal(42.0, module.LastResult);
@@ -359,13 +394,15 @@ HALT
 
         ScriptEngine engine = new ScriptEngine();
         engine.RegisterHostTable(table);
-        ExecutionResult result = engine.Run(@"
+        ExecutionResult result = engine.Run(
+            @"
 LOADC r1 20.0
 LOADC r2 22.0
 CALL math.add() r1
 MOVE r3 r1
 HALT
-");
+"
+        );
         Assert.Equal(VMStatus.Halted, result.Status);
         Assert.Equal(42.0, result.RegistersSnapshot[3]);
     }
@@ -425,7 +462,8 @@ HALT
         table.RegisterModule(typeof(DuplicateNameModuleA));
 
         var ex = Assert.Throws<InvalidOperationException>(() =>
-            table.RegisterModule(typeof(DuplicateNameModuleB)));
+            table.RegisterModule(typeof(DuplicateNameModuleB))
+        );
         Assert.Contains("conflict", ex.Message);
     }
 
@@ -436,7 +474,8 @@ HALT
         table.RegisterModule(typeof(DuplicateIndexModuleA));
 
         var ex = Assert.Throws<InvalidOperationException>(() =>
-            table.RegisterModule(typeof(DuplicateIndexModuleB)));
+            table.RegisterModule(typeof(DuplicateIndexModuleB))
+        );
         Assert.Contains("5", ex.Message);
     }
 
@@ -445,7 +484,8 @@ HALT
     {
         var table = new FFIHostTable();
         var ex = Assert.Throws<NotSupportedException>(() =>
-            table.RegisterModule<UnsupportedTypeModule>());
+            table.RegisterModule<UnsupportedTypeModule>()
+        );
         Assert.Contains("String", ex.Message);
     }
 
@@ -454,7 +494,8 @@ HALT
     {
         var table = new FFIHostTable();
         var ex = Assert.Throws<NotSupportedException>(() =>
-            table.RegisterModule<UnsupportedParamModule>());
+            table.RegisterModule<UnsupportedParamModule>()
+        );
         Assert.Contains("String", ex.Message);
     }
 
@@ -500,12 +541,14 @@ HALT
         ScriptEngine engine = new ScriptEngine();
         engine.RegisterHostTable(table);
 
-        VMChunk chunk = engine.Compile(@"
+        VMChunk chunk = engine.Compile(
+            @"
 LOADC r1 100.0
 CALL doubleR0() r1
 MOVE r2 r1
 HALT
-");
+"
+        );
         ExecutionResult result = engine.Execute(chunk);
         Assert.Equal(VMStatus.Halted, result.Status);
         Assert.Equal(200.0, result.RegistersSnapshot[2]);
@@ -517,22 +560,31 @@ HALT
     public void ManualRegister_StillWorks()
     {
         var table = new FFIHostTable();
-        table.Register("tripleR0", 10, (ref VMState state) =>
-        {
-            unsafe { state.RegPtr[0] = state.RegPtr[0] * 3.0; }
-        });
+        table.Register(
+            "tripleR0",
+            10,
+            (ref VMState state) =>
+            {
+                unsafe
+                {
+                    state.RegPtr[0] = state.RegPtr[0] * 3.0;
+                }
+            }
+        );
 
         Assert.True(table.Methods.ContainsKey("tripleR0"));
         Assert.Equal((ushort)10, table.Methods["tripleR0"].Index);
 
         ScriptEngine engine = new ScriptEngine();
         engine.RegisterHostTable(table);
-        ExecutionResult result = engine.Run(@"
+        ExecutionResult result = engine.Run(
+            @"
 LOADC r1 14.0
 CALL tripleR0() r1
 MOVE r2 r1
 HALT
-");
+"
+        );
         Assert.Equal(VMStatus.Halted, result.Status);
         Assert.Equal(42.0, result.RegistersSnapshot[2]);
     }
@@ -545,7 +597,8 @@ HALT
 
         ScriptEngine engine = new ScriptEngine();
         engine.RegisterHostTable(table);
-        ExecutionResult result = engine.Run(@"
+        ExecutionResult result = engine.Run(
+            @"
 LOADC r1 1.0
 LOADC r2 2.0
 LOADC r3 3.0
@@ -554,7 +607,8 @@ LOADC r5 5.0
 CALL sumFive() r1
 MOVE r6 r1
 HALT
-");
+"
+        );
         Assert.Equal(VMStatus.Halted, result.Status);
         Assert.Equal(15.0, result.RegistersSnapshot[6]);
     }
@@ -566,12 +620,14 @@ HALT
         table.RegisterModule<TypingsTestModule>();
 
         string decls = table.GenerateAutocompleteDeclarations();
-        
-        Assert.Contains("declare namespace myGame", decls);
-        Assert.Contains("function spawn(x: number, y: number): void;", decls);
-        Assert.Contains("Spawns an entity in the game world.", decls);
-        Assert.Contains("@param x X coordinate", decls);
-        Assert.Contains("@param y Y coordinate", decls);
+        Assert.Contains("\"myGame.spawn\":", decls);
+        Assert.Contains("\"type\": \"method\"", decls);
+        Assert.Contains("\"signature\": \"myGame.spawn(x, y)\"", decls);
+        Assert.Contains("\"description\": \"Spawns an entity in the game world.\"", decls);
+        Assert.Contains("\"name\": \"x\"", decls);
+        Assert.Contains("\"description\": \"X coordinate\"", decls);
+        Assert.Contains("\"name\": \"y\"", decls);
+        Assert.Contains("\"description\": \"Y coordinate\"", decls);
     }
 }
 

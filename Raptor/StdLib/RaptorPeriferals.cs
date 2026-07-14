@@ -5,7 +5,8 @@ using Raptor.Attributes;
 public static class RaptorPeriferals
 {
     [RaptorMethod]
-    [RaptorDescription("Prints text to the console")]
+    [RaptorDescription("Prints text on the console")]
+    [RaptorParam("number", "The number that will be printed to the console.")]
     public static void Print(ref VMState state)
     {
         unsafe
