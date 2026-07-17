@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using Raptor;
 using Raptor.Compiler;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -10,6 +11,7 @@ public class RunCommand : Command<RunCommand.Settings>
     public class Settings : CommandSettings
     {
         [CommandArgument(0, "<FILE>")]
+        [Description("The path of the script you wish to run.")]
         public string ScriptPath { get; set; }
 
         [CommandOption("--no-build")]
@@ -21,13 +23,12 @@ public class RunCommand : Command<RunCommand.Settings>
         public bool OmitRaptorAssembly { get; set; }
     }
 
-    private readonly ScriptEngine _engine;
+    private readonly ScriptEngine _engine = new();
     private readonly FFIHostTable _hostTable;
 
     public RunCommand(FFIHostTable table)
     {
         _hostTable = table;
-        _engine = new ScriptEngine();
         _engine.RegisterHostTable(_hostTable);
     }
 
@@ -70,7 +71,6 @@ public class RunCommand : Command<RunCommand.Settings>
                 );
                 return 1;
             }
-            return 0;
         }
         else
         {
@@ -80,8 +80,26 @@ public class RunCommand : Command<RunCommand.Settings>
             {
                 AnsiConsole.WriteLine($"[red bold]Build file not found.[/]");
                 AnsiConsole.WriteLine(
-                    $"[red bold]Make sure to build first or use raptor run without --no-building.[/]"
+                    $"[red bold]Make sure to build first or use 'raptor run' without --no-building.[/]"
                 );
+                return 1;
+            }
+            ExecutionResult result = new ExecutionResult();
+            try
+            {
+                result = _engine.Execute(buildPath);
+                AnsiConsole.WriteLine((_engine == null).ToString());
+            }
+            catch (NullReferenceException ex)
+            {
+                AnsiConsole.WriteLine($"[red bold]{ex.Message}[/]");
+                AnsiConsole.WriteLine($"[red bold]{ex.StackTrace}[/]");
+            }
+            if (result.ErrorMessage != null)
+            {
+                AnsiConsole.WriteLine("[red bold]Error occured at raptor script[/]");
+                AnsiConsole.WriteLine($"[red bold]{result.ErrorMessage}[/]");
+                return 1;
             }
         }
         return 0;

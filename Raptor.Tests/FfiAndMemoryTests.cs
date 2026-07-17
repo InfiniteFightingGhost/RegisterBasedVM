@@ -152,4 +152,37 @@ HALT
         Assert.Equal(VMStatus.Halted, result.Status);
         Assert.Equal(90.0, vm.GetRegister(1));
     }
+
+    [Fact]
+    public void ArrayLengthTest()
+    {
+        var engine = new ScriptEngine();
+        string testScript =
+            @"
+var size = 128;
+var arr = alloc(size);
+var length = len(arr);
+";
+        string asm = Compiler.RaptorScriptCompiler.Compile(testScript);
+        var chunk = engine.Compile(asm);
+        var vm = new VirtualMachine();
+        vm.LoadProgram(chunk);
+        var result = vm.RunFast();
+
+        Assert.Equal(VMStatus.Halted, result.Status);
+        // Find the register where 'length' is stored.
+        // According to compilation rules, the local variable length will map to a register.
+        // We can check registers via VM's GetRegister.
+        // Let's assert that one of the registers holds 128.0.
+        bool found128 = false;
+        for (int i = 0; i < 256; i++)
+        {
+            if (vm.GetRegister(i) == 128.0)
+            {
+                found128 = true;
+                break;
+            }
+        }
+        Assert.True(found128, "A register should contain the array length 128.0");
+    }
 }

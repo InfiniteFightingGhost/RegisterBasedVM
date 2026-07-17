@@ -1166,7 +1166,7 @@ namespace Raptor.Compiler
                     {
                         if (call.Arguments.Count != 1)
                             throw new Exception(
-                                "alloc() expects exactly 1 argument (the array size)"
+                                "alloc() expects exactly 1 argument (the array size)."
                             );
                         int sizeReg = EmitExpression(call.Arguments[0]);
                         int destReg = _regCounter++;
@@ -1185,6 +1185,17 @@ namespace Raptor.Compiler
                         _sb.AppendLine($"FREEARR r{freeArrReg}");
 
                         return 0;
+                    }
+                    if (call.MethodName == "len")
+                    {
+                        if (call.Arguments.Count != 1)
+                            throw new Exception(
+                                "len() expects exactly 1 argument (the array to check)."
+                            );
+                        int lenArrReg = EmitExpression(call.Arguments[0]);
+                        int destReg = _regCounter++;
+                        _sb.AppendLine($"LENARR r{destReg} r{lenArrReg}");
+                        return destReg;
                     }
                     int returnReg = _regCounter++;
                     EmitCall(call, returnReg);

@@ -358,6 +358,9 @@ namespace Raptor
                             case OpCode.MOD:
                                 ExecuteMod(instruction, ref state);
                                 break;
+                            case OpCode.LENARR:
+                                ExecuteLenArray(instruction, ref state);
+                                break;
                         }
                     }
                 }
@@ -541,6 +544,9 @@ namespace Raptor
                                 break;
                             case OpCode.MOD:
                                 ExecuteMod(instruction, ref state);
+                                break;
+                            case OpCode.LENARR:
+                                ExecuteLenArray(instruction, ref state);
                                 break;
                         }
                     }
@@ -732,6 +738,9 @@ namespace Raptor
                                 break;
                             case OpCode.MOD:
                                 ExecuteMod(instruction, ref state);
+                                break;
+                            case OpCode.LENARR:
+                                ExecuteLenArray(instruction, ref state);
                                 break;
                         }
                     }
@@ -1447,6 +1456,17 @@ namespace Raptor
             ushort c = instruction.C;
             double valC = c < 256 ? Reg(state.RegPtr, c) : state.ConstPtr[c - 256];
             Reg(state.RegPtr, a) = (double)((long)valB >> (int)valC);
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe bool ExecuteLenArray(Instruction instruction, ref VMState state)
+        {
+            byte a = instruction.A;
+            ushort b = instruction.B;
+            double valB = b < 256 ? Reg(state.RegPtr, b) : state.ConstPtr[b - 256];
+            uint sizeInBytes = *(uint*)((byte*)(ulong)valB - 4);
+            Reg(state.RegPtr, a) = (double)((sizeInBytes - 4) / 8);
             return true;
         }
     }

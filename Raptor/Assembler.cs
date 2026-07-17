@@ -383,6 +383,7 @@ namespace Raptor
                         case "NEWARR":
                         case "GETARR":
                         case "GETARRA":
+                        case "LENARR":
                             OpCode code;
                             switch (words[0])
                             {
@@ -394,6 +395,9 @@ namespace Raptor
                                     break;
                                 case "GETARRA":
                                     code = OpCode.GETARRA;
+                                    break;
+                                case "LENARR":
+                                    code = OpCode.LENARR;
                                     break;
                                 default:
                                     code = OpCode.PRINT;

@@ -1,10 +1,4 @@
 var size = 256;
 var arr = alloc(size);
-for(var i = 0; i < size; i++)
-{
-    arr[i] = i;
-}
-for(var j = 0; j < size; j++)
-{
-    peri.print(arr[i]);
-}
+var length = len(arr);
+peri.print(length);
