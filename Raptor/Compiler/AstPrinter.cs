@@ -29,11 +29,11 @@ namespace Raptor.Compiler
                     PrintNode("Value", assign.Value, childIndent, true);
                     break;
 
-                // case IndexAssignmentNode idxAssign:
-                //     PrintNode("Array", idxAssign.ArrayExpr, childIndent, false);
-                //     PrintNode("Index", idxAssign.IndexExpr, childIndent, false);
-                //     PrintNode("Value", idxAssign.Value, childIndent, true);
-                //     break;
+                case IndexAssignmentNode idxAssign:
+                    PrintNode("Array", idxAssign.ArrayExpr, childIndent, false);
+                    PrintNode("Index", idxAssign.IndexExpr, childIndent, false);
+                    PrintNode("Value", idxAssign.Value, childIndent, true);
+                    break;
 
                 case IfNode ifNode:
                     PrintNode("Condition", ifNode.Condition, childIndent, false);
@@ -72,25 +72,31 @@ namespace Raptor.Compiler
                     Console.WriteLine($"{childIndent}└── Arguments");
                     PrintList(call.Arguments, childIndent + "    ");
                     break;
-
+                case LogicalOpNode logicalOp:
+                    PrintNode("Left", logicalOp.Left, childIndent, false);
+                    PrintNode("Right", logicalOp.Right, childIndent, true);
+                    break;
                 case BinaryOpNode binOp:
+                    Console.WriteLine($"{childIndent}{binOp.Op}");
                     PrintNode("Left", binOp.Left, childIndent, false);
                     PrintNode("Right", binOp.Right, childIndent, true);
                     break;
 
-                // case IndexAccessNode idxAccess:
-                //     PrintNode("Array", idxAccess.ArrayExpr, childIndent, false);
-                //     PrintNode("Index", idxAccess.IndexExpr, childIndent, true);
-                //     break;
-                //
-                // case ArrayLiteralNode arrLit:
-                //     Console.WriteLine($"{childIndent}└── Elements");
-                //     PrintList(arrLit.Elements, childIndent + "    ");
-                //     break;
+                case IndexAccessNode idxAccess:
+                    PrintNode("Array", idxAccess.ArrayExpr, childIndent, false);
+                    PrintNode("Index", idxAccess.IndexExpr, childIndent, true);
+                    break;
 
-                case NumberNode:
-                case IdentifierNode:
-                    // Leaf nodes, nothing to recurse into
+                case ArrayLiteralNode arrLit:
+                    Console.WriteLine($"{childIndent}└── Elements");
+                    PrintList(arrLit.Elements, childIndent + "    ");
+                    break;
+
+                case NumberNode number:
+                    Console.WriteLine($"{childIndent}└──{number.Value}");
+                    break;
+                case IdentifierNode identifier:
+                    Console.WriteLine($"{childIndent}└──{identifier.Name}");
                     break;
 
                 default:

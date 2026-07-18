@@ -44,6 +44,6 @@ namespace Raptor
         BINXOR, // 31
         BINLSH, // 32
         BINRSH, // 33
-        LENARR,
+        LENARR, // 34
     }
 }

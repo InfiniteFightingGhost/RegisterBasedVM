@@ -1,4 +1,2 @@
-var size = 256;
-var arr = alloc(size);
-var length = len(arr);
-peri.print(length);
+var result = 8 | 4 ^ 2 & 10 == 5 << 1 && 3 || 9;
+peri.print(result);

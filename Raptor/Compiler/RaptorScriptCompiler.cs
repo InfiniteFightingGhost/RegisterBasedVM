@@ -4,6 +4,15 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
+// TODO: Implement bitwise and logical operators. For logical operators touch up on the if\else so that
+//      the statement 'if(arr != null && arr[0] < 5)' evaluates the first statement first and if it's false
+//      jump to the else block or to the next instruction.
+//      Also implement true, false and null keywords.
+//      Better control flow via break and continue statements will be nice as well.
+//      Since the VM has array methods for singular bytes implementing string handling can be built with a little effort,
+//      User defined functions in order to finally have functions that one can call.
+//      High effort high value -> user defined structs
+
 namespace Raptor.Compiler
 {
     #region Token Definitions
@@ -28,6 +37,8 @@ namespace Raptor.Compiler
         Minus,
         Star,
         Slash,
+        StarEquals,
+        SlashEquals,
         PlusEquals,
         MinusEquals,
         PlusPlus,
@@ -38,6 +49,18 @@ namespace Raptor.Compiler
         LessEqual,
         Greater,
         GreaterEqual,
+        Percent,
+        PercentEquals,
+        Ampersand,
+        AmpersandEquals,
+        AmpersandAmpersand,
+        LessLess,
+        GreaterGreater,
+        Caret,
+        CaretEquals,
+        Pipe,
+        PipeEquals,
+        PipePipe,
 
         // Punctuation
         Semicolon,
@@ -148,6 +171,20 @@ namespace Raptor.Compiler
         {
             MethodName = methodName;
             Arguments = arguments;
+        }
+    }
+
+    public class LogicalOpNode : ASTNode
+    {
+        public ASTNode Left { get; }
+        public string Op { get; }
+        public ASTNode Right { get; }
+
+        public LogicalOpNode(ASTNode left, string op, ASTNode right)
+        {
+            Left = left;
+            Op = op;
+            Right = right;
         }
     }
 
@@ -345,22 +382,56 @@ namespace Raptor.Compiler
                     '-' => ConsumeAndReturn(TokenType.MinusMinus, "--"),
                     _ => new Token(TokenType.Minus, "-", _line),
                 },
-                '*' => new Token(TokenType.Star, "*", _line),
-                '/' => new Token(TokenType.Slash, "/", _line),
-
+                '*' => Peek() switch
+                {
+                    '=' => ConsumeAndReturn(TokenType.StarEquals, "*="),
+                    _ => new Token(TokenType.Star, "*", _line),
+                },
+                '/' => Peek() switch
+                {
+                    '=' => ConsumeAndReturn(TokenType.SlashEquals, "/="),
+                    _ => new Token(TokenType.Slash, "/", _line),
+                },
                 '=' => Match('=')
                     ? new Token(TokenType.Equal, "==", _line)
                     : new Token(TokenType.Assign, "=", _line),
                 '!' => Match('=')
                     ? new Token(TokenType.NotEqual, "!=", _line)
                     : throw new Exception($"Unexpected char '!' at line {_line}"),
-                '<' => Match('=')
-                    ? new Token(TokenType.LessEqual, "<=", _line)
-                    : new Token(TokenType.Less, "<", _line),
-                '>' => Match('=')
-                    ? new Token(TokenType.GreaterEqual, ">=", _line)
-                    : new Token(TokenType.Greater, ">", _line),
-
+                '<' => Peek() switch
+                {
+                    '=' => ConsumeAndReturn(TokenType.LessEqual, "<="),
+                    '<' => ConsumeAndReturn(TokenType.LessLess, "<<"),
+                    _ => new Token(TokenType.Less, "<", _line),
+                },
+                '>' => Peek() switch
+                {
+                    '=' => ConsumeAndReturn(TokenType.GreaterEqual, ">="),
+                    '>' => ConsumeAndReturn(TokenType.GreaterGreater, ">>"),
+                    _ => new Token(TokenType.Greater, ">", _line),
+                },
+                '%' => Peek() switch
+                {
+                    '=' => ConsumeAndReturn(TokenType.PercentEquals, "%="),
+                    _ => new Token(TokenType.Percent, "%", _line),
+                },
+                '&' => Peek() switch
+                {
+                    '=' => ConsumeAndReturn(TokenType.AmpersandEquals, "&="),
+                    '&' => ConsumeAndReturn(TokenType.AmpersandAmpersand, "&&"),
+                    _ => new Token(TokenType.Ampersand, "&", _line),
+                },
+                '|' => Peek() switch
+                {
+                    '=' => ConsumeAndReturn(TokenType.PipeEquals, "|="),
+                    '|' => ConsumeAndReturn(TokenType.PipePipe, "||"),
+                    _ => new Token(TokenType.Pipe, "|", _line),
+                },
+                '^' => Peek() switch
+                {
+                    '=' => ConsumeAndReturn(TokenType.CaretEquals, "^="),
+                    _ => new Token(TokenType.Caret, "^", _line),
+                },
                 _ => throw new Exception($"Unexpected character '{c}' at line {_line}"),
             };
         }
@@ -520,9 +591,20 @@ namespace Raptor.Compiler
 
         private ASTNode ParseAssignmentExpression()
         {
-            ASTNode expr = ParseComparison();
-
-            if (Match(TokenType.Assign, TokenType.PlusEquals, TokenType.MinusEquals))
+            ASTNode expr = ParseLogicalOr();
+            if (
+                Match(
+                    TokenType.Assign,
+                    TokenType.PlusEquals,
+                    TokenType.MinusEquals,
+                    TokenType.SlashEquals,
+                    TokenType.StarEquals,
+                    TokenType.PipeEquals,
+                    TokenType.CaretEquals,
+                    TokenType.AmpersandEquals,
+                    TokenType.PercentEquals
+                )
+            )
             {
                 Token op = Previous();
                 ASTNode value = ParseAssignmentExpression();
@@ -530,27 +612,65 @@ namespace Raptor.Compiler
                 {
                     // Desugar operators:
                     // x += y -> x = x + y
-                    // x -= y -> x = x - y
-                    if (op.Type == TokenType.PlusEquals)
+                    // x -= y -> x = x - y, etc
+                    switch (op.Type)
                     {
-                        value = new BinaryOpNode(id, "+", value) { Line = op.Line };
-                    }
-                    else if (op.Type == TokenType.MinusEquals)
-                    {
-                        value = new BinaryOpNode(id, "-", value) { Line = op.Line };
+                        case TokenType.PlusEquals:
+                            value = new BinaryOpNode(id, "+", value) { Line = op.Line };
+                            break;
+                        case TokenType.MinusEquals:
+                            value = new BinaryOpNode(id, "-", value) { Line = op.Line };
+                            break;
+                        case TokenType.SlashEquals:
+                            value = new BinaryOpNode(id, "/", value) { Line = op.Line };
+                            break;
+                        case TokenType.StarEquals:
+                            value = new BinaryOpNode(id, "*", value) { Line = op.Line };
+                            break;
+                        case TokenType.PipeEquals:
+                            value = new BinaryOpNode(id, "|", value) { Line = op.Line };
+                            break;
+                        case TokenType.CaretEquals:
+                            value = new BinaryOpNode(id, "^", value) { Line = op.Line };
+                            break;
+                        case TokenType.AmpersandEquals:
+                            value = new BinaryOpNode(id, "&", value) { Line = op.Line };
+                            break;
+                        case TokenType.PercentEquals:
+                            value = new BinaryOpNode(id, "%", value) { Line = op.Line };
+                            break;
                     }
 
                     return new AssignmentNode(id.Name, value) { Line = op.Line };
                 }
                 else if (expr is IndexAccessNode indexAccess)
                 {
-                    if (op.Type == TokenType.PlusEquals)
+                    switch (op.Type)
                     {
-                        value = new BinaryOpNode(indexAccess, "+", value) { Line = op.Line };
-                    }
-                    else if (op.Type == TokenType.MinusEquals)
-                    {
-                        value = new BinaryOpNode(indexAccess, "-", value) { Line = op.Line };
+                        case TokenType.PlusEquals:
+                            value = new BinaryOpNode(indexAccess, "+", value) { Line = op.Line };
+                            break;
+                        case TokenType.MinusEquals:
+                            value = new BinaryOpNode(indexAccess, "-", value) { Line = op.Line };
+                            break;
+                        case TokenType.SlashEquals:
+                            value = new BinaryOpNode(indexAccess, "/", value) { Line = op.Line };
+                            break;
+                        case TokenType.StarEquals:
+                            value = new BinaryOpNode(indexAccess, "*", value) { Line = op.Line };
+                            break;
+                        case TokenType.PipeEquals:
+                            value = new BinaryOpNode(indexAccess, "|", value) { Line = op.Line };
+                            break;
+                        case TokenType.CaretEquals:
+                            value = new BinaryOpNode(indexAccess, "^", value) { Line = op.Line };
+                            break;
+                        case TokenType.AmpersandEquals:
+                            value = new BinaryOpNode(indexAccess, "&", value) { Line = op.Line };
+                            break;
+                        case TokenType.PercentEquals:
+                            value = new BinaryOpNode(indexAccess, "%", value) { Line = op.Line };
+                            break;
                     }
 
                     return new IndexAssignmentNode(
@@ -603,7 +723,7 @@ namespace Raptor.Compiler
 
         private ASTNode ParseComparison()
         {
-            ASTNode expr = ParseTerm();
+            ASTNode expr = ParseShift();
 
             while (
                 Match(
@@ -617,10 +737,82 @@ namespace Raptor.Compiler
             )
             {
                 Token op = Previous();
-                ASTNode right = ParseTerm();
+                ASTNode right = ParseShift();
                 expr = new BinaryOpNode(expr, op.Value, right) { Line = op.Line };
             }
 
+            return expr;
+        }
+
+        private ASTNode ParseLogicalOr()
+        {
+            ASTNode expr = ParseLogicalAnd();
+            while (Match(TokenType.PipePipe))
+            {
+                Token op = Previous();
+                ASTNode right = ParseLogicalAnd();
+                expr = new LogicalOpNode(expr, op.Value, right) { Line = op.Line };
+            }
+            return expr;
+        }
+
+        private ASTNode ParseLogicalAnd()
+        {
+            ASTNode expr = ParseBitwiseOr();
+            while (Match(TokenType.AmpersandAmpersand))
+            {
+                Token op = Previous();
+                ASTNode right = ParseBitwiseOr();
+                expr = new LogicalOpNode(expr, op.Value, right) { Line = op.Line };
+            }
+            return expr;
+        }
+
+        private ASTNode ParseBitwiseOr()
+        {
+            ASTNode expr = ParseBitwiseXor();
+            while (Match(TokenType.Pipe))
+            {
+                Token op = Previous();
+                ASTNode right = ParseBitwiseXor();
+                expr = new BinaryOpNode(expr, op.Value, right) { Line = op.Line };
+            }
+            return expr;
+        }
+
+        private ASTNode ParseBitwiseXor()
+        {
+            ASTNode expr = ParseBitwiseAnd();
+            while (Match(TokenType.Caret))
+            {
+                Token op = Previous();
+                ASTNode right = ParseBitwiseAnd();
+                expr = new BinaryOpNode(expr, op.Value, right) { Line = op.Line };
+            }
+            return expr;
+        }
+
+        private ASTNode ParseBitwiseAnd()
+        {
+            ASTNode expr = ParseComparison();
+            while (Match(TokenType.Ampersand))
+            {
+                Token op = Previous();
+                ASTNode right = ParseComparison();
+                expr = new BinaryOpNode(expr, op.Value, right) { Line = op.Line };
+            }
+            return expr;
+        }
+
+        private ASTNode ParseShift()
+        {
+            ASTNode expr = ParseTerm();
+            while (Match(TokenType.LessLess, TokenType.GreaterGreater))
+            {
+                Token op = Previous();
+                ASTNode right = ParseTerm();
+                expr = new BinaryOpNode(expr, op.Value, right) { Line = op.Line };
+            }
             return expr;
         }
 
@@ -642,7 +834,7 @@ namespace Raptor.Compiler
         {
             ASTNode expr = ParsePrimary();
 
-            while (Match(TokenType.Star, TokenType.Slash))
+            while (Match(TokenType.Star, TokenType.Slash, TokenType.Percent))
             {
                 Token op = Previous();
                 ASTNode right = ParsePrimary();
@@ -1218,6 +1410,23 @@ namespace Raptor.Compiler
 
                     _sb.AppendLine($"GETARR r{resultReg} r{targetArrayReg} r{accessIndexReg}");
                     return resultReg;
+                case LogicalOpNode logicalNode:
+                    int logicalResultReg = EmitExpression(logicalNode.Left);
+                    string endLabel = $"logic_end{_labelCounter++}";
+                    if (logicalNode.Op == "&&")
+                    {
+                        _sb.AppendLine($"EQ 0 r{logicalResultReg} 0");
+                        _sb.AppendLine($"JUMP {endLabel}");
+                    }
+                    else if (logicalNode.Op == "||")
+                    {
+                        _sb.AppendLine($"EQ 1 r{logicalResultReg} 1");
+                        _sb.AppendLine($"JUMP {endLabel}");
+                    }
+                    int rightSide = EmitExpression(logicalNode.Right);
+                    _sb.AppendLine($"MOVE r{logicalResultReg} r{rightSide}");
+                    _sb.AppendLine($"{endLabel}:");
+                    return logicalResultReg;
                 default:
                     throw new Exception(
                         $"Cannot emit expression node of type {node.GetType().Name}."
@@ -1248,6 +1457,24 @@ namespace Raptor.Compiler
                     break;
                 case "/":
                     instruction = "DIV";
+                    break;
+                case "%":
+                    instruction = "MOD";
+                    break;
+                case "|":
+                    instruction = "BINOR";
+                    break;
+                case "&":
+                    instruction = "BINAND";
+                    break;
+                case "^":
+                    instruction = "BINXOR";
+                    break;
+                case "<<":
+                    instruction = "BINLSH";
+                    break;
+                case ">>":
+                    instruction = "BINRSH";
                     break;
                 case "<":
                     instruction = "LT";
@@ -1352,7 +1579,6 @@ namespace Raptor.Compiler
         {
             var lexer = new Lexer(sourceText);
             var tokens = lexer.ScanTokens();
-
             var parser = new Parser(tokens);
             var program = parser.Parse();
             if (printAst)
