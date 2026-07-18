@@ -26,6 +26,8 @@ namespace Raptor.Compiler
         While,
         Return,
         For,
+        True,
+        False,
 
         // Identifiers and Literals
         Identifier,
@@ -350,6 +352,8 @@ namespace Raptor.Compiler
                 "while" => TokenType.While,
                 "return" => TokenType.Return,
                 "for" => TokenType.For,
+                "true" => TokenType.True,
+                "false" => TokenType.False,
                 _ => TokenType.Identifier,
             };
 
@@ -482,7 +486,6 @@ namespace Raptor.Compiler
                 return ParseWhile();
             if (Match(TokenType.For))
                 return ParseFor();
-
             // Otherwise Expression statement (e.g. assignments, call expressions)
             return ParseExpressionStatement();
         }
@@ -851,6 +854,14 @@ namespace Raptor.Compiler
                 Token numToken = Previous();
                 return new NumberNode(double.Parse(numToken.Value)) { Line = numToken.Line };
             }
+            if (Match(TokenType.False))
+            {
+                return new NumberNode(0) { Line = Previous().Line };
+            }
+            if (Match(TokenType.True))
+            {
+                return new NumberNode(1) { Line = Previous().Line };
+            }
 
             if (Match(TokenType.OpenBracket))
             {
@@ -900,7 +911,6 @@ namespace Raptor.Compiler
                 Consume(TokenType.CloseParenthesis, "Expected ')' after expression.");
                 return expr;
             }
-
             throw new Exception(
                 $"Expected expression at line {Peek().Line}, found '{Peek().Value}'."
             );
