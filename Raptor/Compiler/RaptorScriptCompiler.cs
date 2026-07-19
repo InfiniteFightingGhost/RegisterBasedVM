@@ -1194,6 +1194,12 @@ namespace Raptor.Compiler
                     } while (Match(TokenType.Comma));
                 }
                 Consume(TokenType.CloseBracket, "Expected ']' after array elements.");
+                return new ArrayLiteralNode(elements)
+                {
+                    Line = bracketToken.Line,
+                    Column = bracketToken.Column,
+                    Length = bracketToken.Lexeme.Length, // TODO: Make this actually have the whole array literal("[1,2,3,4]") be the length
+                };
             }
             if (Match(TokenType.Identifier))
             {
