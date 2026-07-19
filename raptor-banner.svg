@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="1200px" height="600px" viewBox="0 0 1200 600" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <!-- Background Linear Gradient -->
+        <linearGradient id="bg-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#050811" />
+            <stop offset="50%" stop-color="#0a101d" />
+            <stop offset="100%" stop-color="#04060b" />
+        </linearGradient>
+
+        <!-- Glow Radial Gradient Behind Dinosaur -->
+        <radialGradient id="dino-glow-gradient" cx="378" cy="300" r="280" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#3aedbc" stop-opacity="0.28" />
+            <stop offset="50%" stop-color="#3aedbc" stop-opacity="0.08" />
+            <stop offset="100%" stop-color="#3aedbc" stop-opacity="0" />
+        </radialGradient>
+
+        <!-- Drop Shadow Filter for Logo -->
+        <filter id="dino-glow" x="-50%" y="-50%" width="200%" height="200%">
+            <!-- Inner intense glow -->
+            <feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#3aedbc" flood-opacity="0.8" />
+            <!-- Outer wide soft glow -->
+            <feDropShadow dx="0" dy="0" stdDeviation="22" flood-color="#3aedbc" flood-opacity="0.55" />
+            <!-- Anchor shadow -->
+            <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#000000" flood-opacity="0.5" />
+        </filter>
+
+        <!-- Drop Shadow Filter for Text -->
+        <filter id="text-shadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.5" />
+        </filter>
+
+        <!-- Soft Glow for Sparkle Stars -->
+        <filter id="sparkle-glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+            </feMerge>
+        </filter>
+    </defs>
+
+    <style>
+        .title-text {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            font-weight: 800;
+            fill: #ffffff;
+            letter-spacing: -1.5px;
+        }
+        .accent-text {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            font-weight: 600;
+            fill: #3aedbc;
+            letter-spacing: -0.5px;
+        }
+        .subtitle-text {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            font-weight: 400;
+            fill: #cbd5e1;
+            letter-spacing: -0.5px;
+        }
+        .code-text {
+            font-family: 'Fira Code', 'Courier New', Courier, monospace;
+            font-size: 11px;
+            fill: #3aedbc;
+            fill-opacity: 0.16;
+        }
+        .stack-trace-header {
+            font-family: 'Fira Code', 'Courier New', Courier, monospace;
+            font-size: 11px;
+            fill: #3aedbc;
+            fill-opacity: 0.3;
+            font-weight: bold;
+        }
+        .ast-node {
+            fill: #060913;
+            fill-opacity: 0.6;
+            stroke: #3aedbc;
+            stroke-opacity: 0.18;
+            stroke-width: 1px;
+        }
+        .ast-text {
+            font-family: 'Fira Code', 'Courier New', Courier, monospace;
+            font-size: 10px;
+            fill: #3aedbc;
+            fill-opacity: 0.35;
+        }
+        .ast-line {
+            stroke: #3aedbc;
+            stroke-opacity: 0.12;
+            stroke-width: 1.2px;
+        }
+    </style>
+
+    <!-- Main Background -->
+    <rect width="1200" height="600" fill="url(#bg-gradient)" />
+
+    <!-- Radial Glow Behind Dinosaur -->
+    <circle cx="378" cy="300" r="280" fill="url(#dino-glow-gradient)" />
+
+    <!-- ==================== BACKGROUND GRAPHICS (NON-GIBBERISH) ==================== -->
+
+    <!-- Top-Left AST Diagram (var x = a + b;) -->
+    <g transform="translate(80, 50)">
+        <!-- Connecting lines -->
+        <line x1="120" y1="20" x2="50" y2="80" class="ast-line" />
+        <line x1="120" y1="20" x2="190" y2="80" class="ast-line" />
+        <line x1="190" y1="80" x2="140" y2="140" class="ast-line" />
+        <line x1="190" y1="80" x2="240" y2="140" class="ast-line" />
+
+        <!-- Root Node: Assign (=) -->
+        <rect x="95" y="10" width="50" height="20" rx="4" class="ast-node" />
+        <text x="120" y="20" class="ast-text" text-anchor="middle" dominant-baseline="central">=</text>
+
+        <!-- Left Node: x -->
+        <rect x="25" y="70" width="50" height="20" rx="4" class="ast-node" />
+        <text x="50" y="80" class="ast-text" text-anchor="middle" dominant-baseline="central">x</text>
+
+        <!-- Right Node: + -->
+        <rect x="165" y="70" width="50" height="20" rx="4" class="ast-node" />
+        <text x="190" y="80" class="ast-text" text-anchor="middle" dominant-baseline="central">+</text>
+
+        <!-- Leaf Left: a -->
+        <rect x="115" y="130" width="50" height="20" rx="4" class="ast-node" />
+        <text x="140" y="140" class="ast-text" text-anchor="middle" dominant-baseline="central">a</text>
+
+        <!-- Leaf Right: b -->
+        <rect x="215" y="130" width="50" height="20" rx="4" class="ast-node" />
+        <text x="240" y="140" class="ast-text" text-anchor="middle" dominant-baseline="central">b</text>
+    </g>
+
+    <!-- Bottom-Left Code Snippet (RaptorScript Physics Loop) -->
+    <g transform="translate(40, 410)">
+        <text class="code-text" xml:space="preserve">
+            <tspan x="0" y="0">// Physics entity bounce update</tspan>
+            <tspan x="0" dy="18">var dt = 0.016;</tspan>
+            <tspan x="0" dy="18">for (var i = 0; i &lt; 100; i++) {</tspan>
+            <tspan x="16" dy="18">py = py + vy * dt;</tspan>
+            <tspan x="16" dy="18">vy = vy - 9.81 * dt;</tspan>
+            <tspan x="16" dy="18">if (py &lt;= 0.0) {</tspan>
+            <tspan x="32" dy="18">py = 0.0;</tspan>
+            <tspan x="32" dy="18">vy = -vy * 0.85; // Bounce!</tspan>
+            <tspan x="16" dy="18">}</tspan>
+            <tspan x="0" dy="18">}</tspan>
+        </text>
+    </g>
+
+    <!-- Top-Center Code (Raptor VM Assembly) -->
+    <g transform="translate(570, 50)">
+        <text class="code-text" xml:space="preserve">
+            <tspan x="0" y="0">OP_LOADC  r1, 0.0</tspan>
+            <tspan x="0" dy="18">OP_LOADC  r2, 10.0</tspan>
+            <tspan x="0" dy="18">OP_LOADC  r3, -9.81</tspan>
+            <tspan x="0" dy="18">OP_MUL    r4, r3, r6</tspan>
+            <tspan x="0" dy="18">OP_ADD    r2, r2, r4</tspan>
+            <tspan x="0" dy="18">OP_CALL   2, 0</tspan>
+        </text>
+    </g>
+
+    <!-- Top-Right Stack Trace -->
+    <g transform="translate(850, 50)">
+        <text class="stack-trace-header" x="0" y="0">Stack Trace:</text>
+        <text class="code-text" xml:space="preserve">
+            <tspan x="0" y="20">0x00F4 : FFI.print()</tspan>
+            <tspan x="0" dy="18">0x02AC : update_physics() at physics.rapt:15</tspan>
+            <tspan x="0" dy="18">0x05E8 : game_loop() at main.rapt:102</tspan>
+            <tspan x="0" dy="18">0x071C : main() at main.rapt:8</tspan>
+        </text>
+    </g>
+
+    <!-- Middle-Right Code (Raptor VM Assembly) -->
+    <g transform="translate(980, 240)">
+        <text class="code-text" xml:space="preserve">
+            <tspan x="0" y="0">OP_LOADC  r5, 0.85</tspan>
+            <tspan x="0" dy="18">OP_MUL    r4, r4, r5</tspan>
+            <tspan x="0" dy="18">OP_UNM    r4, r4</tspan>
+            <tspan x="0" dy="18">OP_RETURN</tspan>
+        </text>
+    </g>
+
+    <!-- Bottom-Right AST Diagram (py &lt; 0.0) -->
+    <g transform="translate(900, 420)">
+        <!-- Connecting lines -->
+        <line x1="100" y1="20" x2="50" y2="80" class="ast-line" />
+        <line x1="100" y1="20" x2="150" y2="80" class="ast-line" />
+
+        <!-- Root Node: Compare (&lt;) -->
+        <rect x="75" y="10" width="50" height="20" rx="4" class="ast-node" />
+        <text x="100" y="20" class="ast-text" text-anchor="middle" dominant-baseline="central">&lt;</text>
+
+        <!-- Left Node: py -->
+        <rect x="25" y="70" width="50" height="20" rx="4" class="ast-node" />
+        <text x="50" y="80" class="ast-text" text-anchor="middle" dominant-baseline="central">py</text>
+
+        <!-- Right Node: 0.0 -->
+        <rect x="125" y="70" width="50" height="20" rx="4" class="ast-node" />
+        <text x="150" y="80" class="ast-text" text-anchor="middle" dominant-baseline="central">0.0</text>
+    </g>
+
+    <!-- Glowing Vector Sparkles (Adding premium tech aesthetic) -->
+    <g transform="translate(1080, 490)">
+        <!-- Sparkle 1 -->
+        <path d="M 0,-12 L 2.5,-2.5 L 12,0 L 2.5,2.5 L 0,12 L -2.5,2.5 L -12,0 L -2.5,-2.5 Z" fill="#ffffff" filter="url(#sparkle-glow)" opacity="0.65" />
+        <!-- Sparkle 2 (Smaller, offset) -->
+        <path d="M 30,20 L 31.5,25 L 36.5,26.5 L 31.5,28 L 30,33 L 28.5,28 L 23.5,26.5 L 28.5,25 Z" fill="#3aedbc" filter="url(#sparkle-glow)" opacity="0.5" />
+    </g>
+
+
+    <!-- ==================== CENTERPIECE FOREGROUND ==================== -->
+
+    <!-- Center-Left Origami Raptor Dinosaur Logo -->
+    <g id="dinosaur-logo" transform="translate(180, 100) scale(6.2)" filter="url(#dino-glow)">
+        <!-- Polygon Folds -->
+        <path d="M21.62,42.77l7.24-6.49v-7.18l-10.55-3.13c-.3-.09-.61-.08-.89,.02l-.99,5.18,3.05,3.06,2.14,8.54Z" fill="#6df4c0" />
+        <path d="M53.21,19.23c.56,0,1-.45,1-1.01v-5.17c0-.61-.37-1.16-.93-1.39l-7.02-2.93-5.83,.45-2.56,2.86-3.81,7.19,7.56,1.58,4.55-1.58,7.03-.02Z" fill="#9af6d3" />
+        <path d="M46.18,19.24h-12.11l1.95,7.89,9.69,7.95,.46-15.84Z" fill="#6df4c0" />
+        <path d="M19.49,34.23l-2.06-8.24c-.27,.09-.51,.26-.69,.49l-6.86,8.78c-.22,.28,.02,.68,.37,.61l9.24-1.64Z" fill="#6df4c0" />
+        <path d="M33,51.65l-3.58,1.81-1.72,5.28c.23,.16,.52,.26,.81,.26h12.13l-7.64-7.35Z" fill="#3aedbc" />
+        <path d="M21.62,42.77l5.54,15.28c.1,.29,.29,.52,.53,.69l5.3-7.09h0l2.73-8.88-4.73-2.26-9.37,2.26Z" fill="#6df4c0" />
+        <path d="M45.71,35.08l-3.1,1.76-.36,3.48,6.47,.19c.41,.01,.65-.45,.41-.78l-3.42-4.65Z" fill="#6df4c0" />
+        <path d="M45.71,35.08l-11.64-15.84-5.22,9.86-7.23,13.67h18.01c.63,0,1.21-.32,1.56-.84l1.06-1.6,3.46-5.24h0Z" fill="#9af6d3" />
+        <path d="M36.76,5.01c-.31,.03-.61,.13-.88,.3l-4.64,3.08c-.36,.24-.3,.78,.09,.94l6.54,2.71,.63-3.66-1.75-3.38Z" fill="#3aedbc" />
+        <path d="M36.76,5.01c-.31,.03-.61,.13-.88,.3l-1.62,1.08,3.62,5.65,.44-4.03-1.55-3.01Z" fill="#31c9a0" />
+        <path d="M36.76,5.01l1.12,7.04,8.39-3.31-8.62-3.59c-.28-.12-.59-.16-.88-.14Z" fill="#6df4c0" />
+        <path d="M34.07,19.24l11.76,11.91-.12,3.93-11.64-15.84Z" fill="#3aedbc" />
+        <path d="M45.71,35.08l-3.46,5.24,2.12,.06,1.33-5.3Z" fill="#3aedbc" />
+        <path d="M21.62,42.77l4.31-14.53,2.91,.87-7.23,13.67Z" fill="#3aedbc" />
+        <path d="M21.62,42.77h14.1l-13.07,2.85-1.03-2.85Z" fill="#3aedbc" />
+        <path d="M27.7,58.74l7.26-5.21-1.95-1.88-5.3,7.09Z" fill="#31c9a0" />
+        <path d="M34.07,19.24l12.03,2.68v-2.67h-12.03Z" fill="#3aedbc" />
+        <path d="M17.43,26.02l-.52,8.67,2.57-.46-2.05-8.21Z" fill="#31c9a0" />
+
+        <!-- Master Black Fold-Line Outlines -->
+        <path d="M10.42,36.85l8.32-1.48c2.45,9.74,.83,4.68,7.48,23.02,.35,.96,1.27,1.6,2.29,1.6h12.13c.41,0,.78-.25,.93-.63s.06-.81-.23-1.09l-7.2-6.92,2.33-7.59h3.17c.97,0,1.86-.48,2.39-1.29l.75-1.14,5.91,.17c.42,.01,.78-.13,1.07-.41s.46-.64,.47-1.04c0-.33-.09-.66-.29-.92l-3.21-4.37,.43-14.53,6.06-.02c1.1,0,2-.9,2-2.01v-5.17c0-1.02-.61-1.92-1.54-2.31l-15.64-6.52c-.89-.37-1.9-.27-2.7,.26l-4.64,3.08c-.34,.23-.57,.57-.65,.97-.08,.4,0,.81,.23,1.15,.17,.26,.41,.45,.69,.57l5.53,2.29-8.13,15.36-9.75-2.9c-.98-.29-2.02,.04-2.65,.85l-6.86,8.77c-.23,.29-.33,.65-.28,1.02,.05,.37,.23,.69,.52,.92,.31,.24,.71,.34,1.1,.27Zm8.33-9.71l8.65,2.57-5.44,10.28-3.22-12.85Zm19.41,30.85h-8.65l3.62-4.84,5.04,4.84Zm-6.06-6.81l-4.28,5.72-4.77-13.15h11.32l-2.28,7.42Zm15.61-11.71l-3.63-.1,1.68-2.55,1.95,2.65Zm-2.91-7.34l-8.75-11.91h9.1l-.35,11.91Zm-1.19-23.44l-4.94,1.95-.68-4.29,5.62,2.34Zm-11.09,.04l3.46-2.29,.63,3.99-4.09-1.69Zm6.07,4.09l7.67-3.03,6.65,2.77c.19,.08,.31,.26,.31,.47v5.17l-7.03,.02h-10.45l2.86-5.4Zm-4.38,8.28l10.29,14-4.13,6.27c-.16,.24-.43,.39-.72,.39H23.28l6.45-12.2h0l4.47-8.45Zm-17.33,6.8l1.38,5.51-6.61,1.17,5.23-6.69Z" fill="#060913" />
+    </g>
+
+    <!-- Right-Side Titles and Explanations -->
+    <g transform="translate(600, 270)" filter="url(#text-shadow)">
+        <!-- "Raptor" Title -->
+        <text class="title-text" x="0" y="0" font-size="92">Raptor</text>
+
+        <!-- "Lightweight, zero-overhead" -->
+        <text class="accent-text" x="0" y="55" font-size="28">Lightweight, zero-overhead</text>
+
+        <!-- "C# VM and Scripting Engine" -->
+        <text class="subtitle-text" x="0" y="100" font-size="28">C# VM and Scripting Engine</text>
+    </g>
+
+    <!-- Additional background instructions below to the right of the dinosaur -->
+    <g transform="translate(600, 450)">
+        <text class="code-text" xml:space="preserve">
+            <tspan x="0" y="0">OP_NEWARR  r1, 1024      // Alloc dynamic heap array</tspan>
+            <tspan x="0" dy="18">OP_SETARR  r1, 0, r2     // Pin and write registry</tspan>
+            <tspan x="0" dy="18">OP_FREEARR r1            // Coalesce heap memory</tspan>
+        </text>
+    </g>
+</svg>

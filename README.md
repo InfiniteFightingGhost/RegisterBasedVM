@@ -1,6 +1,8 @@
 <p align="center">
-  <img src="./dinosaur-origami-paper-svgrepo-com.png" alt="Raptor Logo" width="180">
+  <img src="./raptor-banner.svg" alt="Raptor VM & Scripting Language" width="100%">
 </p>
+
+
 
 <h1 align="center">Raptor VM & Scripting Language</h1>
 
