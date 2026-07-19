@@ -502,4 +502,21 @@ var a = alloc(1.0, 2.0); // alloc expects exactly 1 argument
         Assert.True(reporter.HasErrors);
         Assert.Contains("E0024", reporter.Diagnostics.Select(d => d.Code));
     }
+
+    [Fact]
+    public void CompilerRecoversFromUndeclaredVariableAssignments()
+    {
+        string raptorScript = @"
+x = 10.0; // Undeclared variable assignment
+y = 20.0; // Undeclared variable assignment
+";
+        var reporter = new Compiler.DiagnosticReporter();
+        Assert.Throws<Compiler.CompileException>(() =>
+            Raptor.Compiler.RaptorScriptCompiler.Compile(raptorScript, reporter: reporter)
+        );
+        Assert.True(reporter.HasErrors);
+        var codes = reporter.Diagnostics.Select(d => d.Code).ToList();
+        Assert.Equal(2, codes.Count);
+        Assert.All(codes, code => Assert.Equal("E0018", code));
+    }
 }

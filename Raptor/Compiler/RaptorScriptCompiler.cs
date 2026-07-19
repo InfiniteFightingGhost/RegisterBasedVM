@@ -1191,7 +1191,7 @@ namespace Raptor.Compiler
                     do
                     {
                         elements.Add(ParseExpression());
-                    } while (Check(TokenType.Comma));
+                    } while (Match(TokenType.Comma));
                 }
                 Consume(TokenType.CloseBracket, "Expected ']' after array elements.");
             }
@@ -1492,7 +1492,7 @@ namespace Raptor.Compiler
                         assign.Length
                     )
                 );
-                throw new EmitException();
+                regIndex = 0; // Fallback register index to continue emitting and gather other errors
             }
             else
             {
@@ -1889,12 +1889,12 @@ namespace Raptor.Compiler
                     string endLabel = $"logic_end{_labelCounter++}";
                     if (logicalNode.Op == "&&")
                     {
-                        _sb.AppendLine($"EQ 0 r{logicalResultReg} 0");
+                        _sb.AppendLine($"EQ 1 r{logicalResultReg} 1");
                         _sb.AppendLine($"JUMP {endLabel}");
                     }
                     else if (logicalNode.Op == "||")
                     {
-                        _sb.AppendLine($"EQ 1 r{logicalResultReg} 1");
+                        _sb.AppendLine($"EQ 0 r{logicalResultReg} 0");
                         _sb.AppendLine($"JUMP {endLabel}");
                     }
                     int rightSide = EmitExpression(logicalNode.Right);

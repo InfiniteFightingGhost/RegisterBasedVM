@@ -5,5 +5,8 @@ for(var i = 0; i < 10; i++)
 }
 for(var i = 0; i < 10; i++)
 {
-            peri.print(i);
+    var arr = [1,2,3,4,5];
+    peri.print(i);
 }
+
+peri.print(arr[0]);

@@ -330,7 +330,7 @@ namespace Raptor
                             instruction = Instruction.CreateABx(OpCode.SQRT, destA4, destB4);
                             break;
                         case "FISR":
-                            destA4 = byte.Parse(words[2].TrimStart('r'));
+                            destA4 = byte.Parse(words[1].TrimStart('r'));
                             if (words[2].StartsWith("r"))
                             {
                                 destB4 = ushort.Parse(words[2].TrimStart('r'));

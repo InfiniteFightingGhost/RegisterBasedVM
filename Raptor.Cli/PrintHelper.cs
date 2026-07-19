@@ -8,8 +8,6 @@ namespace Raptor.Cli
     {
         public static void PrintDiagnostic(Diagnostic diagnostic, string fileName, string[] code)
         {
-            if (diagnostic.Line < 1 || diagnostic.Line > code.Length) return;
-
             if (diagnostic.Severity == DiagnosticSeverity.Error)
             {
                 AnsiConsole.Markup($"[red]{diagnostic.Severity}[/]");
@@ -25,11 +23,11 @@ namespace Raptor.Cli
             AnsiConsole.MarkupLine(
                 $"[white]{Markup.Escape(fileName)}:{diagnostic.Line}:{diagnostic.Column}[/]"
             );
-            int padLength = diagnostic.Line / 10;
-            string pad = new string(' ', padLength);
-            AnsiConsole.MarkupLine($"[blue]  {pad} |[/]");
+            string lineStr = diagnostic.Line.ToString();
+            string pad = new string(' ', lineStr.Length);
+            AnsiConsole.MarkupLine($"[blue] {pad} |[/]");
             string line = code[diagnostic.Line - 1];
-            AnsiConsole.Markup($"[blue] {pad}{diagnostic.Line} |  [/]");
+            AnsiConsole.Markup($"[blue] {lineStr} |  [/]");
             AnsiConsole.MarkupLine($"[white]{Markup.Escape(line)}[/]");
 
             // Match padding spaces/tabs to line tabs
@@ -40,12 +38,10 @@ namespace Raptor.Cli
             }
 
             string underCaret = new string('^', diagnostic.Length);
-            AnsiConsole.Markup($"[blue]  {pad} |  [/]");
+            AnsiConsole.Markup($"[blue] {pad} |  [/]");
             string annotation =
                 diagnostic.Annotation != null ? Markup.Escape(diagnostic.Annotation) : string.Empty;
-            AnsiConsole.MarkupLine(
-                $"[red]{padding}{underCaret}[/][white]{annotation}[/]"
-            );
+            AnsiConsole.MarkupLine($"[red]{padding}{underCaret}[/][white]{annotation}[/]");
         }
     }
 }
