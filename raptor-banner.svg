@@ -197,13 +197,6 @@
         <text x="150" y="80" class="ast-text" text-anchor="middle" dominant-baseline="central">0.0</text>
     </g>
 
-    <!-- Glowing Vector Sparkles (Adding premium tech aesthetic) -->
-    <g transform="translate(1080, 490)">
-        <!-- Sparkle 1 -->
-        <path d="M 0,-12 L 2.5,-2.5 L 12,0 L 2.5,2.5 L 0,12 L -2.5,2.5 L -12,0 L -2.5,-2.5 Z" fill="#ffffff" filter="url(#sparkle-glow)" opacity="0.65" />
-        <!-- Sparkle 2 (Smaller, offset) -->
-        <path d="M 30,20 L 31.5,25 L 36.5,26.5 L 31.5,28 L 30,33 L 28.5,28 L 23.5,26.5 L 28.5,25 Z" fill="#3aedbc" filter="url(#sparkle-glow)" opacity="0.5" />
-    </g>
 
 
     <!-- ==================== CENTERPIECE FOREGROUND ==================== -->

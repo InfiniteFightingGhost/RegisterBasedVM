@@ -21,7 +21,7 @@ loop:
     ADD result last lastlast
     ADD counter counter 1
     PRINT counter
-    LT 1 counter n
+    LT 0 counter n
     JUMP loop
 PRINT result
 HALT";
@@ -33,6 +33,7 @@ HALT";
         machine.LoadProgram(chunk);
         var result = machine.RunFast();
         Assert.Equal(VMStatus.Halted, result.Status);
+        Assert.Equal(5.0, result.RegistersSnapshot[0]);
     }
 
     [Fact]
@@ -488,7 +489,7 @@ x_loop:
     CALL intersect() r0
     LE 0 t zero
     JUMP check_sp2
-    LT 1 t t_min
+    LT 0 t t_min
     JUMP set_sp1
     JUMP check_sp2
 set_sp1:
@@ -508,7 +509,7 @@ check_sp2:
     CALL intersect() r0
     LE 0 t zero
     JUMP end_check
-    LT 1 t t_min
+    LT 0 t t_min
     JUMP set_sp2
     JUMP end_check
 set_sp2:
@@ -614,31 +615,31 @@ render_sky:
 
 print_pixel:
     ; Clamp and truncate r
-    LT 0 r zero
+    LT 1 r zero
     JUMP r_not_neg
     LOADC r 0.0
 r_not_neg:
-    LT 0 max_val r
+    LT 1 max_val r
     JUMP r_not_high
     LOADC r 255.0
 r_not_high:
     BINAND r r r
     ; Clamp and truncate g
-    LT 0 g zero
+    LT 1 g zero
     JUMP g_not_neg
     LOADC g 0.0
 g_not_neg:
-    LT 0 max_val g
+    LT 1 max_val g
     JUMP g_not_high
     LOADC g 255.0
 g_not_high:
     BINAND g g g
     ; Clamp and truncate b_val
-    LT 0 b_val zero
+    LT 1 b_val zero
     JUMP b_not_neg
     LOADC b_val 0.0
 b_not_neg:
-    LT 0 max_val b_val
+    LT 1 max_val b_val
     JUMP b_not_high
     LOADC b_val 255.0
 b_not_high:

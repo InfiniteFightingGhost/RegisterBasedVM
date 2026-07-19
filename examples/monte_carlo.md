@@ -45,7 +45,7 @@ loop:
     
     ; Loop Control
     ADD i i 1
-    LT 1 i epochs
+    LT 0 i epochs
     JUMP loop
 
 DEFINE result r6

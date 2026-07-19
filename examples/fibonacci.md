@@ -72,7 +72,7 @@ loop:
     ADD result last lastlast
     ADD counter counter 1
     PRINT counter
-    LT 1 counter n
+    LT 0 counter n
     JUMP loop
 PRINT result
 HALT

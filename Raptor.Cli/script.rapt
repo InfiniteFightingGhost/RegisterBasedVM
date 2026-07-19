@@ -1,5 +1,5 @@
 var result = 8 | 4 ^ 2 & 10 == 5 << 1 && 3 || 9;
-peri.print(result);
+peri.print(result)!;
 
 for(var i = 0; i < 10; i++)
 {

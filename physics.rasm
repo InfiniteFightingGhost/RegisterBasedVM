@@ -14,7 +14,7 @@ loop:
     ADD r1 r1 r10
     MUL r11 r4 r6
     ADD r2 r2 r11
-    LT 0 r2 r7
+    LT 1 r2 r7
     JUMP skip_ground
     MOVE r2 r7
     LOADC r4 0.0

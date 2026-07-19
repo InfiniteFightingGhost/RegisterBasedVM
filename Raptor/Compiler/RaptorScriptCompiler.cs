@@ -77,7 +77,7 @@ namespace Raptor.Compiler
         EOF,
     }
 
-    public record Token(TokenType Type, string Value, int Line);
+    public record Token(TokenType Type, string Lexeme, int Line, int Column = 0);
 
     #endregion
 
@@ -262,6 +262,7 @@ namespace Raptor.Compiler
         private readonly string _source;
         private int _index;
         private int _line = 1;
+        private int _column = 0;
 
         public Lexer(string source)
         {
@@ -277,7 +278,10 @@ namespace Raptor.Compiler
                 if (char.IsWhiteSpace(c))
                 {
                     if (c == '\n')
+                    {
                         _line++;
+                        _column = -1;
+                    }
                     Advance();
                     continue;
                 }
@@ -305,11 +309,15 @@ namespace Raptor.Compiler
                 tokens.Add(ScanOperatorOrPunctuation());
             }
 
-            tokens.Add(new Token(TokenType.EOF, "", _line));
+            tokens.Add(new Token(TokenType.EOF, "", _line, _column));
             return tokens;
         }
 
-        private char Advance() => _source[_index++];
+        private char Advance()
+        {
+            _column++;
+            return _source[_index++];
+        }
 
         private char Peek() => IsAtEnd() ? '\0' : _source[_index];
 
@@ -331,7 +339,7 @@ namespace Raptor.Compiler
             }
 
             string val = _source[start.._index];
-            return new Token(TokenType.Number, val, _line);
+            return new Token(TokenType.Number, val, _line, _column);
         }
 
         private Token ScanIdentifierOrKeyword()
@@ -357,7 +365,7 @@ namespace Raptor.Compiler
                 _ => TokenType.Identifier,
             };
 
-            return new Token(type, val, _line);
+            return new Token(type, val, _line, _column);
         }
 
         private Token ScanOperatorOrPunctuation()
@@ -365,78 +373,82 @@ namespace Raptor.Compiler
             char c = Advance();
             return c switch
             {
-                ';' => new Token(TokenType.Semicolon, ";", _line),
-                '(' => new Token(TokenType.OpenParenthesis, "(", _line),
-                ')' => new Token(TokenType.CloseParenthesis, ")", _line),
-                '[' => new Token(TokenType.OpenBracket, "[", _line),
-                ']' => new Token(TokenType.CloseBracket, "]", _line),
-                '{' => new Token(TokenType.OpenBrace, "{", _line),
-                '}' => new Token(TokenType.CloseBrace, "}", _line),
-                ',' => new Token(TokenType.Comma, ",", _line),
+                ';' => new Token(TokenType.Semicolon, ";", _line, _column),
+                '(' => new Token(TokenType.OpenParenthesis, "(", _line, _column),
+                ')' => new Token(TokenType.CloseParenthesis, ")", _line, _column),
+                '[' => new Token(TokenType.OpenBracket, "[", _line, _column),
+                ']' => new Token(TokenType.CloseBracket, "]", _line, _column),
+                '{' => new Token(TokenType.OpenBrace, "{", _line, _column),
+                '}' => new Token(TokenType.CloseBrace, "}", _line, _column),
+                ',' => new Token(TokenType.Comma, ",", _line, _column),
 
                 '+' => Peek() switch
                 {
                     '=' => ConsumeAndReturn(TokenType.PlusEquals, "+="),
                     '+' => ConsumeAndReturn(TokenType.PlusPlus, "++"),
-                    _ => new Token(TokenType.Plus, "+", _line),
+                    _ => new Token(TokenType.Plus, "+", _line, _column),
                 },
                 '-' => Peek() switch
                 {
                     '=' => ConsumeAndReturn(TokenType.MinusEquals, "-="),
                     '-' => ConsumeAndReturn(TokenType.MinusMinus, "--"),
-                    _ => new Token(TokenType.Minus, "-", _line),
+                    _ => new Token(TokenType.Minus, "-", _line, _column),
                 },
                 '*' => Peek() switch
                 {
                     '=' => ConsumeAndReturn(TokenType.StarEquals, "*="),
-                    _ => new Token(TokenType.Star, "*", _line),
+                    _ => new Token(TokenType.Star, "*", _line, _column),
                 },
                 '/' => Peek() switch
                 {
                     '=' => ConsumeAndReturn(TokenType.SlashEquals, "/="),
-                    _ => new Token(TokenType.Slash, "/", _line),
+                    _ => new Token(TokenType.Slash, "/", _line, _column),
                 },
                 '=' => Match('=')
-                    ? new Token(TokenType.Equal, "==", _line)
-                    : new Token(TokenType.Assign, "=", _line),
+                    ? new Token(TokenType.Equal, "==", _line, _column)
+                    : new Token(TokenType.Assign, "=", _line, _column),
                 '!' => Match('=')
-                    ? new Token(TokenType.NotEqual, "!=", _line)
-                    : throw new Exception($"Unexpected char '!' at line {_line}"),
+                    ? new Token(TokenType.NotEqual, "!=", _line, _column)
+                    : throw new Exception(
+                        $"Unexpected char '!' at line {_line} at column {_column}"
+                    ),
                 '<' => Peek() switch
                 {
                     '=' => ConsumeAndReturn(TokenType.LessEqual, "<="),
                     '<' => ConsumeAndReturn(TokenType.LessLess, "<<"),
-                    _ => new Token(TokenType.Less, "<", _line),
+                    _ => new Token(TokenType.Less, "<", _line, _column),
                 },
                 '>' => Peek() switch
                 {
                     '=' => ConsumeAndReturn(TokenType.GreaterEqual, ">="),
                     '>' => ConsumeAndReturn(TokenType.GreaterGreater, ">>"),
-                    _ => new Token(TokenType.Greater, ">", _line),
+                    _ => new Token(TokenType.Greater, ">", _line, _column),
                 },
                 '%' => Peek() switch
                 {
                     '=' => ConsumeAndReturn(TokenType.PercentEquals, "%="),
-                    _ => new Token(TokenType.Percent, "%", _line),
+                    _ => new Token(TokenType.Percent, "%", _line, _column),
                 },
                 '&' => Peek() switch
                 {
                     '=' => ConsumeAndReturn(TokenType.AmpersandEquals, "&="),
                     '&' => ConsumeAndReturn(TokenType.AmpersandAmpersand, "&&"),
-                    _ => new Token(TokenType.Ampersand, "&", _line),
+                    _ => new Token(TokenType.Ampersand, "&", _line, _column),
                 },
                 '|' => Peek() switch
                 {
                     '=' => ConsumeAndReturn(TokenType.PipeEquals, "|="),
                     '|' => ConsumeAndReturn(TokenType.PipePipe, "||"),
-                    _ => new Token(TokenType.Pipe, "|", _line),
+                    _ => new Token(TokenType.Pipe, "|", _line, _column),
                 },
                 '^' => Peek() switch
                 {
                     '=' => ConsumeAndReturn(TokenType.CaretEquals, "^="),
-                    _ => new Token(TokenType.Caret, "^", _line),
+                    _ => new Token(TokenType.Caret, "^", _line, _column),
                 },
-                _ => throw new Exception($"Unexpected character '{c}' at line {_line}"),
+                _ => throw new Exception(
+                    $"Unexpected character '{c}' at line {_line} at column {_column}"
+                ),
             };
         }
 
@@ -451,7 +463,7 @@ namespace Raptor.Compiler
         private Token ConsumeAndReturn(TokenType type, string value)
         {
             Advance(); // Consume the peeked character
-            return new Token(type, value, _line);
+            return new Token(type, value, _line, _column);
         }
     }
 
@@ -496,7 +508,7 @@ namespace Raptor.Compiler
             Consume(TokenType.Assign, "Expected '=' in variable declaration.");
             ASTNode initializer = ParseExpression();
             Consume(TokenType.Semicolon, "Expected ';' after declaration.");
-            return new VarDeclNode(nameToken.Value, initializer) { Line = nameToken.Line };
+            return new VarDeclNode(nameToken.Lexeme, initializer) { Line = nameToken.Line };
         }
 
         private ASTNode ParseIf()
@@ -741,7 +753,7 @@ namespace Raptor.Compiler
             {
                 Token op = Previous();
                 ASTNode right = ParseShift();
-                expr = new BinaryOpNode(expr, op.Value, right) { Line = op.Line };
+                expr = new BinaryOpNode(expr, op.Lexeme, right) { Line = op.Line };
             }
 
             return expr;
@@ -754,7 +766,7 @@ namespace Raptor.Compiler
             {
                 Token op = Previous();
                 ASTNode right = ParseLogicalAnd();
-                expr = new LogicalOpNode(expr, op.Value, right) { Line = op.Line };
+                expr = new LogicalOpNode(expr, op.Lexeme, right) { Line = op.Line };
             }
             return expr;
         }
@@ -766,7 +778,7 @@ namespace Raptor.Compiler
             {
                 Token op = Previous();
                 ASTNode right = ParseBitwiseOr();
-                expr = new LogicalOpNode(expr, op.Value, right) { Line = op.Line };
+                expr = new LogicalOpNode(expr, op.Lexeme, right) { Line = op.Line };
             }
             return expr;
         }
@@ -778,7 +790,7 @@ namespace Raptor.Compiler
             {
                 Token op = Previous();
                 ASTNode right = ParseBitwiseXor();
-                expr = new BinaryOpNode(expr, op.Value, right) { Line = op.Line };
+                expr = new BinaryOpNode(expr, op.Lexeme, right) { Line = op.Line };
             }
             return expr;
         }
@@ -790,7 +802,7 @@ namespace Raptor.Compiler
             {
                 Token op = Previous();
                 ASTNode right = ParseBitwiseAnd();
-                expr = new BinaryOpNode(expr, op.Value, right) { Line = op.Line };
+                expr = new BinaryOpNode(expr, op.Lexeme, right) { Line = op.Line };
             }
             return expr;
         }
@@ -802,7 +814,7 @@ namespace Raptor.Compiler
             {
                 Token op = Previous();
                 ASTNode right = ParseComparison();
-                expr = new BinaryOpNode(expr, op.Value, right) { Line = op.Line };
+                expr = new BinaryOpNode(expr, op.Lexeme, right) { Line = op.Line };
             }
             return expr;
         }
@@ -814,7 +826,7 @@ namespace Raptor.Compiler
             {
                 Token op = Previous();
                 ASTNode right = ParseTerm();
-                expr = new BinaryOpNode(expr, op.Value, right) { Line = op.Line };
+                expr = new BinaryOpNode(expr, op.Lexeme, right) { Line = op.Line };
             }
             return expr;
         }
@@ -827,7 +839,7 @@ namespace Raptor.Compiler
             {
                 Token op = Previous();
                 ASTNode right = ParseFactor();
-                expr = new BinaryOpNode(expr, op.Value, right) { Line = op.Line };
+                expr = new BinaryOpNode(expr, op.Lexeme, right) { Line = op.Line };
             }
 
             return expr;
@@ -841,7 +853,7 @@ namespace Raptor.Compiler
             {
                 Token op = Previous();
                 ASTNode right = ParsePrimary();
-                expr = new BinaryOpNode(expr, op.Value, right) { Line = op.Line };
+                expr = new BinaryOpNode(expr, op.Lexeme, right) { Line = op.Line };
             }
 
             return expr;
@@ -852,7 +864,7 @@ namespace Raptor.Compiler
             if (Match(TokenType.Number))
             {
                 Token numToken = Previous();
-                return new NumberNode(double.Parse(numToken.Value)) { Line = numToken.Line };
+                return new NumberNode(double.Parse(numToken.Lexeme)) { Line = numToken.Line };
             }
             if (Match(TokenType.False))
             {
@@ -892,9 +904,9 @@ namespace Raptor.Compiler
                         } while (Match(TokenType.Comma));
                     }
                     Consume(TokenType.CloseParenthesis, "Expected ')' after arguments.");
-                    return new CallNode(idToken.Value, args) { Line = idToken.Line };
+                    return new CallNode(idToken.Lexeme, args) { Line = idToken.Line };
                 }
-                ASTNode expr = new IdentifierNode(idToken.Value) { Line = idToken.Line };
+                ASTNode expr = new IdentifierNode(idToken.Lexeme) { Line = idToken.Line };
                 while (Match(TokenType.OpenBracket))
                 {
                     ASTNode indexExpr = ParseExpression();
@@ -912,7 +924,7 @@ namespace Raptor.Compiler
                 return expr;
             }
             throw new Exception(
-                $"Expected expression at line {Peek().Line}, found '{Peek().Value}'."
+                $"Expected expression at line {Peek().Line}, found '{Peek().Lexeme}'."
             );
         }
 

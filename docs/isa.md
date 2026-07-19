@@ -6,7 +6,7 @@ This document serves as a complete reference manual for the virtual machine's In
 
 ## Operand Types Key
 
-- **`rA`**: Destination register (8-bit index, `0` to `255`). Always resolves to a register relative to `BasePtr`.
+- **`rA`**: Destination register (8-bit index, `0` to `255`). Always resolves to a register relative to the active frame pointer `RegPtr`.
 - **`rB` / `rC`**: Source register operands (9-bit index, `0` to `255`).
 - **`kB` / `kC`**: Constant pool operands (9-bit index, encoded as `256` to `511`). Points to `Constants[Index - 256]`.
 - **`opB` / `opC`**: Operands resolving via Register/Constant (RC) addressing. Can be a register (if $< 256$) or a constant (if $\ge 256$).
@@ -37,8 +37,8 @@ This document serves as a complete reference manual for the virtual machine's In
 | **`RAND`** | `ABC` | `RAND rA` | Generates a pseudo-random double in `[0, 1]` using XORShift32 and writes it to `rA`. |
 | **`SQRT`** | `ABx` | `SQRT rA opB` | Computes the square root of `opB` and writes it to `rA`. <br> $\text{rA} = \sqrt{\text{opB}}$ |
 | **`FISR`** | `ABx` | `FISR rA opB` | Computes the Fast Inverse Square Root of `opB` and writes it to `rA`. <br> $\text{rA} = 1 / \sqrt{\text{opB}}$ |
-| **`CALL`** | `ABx` | `CALL method() rStart` | Slides register base pointer and transfers control. <br> $\text{StackFramePush}(\text{Ip} - \text{InstPtr}, \text{BasePtr})$ <br> $\text{BasePtr} += \text{rStart}$ <br> $\text{Ip} = \text{InstPtr} + \text{MethodTable}[\text{methodIndex}]$ |
-| **`RETURN`** | `ABx` | `RETURN rStart rEnd` | Restores calling frame and returns values. Copies return range `[rStart, rEnd]` to callee window start, pops StackFrame, and restores parent `BasePtr` and `Ip`. |
+| **`CALL`** | `ABx` | `CALL method() rStart` | Slides register base pointer and transfers control. <br> $\text{StackFramePush}(\text{Ip} - \text{InstPtr}, \text{RegPtr})$ <br> $\text{RegPtr} += \text{rStart}$ <br> $\text{Ip} = \text{InstPtr} + \text{MethodTable}[\text{methodIndex}]$ |
+| **`RETURN`** | `ABx` | `RETURN rStart rEnd` | Restores calling frame and returns values. Copies return range `[rStart, rEnd]` to callee window start, pops StackFrame, and restores parent `RegPtr` and `Ip`. |
 | **`FOR`** | *2 Words*| `FOR rIndex max step < label` | **Word 1 (`ABC`):** Stores `rIndex`, `max`, `step`. <br> **Word 2 (`AsBx`):** Stores comparison operator (`comp`) and relative `jumpOffset`. <br> Increments `rIndex` by `step`. If condition `(rIndex comp max)` is true, jumps: $\text{Ip} += \text{jumpOffset} - 2$. Else, skips the second word: $\text{Ip}++$. |
 | **`NEWARR`**| `ABC` | `NEWARR rA size` | Allocates a byte block of `size` bytes on the heap, and writes the resulting address to register `rA`. Note: `size` is raw bytes; double arrays require `elements * 8` bytes. |
 | **`FREEARR`**| `ABC` | `FREEARR rA` | Deallocates the array pointed to by `rA` on the heap, and immediately coalesces contiguous free blocks. Sets `rA` to `0`. |

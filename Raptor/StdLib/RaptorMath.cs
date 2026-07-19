@@ -39,6 +39,7 @@ namespace Raptor.StdLib
             }
         }
 
+        [RaptorMethod]
         [RaptorDescription("Calculates the specified number to the specified power.")]
         [RaptorParam("base", "Number that specifies the base.")]
         [RaptorParam("power", "Number that specifies the power.")]

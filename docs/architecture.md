@@ -58,14 +58,14 @@ The VM uses fixed-width **32-bit instructions** represented by the `Instruction`
 To avoid separate instruction variants for register-register and register-constant operations (e.g., `ADD_RR` vs. `ADD_RC`), the VM utilizes a **Register/Constant (RC)** addressing mechanism.
 
 For any 9-bit operand (fields `B` and `C` in `ABC` format, or `B` in `ABx` format when used as an operand):
-- If the encoded value is **less than 256**, it references a register relative to the active stack frame:
-  $$\text{Operand} = \text{Registers}[\text{BasePtr} + \text{Index}]$$
+- If the encoded value is **less than 256**, it references a register relative to the active stack frame pointer (`state.RegPtr`):
+  $$\text{Operand} = \text{Registers}[\text{Index}]$$
 - If the encoded value is **greater than or equal to 256**, it references the global constant table:
   $$\text{Operand} = \text{Constants}[\text{Index} - 256]$$
 
 This logic is implemented in [VirtualMachine.cs](file:///home/andy/Projects/Raptor/Raptor/VirtualMachine.cs) as follows:
 ```csharp
-double valB = b < 256 ? Reg(state.RegPtr, state.BasePtr, b) : state.ConstPtr[b - 256];
+double valB = b < 256 ? Reg(state.RegPtr, b) : state.ConstPtr[b - 256];
 ```
 This design maximizes code density, permitting up to 256 registers and 256 active constants to be accessed directly within a single three-address instruction.
 
@@ -79,40 +79,32 @@ One of the VM's primary performance features is **sliding register windows**, wh
 In stack-based VMs or standard register VMs, calling a function requires copying arguments from the parent frame onto a call stack, or copying them into parameters registers for the callee. This copying wastes CPU cycles.
 
 ### The Zero-Copy Solution
-The VM allocates a single continuous register file of 256 doubles on the thread stack. It uses a base pointer (`BasePtr`) to index registers relative to the active method frame, and shifts the register pointer (`state.RegPtr`) directly to keep access offsets zero-based.
+The VM allocates a single continuous register file of 256 doubles on the thread stack. Instead of tracking an integer base pointer index, it shifts the active register file pointer (`state.RegPtr`) directly to keep access offsets zero-based in child frames.
 
 When a method is called via `CALL A B`:
 - `A` is the register index in the parent's frame where the callee's frame should start.
 - `B` is the index of the callee method in the method table.
 
-The VM pushes the current Program Counter index (calculated via `state.Ip - state.InstPtr`) and `BasePtr` onto the call stack, shifts `BasePtr` forward, and advances `state.RegPtr` to slide the window:
-$$\text{BasePtr}_{\text{callee}} = \text{BasePtr}_{\text{parent}} + A$$
-$$\text{RegPtr}_{\text{callee}} = \text{RegPtr}_{\text{parent}} + \text{BasePtr}_{\text{callee}}$$
+The VM pushes the current Program Counter index (calculated via `state.Ip - state.InstPtr`) and the current register pointer (`state.RegPtr`) onto the call stack, and then advances `state.RegPtr` directly to slide the window forward:
+$$\text{RegPtr}_{\text{callee}} = \text{RegPtr}_{\text{parent}} + A$$
 
 ```csharp
-[MethodImpl(MethodImplOptions.AggressiveInlining)]
-public static unsafe bool ExecuteCall(Instruction instruction, ref VMState state)
-{
-    byte start = instruction.A;
-    ushort methodIndex = instruction.B;
-    int currentPcIndex = (int)(state.Ip - state.InstPtr);
-    StackFrame frame = new StackFrame(currentPcIndex, state.BasePtr);
-    CallStackPush(ref state.CallStackPtr, frame);
-    state.BasePtr += start;
-    state.RegPtr += state.BasePtr;
-
-    state.Ip = state.InstPtr + (int)state.MethodTablePtr[methodIndex];
-    return true;
-}
+byte frameStart = instruction.A;
+int currentPcIndex = (int)(state.Ip - state.InstPtr);
+StackFrame frame = new StackFrame(currentPcIndex, state.RegPtr);
+CallStackPush(ref state.CallStackPtr, frame);
+state.RegPtr += frameStart;
+state.Ip = state.InstPtr + (int)vm._methods[methodIndex];
 ```
 
 ### Argument Passing
-Because the callee's register frame begins exactly at `BasePtr_parent + A`, the parent can place arguments directly into registers starting at `R[A]` (relative to the parent). These arguments automatically become `R0`, `R1`, `R2`, etc. inside the callee, requiring **zero memory copies**.
+Because the callee's register frame begins exactly at `RegPtr_parent + A`, the parent can place arguments directly into registers starting at `R[A]` (relative to the parent). These arguments automatically become `R0`, `R1`, `R2`, etc. inside the callee, requiring **zero memory copies**.
 
 ### Returning Values
-When returning via `RETURN A B` (returning values from callee's register `A` to register `B`):
+When returning via `RETURN A B` (returning values from callee's register range `[A, B]`):
 1. The return values are copied from the returning range `[A, B]` to the start of the callee's frame (`R0, R1, ...`).
-2. The VM pops the `StackFrame`, shifts the register pointer back (`state.RegPtr -= state.BasePtr`), and restores the parent's `BasePtr` and `Ip` (Instruction Pointer).
+2. The VM pops the `StackFrame` off the stack and restores the parent's `RegPtr` and `Ip` (Instruction Pointer):
+   $$\text{RegPtr}_{\text{parent}} = \text{StackFrame.PreviousRegPtr}$$
 
 ```csharp
 [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -123,13 +115,11 @@ public static unsafe bool ExecuteReturn(Instruction instruction, ref VMState sta
     byte count = (byte)(end - start);
     for (uint i = 0; i <= count; i++)
     {
-        Reg(state.RegPtr, state.BasePtr, i) = Reg(state.RegPtr, state.BasePtr, start + i);
+        Reg(state.RegPtr, i) = Reg(state.RegPtr, start + i);
     }
     StackFrame frame = CallStackPop(ref state.CallStackPtr);
-    int target = frame.ReturnPC;
-    state.RegPtr -= state.BasePtr;
-    state.BasePtr = frame.PreviousBase;
-    state.Ip = state.InstPtr + target;
+    state.RegPtr = frame.PreviousRegPtr;
+    state.Ip = state.InstPtr + frame.ReturnPC;
 
     return true;
 }
@@ -142,20 +132,20 @@ public static unsafe bool ExecuteReturn(Instruction instruction, ref VMState sta
 The call stack is represented by a contiguous block of `StackFrame` structures, allocated directly on the thread stack.
 
 ### StackFrame Structure
-Each stack frame is a lightweight 8-byte structure tracking:
+Each stack frame is a lightweight 16-byte structure tracking:
 - `ReturnPC` (4 bytes): The program counter index (offset from the instructions array start) to jump back to in the parent.
-- `PreviousBase` (4 bytes): The parent's register base pointer.
+- `PreviousRegPtr` (8 bytes): The parent's register pointer (pointing directly into the stackalloc registers block).
 
 ```csharp
-public readonly struct StackFrame
+public readonly unsafe struct StackFrame
 {
     public readonly int ReturnPC;
-    public readonly int PreviousBase;
+    public readonly double* PreviousRegPtr;
     
-    public StackFrame(int returnPC, int previousBase)
+    public StackFrame(int returnPC, double* previousRegPtr)
     {
         ReturnPC = returnPC;
-        PreviousBase = previousBase;
+        PreviousRegPtr = previousRegPtr;
     }
 }
 ```

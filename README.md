@@ -23,7 +23,7 @@
 
 **Raptor** is a complete, high-performance scripting pipeline consisting of **RaptorScript** (a high-level, JS/C#-like programming language), an optimizing compiler with source map debugging, a command-line toolchain (CLI), and an ultra-fast register-based virtual machine interpreter written in C# targeting **.NET 10.0**.
 
-By combining raw pointer arithmetic, stack-allocated registers, type unions, and live program reloading, Raptor runs scripts at **360 to 660+ MIPS** on standard consumer hardware. It is built specifically for **game engine scripting** where high execution speeds, low FFI latency, and zero garbage collection stutter are non-negotiable.
+By combining raw pointer arithmetic, stack-allocated registers, and live program reloading, Raptor runs scripts at **360 to 660+ MIPS** on standard consumer hardware. It is built specifically for **game engine scripting** where high execution speeds, low FFI latency, and zero garbage collection stutter are non-negotiable.
 
 ---
 
@@ -52,6 +52,29 @@ for(var i = 0; i < 10; i++) {
 }
 ```
 
+#### Compiled Output (Raptor Assembly - `.rasm`)
+The compiler generates optimized, register-friendly assembly. For example, a simple conditional branch:
+
+```javascript
+// RaptorScript (.rapt)
+var x = 10;
+if (x < 20) {
+    peri.print(x);
+}
+```
+
+Translates directly to:
+
+```assembly
+; Raptor Assembly (.rasm)
+LOADC r1 10.0            ; Load x (10) into register r1
+LT 1 r1 20.0             ; Compare r1 < 20.0 (expected true, skip JUMP if met)
+JUMP logic_end           ; Jump past body if comparison is false
+CALL peri.print() r1     ; Call FFI print with register r1
+logic_end:               ; End of branch
+HALT                     ; Stop VM execution
+```
+
 ### 2. Live Reloading (`ScriptWatcher`)
 Engineered for rapid game-design iteration. The thread-safe `ScriptWatcher` monitors script files on disk and automatically recompiles and swaps the execution `VMChunk` on the fly, updating gameplay mechanics, stats, or AI state **without halting the main execution thread or stopping the game loop**.
 
@@ -77,6 +100,19 @@ In game loops, scripting languages face a difficult trade-off between **raw exec
 | **FFI Call Overhead** | High (reflection/boxing) | Medium (~50–150 ns marshalling) | Low (~10-20 ns call cost) | **Ultra-Low (< 5 ns call overhead)** |
 | **AOT / IL2CPP Compatibility** | Excellent (Refsafe JIT limits) | Complex (requires native libs) | Broken on iOS/Consoles | **Perfect (runs natively anywhere .NET runs)** |
 | **Memory Locality** | Poor (managed heap objects) | Medium (C-structs) | High (C-structs) | **Maximum (L1 Stack-allocated registers)** |
+
+### Core Concept: Register vs. Stack Virtual Machines
+
+Most virtual machines (like the JVM, .NET CLR, or simple hobby runtimes) are **stack-based**. They push and pop operands on a virtual evaluation stack. Raptor is **register-based** (similar to Lua 5.0).
+
+Here is how both evaluate the statement `result = x + y`:
+
+| Stack-Based VM (JVM/CLR style) | Register-Based VM (Raptor style) |
+| :--- | :--- |
+| `LOAD x` (Push `x` to stack) <br> `LOAD y` (Push `y` to stack) <br> `ADD` (Pop `x` & `y`, add, push result) <br> `STORE result` (Pop result into variable) | `ADD r_result r_x r_y` (Direct register addition) |
+| **4 Instructions, 4 stack memory reads/writes** | **1 Instruction, 0 memory copies** |
+
+By using a register layout with 256 virtual registers, Raptor cuts instruction dispatch overhead by **30% to 50%** and keeps operands warm in CPU registers or L1 caches.
 
 ---
 
@@ -117,27 +153,14 @@ Opcode execution latencies inside the hot interpreter loop:
 ### 1. Stack-Allocated Register Files & L1 Cache Locality
 Interpreter registers are allocated on the local stack using `stackalloc`:
 ```csharp
-Register* RegPtr = stackalloc Register[256];
+double* RegPtr = stackalloc double[256];
 ```
 This forces the VM's register file to remain warm inside the CPU's **L1 Data Cache** (~4 cycle access latency), bypassing managed allocations.
 
-### 2. Register Type Union (No Cast Stalls)
-To prevent performance-killing CPU stalls when converting floating-point registers to integers for memory address indexing or bitwise operations, registers use a unified representation:
-```csharp
-[StructLayout(LayoutKind.Explicit, Size = 8)]
-public struct Register
-{
-    [FieldOffset(0)] public double AsDouble;
-    [FieldOffset(0)] public long AsLong;
-    [FieldOffset(0)] public ulong AsULong;
-}
-```
-This permits floating-point math, bitwise logic, and pointer offsets to read/write their native sizes directly with zero runtime conversion cost.
-
-### 3. Fused Loop Control (`FOR` Super-Instruction)
+### 2. Fused Loop Control (`FOR` Super-Instruction)
 Compiles loop increments, comparisons, and branches into a single two-word `FOR` super-instruction, reducing interpreter loop dispatch overhead by **50%**.
 
-### 4. Zero-Check Array Pointers
+### 3. Zero-Check Array Pointers
 Bypasses standard .NET array boundary checks (`IndexOutOfRangeException`) in the interpreter loop by pinning managed bytecode and constant blocks using `fixed` statements and resolving them via raw pointers.
 
 ---
@@ -192,6 +215,23 @@ Detailed architectural layouts are located in the [docs/](file:///home/andy/Proj
 - [Monte Carlo Pi Approximation](file:///home/andy/Projects/Raptor/examples/monte_carlo.md): Explores how a 4x loop unrolling optimization achieves a **25.6% speedup**.
 - [Perceptron Machine Learning Model](file:///home/andy/Projects/Raptor/examples/perceptron.md): Textual model training illustrating weight updates and FFI calling.
 - [3D Raytracer Visual Render](file:///home/andy/Projects/Raptor/examples/raytracer.md): Raytracer camera parameters, mathematical formulas, and PPM output formatting.
+
+### Directory Structure
+```text
+Raptor/
+├── docs/                     # Architectural & specification documents
+├── examples/                 # Workload explanations and algorithms
+├── Raptor/                   # Core VM & Compiler source code
+│   ├── Compiler/             # Lexer, Parser, AST, and RaptorScript Compiler
+│   ├── Attributes/           # FFI mapping attributes ([RaptorModule], etc.)
+│   ├── StdLib/               # Math and peripheral FFI libraries
+│   ├── VirtualMachine.cs     # Hot interpreter loop and dispatch
+│   ├── VMState.cs            # CPU-friendly state struct
+│   ├── ScriptWatcher.cs      # Live filesystem hot-reloader
+│   └── RaptorBinary.cs       # .rbc serialization engine
+├── Raptor.Cli/               # CLI frontend commands (build, run, docs)
+└── Raptor.Tests/             # Integration and verification test suites
+```
 
 ---
 
