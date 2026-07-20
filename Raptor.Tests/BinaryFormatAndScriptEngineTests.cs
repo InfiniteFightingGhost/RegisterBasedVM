@@ -258,7 +258,7 @@ HALT
             );
 
             // Wait a brief moment for the file watcher to detect, compile, and reload
-            for (int i = 0; i < 100; i++)
+            for (int i = 0; i < 300; i++)
             {
                 if (reloadedFired)
                     break;

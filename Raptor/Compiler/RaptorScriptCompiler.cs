@@ -1436,7 +1436,14 @@ namespace Raptor.Compiler
                     EmitIndexAssignment(indexAssignmentNode);
                     break;
                 case CallNode call:
-                    EmitCall(call, 0); // Accumulate in r0 by default
+                    if (call.MethodName is "free" or "alloc" or "len")
+                    {
+                        EmitExpression(call);
+                    }
+                    else
+                    {
+                        EmitCall(call, 0); // Accumulate in r0 by default
+                    }
                     break;
                 default:
                     _reporter.Report(

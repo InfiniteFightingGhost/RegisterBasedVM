@@ -68,7 +68,7 @@ namespace Raptor
 
             _watcher = new FileSystemWatcher(directory, filename)
             {
-                NotifyFilter = NotifyFilters.LastWrite,
+                NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.Size,
                 EnableRaisingEvents = true
             };
 
