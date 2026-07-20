@@ -54,9 +54,4 @@ jobs:
 
     - name: Publish to NuGet.org (Trusted Publishing / OIDC)
       if: startsWith(github.ref, 'refs/tags/')
-      run: |
-        if [ -n "${{ secrets.NUGET_API_KEY }}" ]; then
-          dotnet nuget push ./artifacts/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
-        else
-          dotnet nuget push ./artifacts/*.nupkg --source https://api.nuget.org/v3/index.json --skip-duplicate
-        fi
+      run: dotnet nuget push ./artifacts/*.nupkg --source https://api.nuget.org/v3/index.json --skip-duplicate

@@ -48,13 +48,25 @@ jobs:
       run: dotnet build Raptor.sln --configuration Release --no-restore
 
     - name: Run unit tests (.NET 8.0)
-      run: dotnet test Raptor.Tests/Raptor.Tests.csproj -f net8.0 --configuration Release --no-build --verbosity normal
+      run: dotnet test Raptor.Tests/Raptor.Tests.csproj -f net8.0 --configuration Release --no-build --verbosity normal --collect:"XPlat Code Coverage"
 
     - name: Run unit tests (.NET 9.0)
-      run: dotnet test Raptor.Tests/Raptor.Tests.csproj -f net9.0 --configuration Release --no-build --verbosity normal
+      run: dotnet test Raptor.Tests/Raptor.Tests.csproj -f net9.0 --configuration Release --no-build --verbosity normal --collect:"XPlat Code Coverage"
 
     - name: Run unit tests (.NET 10.0)
-      run: dotnet test Raptor.Tests/Raptor.Tests.csproj -f net10.0 --configuration Release --no-build --verbosity normal
+      run: dotnet test Raptor.Tests/Raptor.Tests.csproj -f net10.0 --configuration Release --no-build --verbosity normal --collect:"XPlat Code Coverage"
+
+    - name: Generate Code Coverage Report
+      if: matrix.os == 'ubuntu-latest'
+      uses: danielpalme/ReportGenerator-GitHub-Action@v5
+      with:
+        reports: '**/coverage.cobertura.xml'
+        targetdir: 'coveragereport'
+        reporttypes: 'MarkdownSummary;GithubMarkdown'
+
+    - name: Publish Code Coverage Summary
+      if: matrix.os == 'ubuntu-latest'
+      run: cat coveragereport/Summary.md >> $GITHUB_STEP_SUMMARY
 
     - name: Run fast benchmarks
       run: dotnet run --configuration Release --project Raptor.Benchmarks --no-build -- --fast
