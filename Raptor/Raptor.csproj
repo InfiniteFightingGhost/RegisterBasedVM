@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Nullable>enable</Nullable>
@@ -11,14 +11,21 @@
     <PublishAot>true</PublishAot>
     <IsAotCompatible>true</IsAotCompatible>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
     <PackageId>Raptor.VM</PackageId>
     <Version>1.0.0-alpha</Version>
     <Authors>InfiniteFightingGhost</Authors>
-    <Description>Fast, zero-allocation register-based VM and scripting engine for .NET 10.</Description>
+    <Description>Fast, zero-allocation register-based VM and scripting engine for .NET.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/InfiniteFightingGhost/Raptor</RepositoryUrl>
-    <PackageTags>vm;scripting;game-engine;compiler;bytecode;dotnet10</PackageTags>
+    <PackageTags>vm;scripting;game-engine;compiler;bytecode;dotnet</PackageTags>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
   <ItemGroup>
     <InternalsVisibleTo Include="Raptor.Tests" />

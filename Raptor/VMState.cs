@@ -6,13 +6,13 @@ using System.Text;
 
 namespace Raptor
 {
-    [StructLayout(LayoutKind.Sequential)]
     ///<summary>
     ///This struct represents everything that the <see cref="VirtualMachine"/> will need in order to do it's magic.
     ///</summary>
-    ///<remarks
+    ///<remarks>
     ///A little on the big side, don't you think?
     ///</remarks>
+    [StructLayout(LayoutKind.Sequential)]
     public unsafe struct VMState
     {
         public double* RegPtr;

@@ -23,7 +23,7 @@ namespace Raptor.Attributes
         /// If using <see cref="ScriptEngine.RegisterHostMethod(string, ushort, VirtualMachine.HostFFIDelegate)"/> or
         /// using the attrtibute approach of registering methods using "ref VMState" make sure to provide names for the params
         /// or else you will get zero parameter descriptions.
-        /// </remarks
+        /// </remarks>
         public string? ParamName { get; set; }
 
         /// <summary>

@@ -263,7 +263,7 @@ Raptor/
 
 Raptor ships with core FFI modules exposed natively to RaptorScript:
 * **`math`:** Under `RaptorMath.cs` (contains `Sin`, `Cos`, `Tan`, `Pow`, `Sqrt`, `Min`, `Max`, `Abs`, `Floor`, `Ceiling`, `Atan2`, `Clamp`, `Pi`).
-* **`peri`:** Under `RaptorPeriferals.cs` (contains `Print` for console output).
+* **`peri`:** Under `RaptorPeripherals.cs` (contains `Print` for console output).
 
 These modules register using high-performance reflection via custom attributes (`[RaptorModule]`, `[RaptorMethod]`, `[RaptorDescription]`, `[RaptorParam]`, `[RaptorPure]`).
 

@@ -38,3 +38,6 @@ todos.md
 test.rapt
 physics.rasm
 
+# Unity & Large Media Files
+*.meta
+orbit.gif

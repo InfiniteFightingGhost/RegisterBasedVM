@@ -19,7 +19,7 @@ If you discover a memory safety vulnerability, bytecode verification bypass, out
 
 ### Security Disclosure Process
 
-1. **Private Email Reporting**: Email details of the vulnerability to the maintainers or report via GitHub Security Advisory.
+1. **GitHub Private Security Advisory**: Report vulnerabilities privately via [GitHub Security Advisories](https://github.com/InfiniteFightingGhost/Raptor/security/advisories/new) or contact maintainer [@InfiniteFightingGhost](https://github.com/InfiniteFightingGhost).
 2. **Details to Include**:
    - Description of the issue or bytecode exploit payload.
    - Proof of concept script (`.rapt` or `.rasm`) demonstrating the vulnerability.

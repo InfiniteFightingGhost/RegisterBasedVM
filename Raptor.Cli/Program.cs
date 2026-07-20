@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using Raptor;
 using Raptor.Cli;
 using Raptor.StdLib;
@@ -6,7 +6,7 @@ using Spectre.Console.Cli;
 
 var table = new FFIHostTable();
 table.RegisterModule(typeof(RaptorMath));
-table.RegisterModule(typeof(RaptorPeriferals));
+table.RegisterModule(typeof(RaptorPeripherals));
 
 var services = new ServiceCollection();
 services.AddSingleton(table);
