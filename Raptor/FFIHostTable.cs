@@ -937,15 +937,15 @@ namespace Raptor
         /// </summary>
         public class MethodDefinition
         {
-            public string Type { get; set; } = null!;
-            public string Signature { get; set; } = null!;
+            public required string Type { get; set; }
+            public required string Signature { get; set; }
             public string? Description { get; set; }
             public List<ParameterDefinition> Parameters { get; set; } = new();
         }
 
         public class ParameterDefinition
         {
-            public string Name { get; set; } = null!;
+            public required string Name { get; set; }
             public string? Description { get; set; }
         }
 
@@ -987,8 +987,20 @@ namespace Raptor
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                 WriteIndented = true,
             };
-            sb.Append(JsonSerializer.Serialize(methods, options));
+            sb.Append(
+                JsonSerializer.Serialize(
+                    methods,
+                    AppJsonSerializerContext.Default.DictionaryStringMethodDefinition
+                )
+            );
             return sb.ToString();
         }
     }
+
+    [JsonSourceGenerationOptions(
+        PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
+        WriteIndented = true
+    )]
+    [JsonSerializable(typeof(Dictionary<string, FFIHostTable.MethodDefinition>))]
+    internal partial class AppJsonSerializerContext : JsonSerializerContext { }
 }
