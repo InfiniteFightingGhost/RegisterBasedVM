@@ -373,10 +373,6 @@ if (targetDistance < 5.0) {
             reporter: new Compiler.DiagnosticReporter()
         );
         Assert.NotEmpty(rasm);
-        System.IO.File.WriteAllText(
-            "/home/andy/.gemini/antigravity/brain/ec45c6eb-d535-4e23-909e-6974cf17074d/scratch/compiled_gameplay.rasm",
-            rasm
-        );
 
         ScriptEngine engine = new ScriptEngine();
         // Register some dummy FFI methods so the assembler doesn't fail on missing names
@@ -441,7 +437,8 @@ enemy.z = val * 2.0;
     [Fact]
     public void CompilerThrowsCompileExceptionOnSyntaxErrors()
     {
-        string raptorScript = @"
+        string raptorScript =
+            @"
 var x = 10.0;
 var y = ; // Syntax error
 ";
@@ -455,7 +452,8 @@ var y = ; // Syntax error
     [Fact]
     public void CompilerRecoversFromMultipleUndefinedAndDoubleDeclarations()
     {
-        string raptorScript = @"
+        string raptorScript =
+            @"
 var x = 10.0;
 var x = 20.0; // Double declaration
 var y = z + w; // Undefined identifiers
@@ -464,7 +462,7 @@ var y = z + w; // Undefined identifiers
         Assert.Throws<Compiler.CompileException>(() =>
             Raptor.Compiler.RaptorScriptCompiler.Compile(raptorScript, reporter: reporter)
         );
-        
+
         Assert.True(reporter.HasErrors);
         // Verify multiple errors reported: E0019 (double declaration), E0018 (undefined z), E0018 (undefined w)
         var codes = reporter.Diagnostics.Select(d => d.Code).ToList();
@@ -476,7 +474,8 @@ var y = z + w; // Undefined identifiers
     [Fact]
     public void CompilerThrowsEmitExceptionOnLoopValidationErrors()
     {
-        string raptorScript = @"
+        string raptorScript =
+            @"
 for (var i = 0.0; 10.0; i = i + 1.0) { // Condition is not a comparison
     var x = i;
 }
@@ -492,7 +491,8 @@ for (var i = 0.0; 10.0; i = i + 1.0) { // Condition is not a comparison
     [Fact]
     public void CompilerThrowsEmitExceptionOnFfiArgCountErrors()
     {
-        string raptorScript = @"
+        string raptorScript =
+            @"
 var a = alloc(1.0, 2.0); // alloc expects exactly 1 argument
 ";
         var reporter = new Compiler.DiagnosticReporter();
@@ -506,7 +506,8 @@ var a = alloc(1.0, 2.0); // alloc expects exactly 1 argument
     [Fact]
     public void CompilerRecoversFromUndeclaredVariableAssignments()
     {
-        string raptorScript = @"
+        string raptorScript =
+            @"
 x = 10.0; // Undeclared variable assignment
 y = 20.0; // Undeclared variable assignment
 ";
@@ -525,7 +526,10 @@ y = 20.0; // Undeclared variable assignment
     {
         string raptorScript = @"var result = 8 | 4 ^ 2 & 10 == 5 << 1 && 3 || 9;";
         var reporter = new Compiler.DiagnosticReporter();
-        string rasmCode = Raptor.Compiler.RaptorScriptCompiler.Compile(raptorScript, reporter: reporter);
+        string rasmCode = Raptor.Compiler.RaptorScriptCompiler.Compile(
+            raptorScript,
+            reporter: reporter
+        );
         Assert.False(reporter.HasErrors);
 
         ScriptEngine engine = new ScriptEngine();

@@ -20,13 +20,16 @@ public class ControlFlowBenchmark
     {
         _vm = new VirtualMachine();
         var table = new FFIHostTable();
-        
+
         // 1. Predictable FFI populates array with all 0.1s
-        table.Register("populateDataPredictable", 10, (ref VMState state) => {
-            unsafe {
+        table.Register("populateDataPredictable", 10, (ref VMState state) =>
+        {
+            unsafe
+            {
                 double* arrPtr = (double*)(ulong)state.RegPtr[0];
                 int size = Epochs;
-                for (int i = 0; i < size; i++) {
+                for (int i = 0; i < size; i++)
+                {
                     arrPtr[i] = 0.1;
                 }
             }
@@ -34,11 +37,14 @@ public class ControlFlowBenchmark
 
         // 2. Unpredictable FFI populates array with random doubles (0.0 to 1.0)
         var random = new Random(42);
-        table.Register("populateDataUnpredictable", 11, (ref VMState state) => {
-            unsafe {
+        table.Register("populateDataUnpredictable", 11, (ref VMState state) =>
+        {
+            unsafe
+            {
                 double* arrPtr = (double*)(ulong)state.RegPtr[0];
                 int size = Epochs;
-                for (int i = 0; i < size; i++) {
+                for (int i = 0; i < size; i++)
+                {
                     arrPtr[i] = random.NextDouble();
                 }
             }

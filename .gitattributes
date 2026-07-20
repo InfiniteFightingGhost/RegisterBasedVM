@@ -1,0 +1,2 @@
+# Enforce LF line endings for all text/C# files across Windows, Linux, and macOS
+* text=auto eol=lf
