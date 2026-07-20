@@ -62,7 +62,7 @@ jobs:
       with:
         reports: '**/coverage.cobertura.xml'
         targetdir: 'coveragereport'
-        reporttypes: 'MarkdownSummary;GithubMarkdown'
+        reporttypes: 'MarkdownSummary'
 
     - name: Publish Code Coverage Summary
       if: matrix.os == 'ubuntu-latest'
