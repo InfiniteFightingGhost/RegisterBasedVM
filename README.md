@@ -35,8 +35,9 @@ using Raptor.StdLib;
 
 // 1. Initialize engine and register standard math FFI module
 var engine = new ScriptEngine();
-engine.RegisterModule<RaptorMath>();
-
+var table = new FFIHostTable();
+table.RegisterModule<RaptorMath>();
+engine.RegisterHostTable(table);
 // 2. Compile high-level RaptorScript into an optimized VM chunk
 VMChunk chunk = engine.Compile(@"
     var radius = 5.0;
@@ -243,18 +244,32 @@ Detailed architectural layouts are located in the [docs/](docs/) and [examples/]
 ### Directory Structure
 ```text
 Raptor/
-├── docs/                     # Architectural & specification documents
-├── examples/                 # Workload explanations and algorithms
-├── Raptor/                   # Core VM & Compiler source code
-│   ├── Compiler/             # Lexer, Parser, AST, and RaptorScript Compiler
-│   ├── Attributes/           # FFI mapping attributes ([RaptorModule], etc.)
-│   ├── StdLib/               # Math and peripheral FFI libraries
-│   ├── VirtualMachine.cs     # Hot interpreter loop and dispatch
-│   ├── VMState.cs            # CPU-friendly state struct
-│   ├── ScriptWatcher.cs      # Live filesystem hot-reloader
-│   └── RaptorBinary.cs       # .rbc serialization engine
-├── Raptor.Cli/               # CLI frontend commands (build, run, docs)
-└── Raptor.Tests/             # Integration and verification test suites
+├── .github/                  # CI/CD workflows, release automation, and issue templates
+├── docs/                     # Architectural & specification documents (ISA, memory, pipeline)
+├── examples/                 # Example workloads (raytracer, fibonacci, monte carlo, perceptron)
+├── Raptor/                   # Core VM, Compiler, and FFI engine (Unity & .NET compatible)
+│   ├── Attributes/           # FFI metadata attributes ([RaptorModule], [RaptorMethod], etc.)
+│   ├── Compiler/             # Lexer, Parser, AST nodes, and RaptorScript bytecode compiler
+│   ├── StdLib/               # Built-in native FFI modules (RaptorMath, RaptorPeripherals)
+│   ├── ScriptEngine.cs       # High-level host embedding entry point
+│   ├── VirtualMachine.cs     # Ultra-fast hot interpreter dispatch loop & opcode logic
+│   ├── BytecodeVerifier.cs   # Bytecode safety validator & stack/register boundary verifier
+│   ├── FFIHostTable.cs       # High-speed method reflection & zero-overhead invocation host table
+│   ├── Assembler.cs          # Two-pass assembly parser, instruction encoder & constant pool
+│   ├── Disassembler.cs       # Bytecode disassembler & instruction decoder
+│   ├── ScriptWatcher.cs      # Thread-safe filesystem hot-reloader
+│   ├── RaptorBinary.cs       # .rbc binary serialization and header verification engine
+│   ├── VMState.cs            # CPU cache-friendly VM execution state struct
+│   └── package.json          # Unity Package Manager (UPM) manifest & asmdef integration
+├── Raptor.Cli/               # Spectre.Console CLI toolchain
+│   ├── BuildCommand.cs       # Compiles .rapt -> .rasm / .rbc & exports editor API metadata
+│   ├── RunCommand.cs         # Compiles & executes scripts directly from terminal
+│   └── DocsCommand.cs        # Opens documentation reference in browser
+├── Raptor.Benchmarks/        # BenchmarkDotNet performance benchmark suite
+└── Raptor.Tests/             # Unit and integration test suites
+    ├── VMIntegrationTests.cs # Full end-to-end VM script execution tests
+    ├── BytecodeVerifierTests.cs # Safety, invalid opcode & boundary verification tests
+    └── FfiReflectionTests.cs # FFI method registration & call overhead tests
 ```
 
 ---
@@ -280,5 +295,14 @@ Upcoming features and planned additions to the Raptor ecosystem:
 
 ---
 
+## Community & Support
+
+- **Questions & Discussions**: Ask questions, share engine integration ideas, or showcase projects on [GitHub Discussions](https://github.com/InfiniteFightingGhost/Raptor/discussions).
+- **Bug Reports & Feature Requests**: Open an issue using our structured [Issue Templates](https://github.com/InfiniteFightingGhost/Raptor/issues/new/choose).
+- **Security Disclosures**: Review our [Security Policy](SECURITY.md) to report vulnerabilities privately.
+
+---
+
 ## License
 Raptor is released under the [MIT License](LICENSE).
+

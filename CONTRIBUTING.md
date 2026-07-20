@@ -83,3 +83,6 @@ When modifying hot interpreter paths ([VirtualMachine.cs](Raptor/VirtualMachine.
 ## 5. Community Guidelines
 
 Please note that this project is governed by the [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code.
+
+For general questions, architecture discussions, or feature proposals before writing code, join us on [GitHub Discussions](https://github.com/InfiniteFightingGhost/Raptor/discussions).
+
