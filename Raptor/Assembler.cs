@@ -42,7 +42,7 @@ namespace Raptor
                     lines.RemoveAt(i--);
                     continue;
                 }
-                lines[i] = lines[i].TrimStart();
+                lines[i] = lines[i].Trim();
                 string[] words = lines[i].Split();
                 if (lines[i].StartsWith("DEFINE "))
                 {
