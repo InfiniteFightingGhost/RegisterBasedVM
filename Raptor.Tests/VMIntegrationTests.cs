@@ -20,7 +20,6 @@ loop:
     MOVE last result
     ADD result last lastlast
     ADD counter counter 1
-    PRINT counter
     LT 0 counter n
     JUMP loop
 PRINT result
@@ -49,7 +48,6 @@ PRINT result
 HALT
 
 method()
-    PRINT r0
     LE 1 r0 2
     JUMP math
     LOADC r0 1
@@ -190,13 +188,6 @@ PRINT b
 HALT
 
 ; --- FUNCTIONS ---
-
-print()
-    PRINT w1
-    PRINT w2
-    PRINT b
-    PRINTA 10
-    RETURN r0 r0
 
 dot()
     MUL temp1 x1 w1

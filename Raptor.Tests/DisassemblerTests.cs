@@ -19,7 +19,7 @@ LOADC r1 10.0
 LOADC r2 5.5
 ADD r3 r1 r2
 FOR r4 100 1 < loop
-PRINT r3
+ADD r1 r1 r1
 loop:
 HALT
 ";
