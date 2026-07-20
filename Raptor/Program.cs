@@ -29,7 +29,8 @@ namespace Raptor
                         if (args.Length == 1)
                         {
                             Console.WriteLine("Enter path for <file.rasm>");
-                            filePath = Console.ReadLine();
+                            string? input = Console.ReadLine();
+                            filePath = input == null ? string.Empty : input;
                         }
                         else
                             filePath = args[1];

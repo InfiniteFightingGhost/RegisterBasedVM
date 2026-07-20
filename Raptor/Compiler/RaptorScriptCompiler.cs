@@ -1666,6 +1666,8 @@ namespace Raptor.Compiler
             }
             finally
             {
+                if (_environment.Enclosing == null)
+                    throw new Exception("How is this possible?");
                 _environment = _environment.Enclosing;
             }
         }
@@ -1893,33 +1895,27 @@ namespace Raptor.Compiler
                 case LogicalOpNode logicalNode:
                     int logicalResultReg = EmitExpression(logicalNode.Left);
                     string endLabel = $"logic_end{_labelCounter++}";
+                    int zeroRegLogical = _regCounter++;
+                    _sb.AppendLine($"LOADC r{zeroRegLogical} 0.0");
                     if (logicalNode.Op == "&&")
                     {
-                        _sb.AppendLine($"EQ 1 r{logicalResultReg} 1");
+                        // Jump to endLabel if Left is falsey (r{logicalResultReg} == 0.0)
+                        _sb.AppendLine($"EQ 0 r{logicalResultReg} r{zeroRegLogical}");
                         _sb.AppendLine($"JUMP {endLabel}");
                     }
                     else if (logicalNode.Op == "||")
                     {
-                        _sb.AppendLine($"EQ 0 r{logicalResultReg} 0");
+                        // Jump to endLabel if Left is truthy (r{logicalResultReg} != 0.0)
+                        _sb.AppendLine($"EQ 1 r{logicalResultReg} r{zeroRegLogical}");
                         _sb.AppendLine($"JUMP {endLabel}");
                     }
                     int rightSide = EmitExpression(logicalNode.Right);
                     _sb.AppendLine($"MOVE r{logicalResultReg} r{rightSide}");
                     _sb.AppendLine($"{endLabel}:");
                     return logicalResultReg;
-                default:
-                    _reporter.Report(
-                        new Diagnostic(
-                            "E0027",
-                            DiagnosticSeverity.Error,
-                            $"Cannot emit expression node of type {node.GetType().Name}.",
-                            node.Line,
-                            node.Column,
-                            node.Length
-                        )
-                    );
-                    throw new EmitException();
             }
+
+            throw new EmitException();
         }
 
         private int EmitBinaryOp(BinaryOpNode binary)
@@ -1928,70 +1924,100 @@ namespace Raptor.Compiler
             int rightReg = EmitExpression(binary.Right);
             int resReg = _regCounter++;
 
-            string instruction;
-            int firstReg = leftReg;
-            int secondReg = rightReg;
-
             switch (binary.Op)
             {
                 case "+":
-                    instruction = "ADD";
-                    break;
-                case "-":
-                    instruction = "SUB";
-                    break;
-                case "*":
-                    instruction = "MUL";
-                    break;
-                case "/":
-                    instruction = "DIV";
-                    break;
-                case "%":
-                    instruction = "MOD";
-                    break;
-                case "|":
-                    instruction = "BINOR";
-                    break;
-                case "&":
-                    instruction = "BINAND";
-                    break;
-                case "^":
-                    instruction = "BINXOR";
-                    break;
-                case "<<":
-                    instruction = "BINLSH";
-                    break;
-                case ">>":
-                    instruction = "BINRSH";
-                    break;
-                case "<":
-                    instruction = "LT";
-                    break;
-                case "<=":
-                    instruction = "LE";
-                    break;
-                case ">":
-                    // Desugar a > b -> b < a
-                    instruction = "LT";
-                    firstReg = rightReg;
-                    secondReg = leftReg;
-                    break;
-                case ">=":
-                    // Desugar a >= b -> b <= a
-                    instruction = "LE";
-                    firstReg = rightReg;
-                    secondReg = leftReg;
-                    break;
-                case "==":
-                    instruction = "EQ";
-                    break;
-                case "!=":
-                    // Desugar a != b -> EQ r_res r_left r_right followed by EQ r_res r_res 0.0 (inverted)
-                    _sb.AppendLine($"EQ r{resReg} r{leftReg} r{rightReg}");
-                    int zeroReg = _regCounter++;
-                    _sb.AppendLine($"LOADC r{zeroReg} 0.0");
-                    _sb.AppendLine($"EQ r{resReg} r{resReg} r{zeroReg}");
+                    _sb.AppendLine($"ADD r{resReg} r{leftReg} r{rightReg}");
                     return resReg;
+                case "-":
+                    _sb.AppendLine($"SUB r{resReg} r{leftReg} r{rightReg}");
+                    return resReg;
+                case "*":
+                    _sb.AppendLine($"MUL r{resReg} r{leftReg} r{rightReg}");
+                    return resReg;
+                case "/":
+                    _sb.AppendLine($"DIV r{resReg} r{leftReg} r{rightReg}");
+                    return resReg;
+                case "%":
+                    _sb.AppendLine($"MOD r{resReg} r{leftReg} r{rightReg}");
+                    return resReg;
+                case "|":
+                    _sb.AppendLine($"BINOR r{resReg} r{leftReg} r{rightReg}");
+                    return resReg;
+                case "&":
+                    _sb.AppendLine($"BINAND r{resReg} r{leftReg} r{rightReg}");
+                    return resReg;
+                case "^":
+                    _sb.AppendLine($"BINXOR r{resReg} r{leftReg} r{rightReg}");
+                    return resReg;
+                case "<<":
+                    _sb.AppendLine($"BINLSH r{resReg} r{leftReg} r{rightReg}");
+                    return resReg;
+                case ">>":
+                    _sb.AppendLine($"BINRSH r{resReg} r{leftReg} r{rightReg}");
+                    return resReg;
+                case "<":
+                    {
+                        string skipLabel = $"cmp_skip{_labelCounter++}";
+                        _sb.AppendLine($"LOADC r{resReg} 1.0");
+                        _sb.AppendLine($"LT 1 r{leftReg} r{rightReg}");
+                        _sb.AppendLine($"JUMP {skipLabel}");
+                        _sb.AppendLine($"LOADC r{resReg} 0.0");
+                        _sb.AppendLine($"{skipLabel}:");
+                        return resReg;
+                    }
+                case "<=":
+                    {
+                        string skipLabel = $"cmp_skip{_labelCounter++}";
+                        _sb.AppendLine($"LOADC r{resReg} 1.0");
+                        _sb.AppendLine($"LE 1 r{leftReg} r{rightReg}");
+                        _sb.AppendLine($"JUMP {skipLabel}");
+                        _sb.AppendLine($"LOADC r{resReg} 0.0");
+                        _sb.AppendLine($"{skipLabel}:");
+                        return resReg;
+                    }
+                case ">":
+                    {
+                        // a > b -> b < a
+                        string skipLabel = $"cmp_skip{_labelCounter++}";
+                        _sb.AppendLine($"LOADC r{resReg} 1.0");
+                        _sb.AppendLine($"LT 1 r{rightReg} r{leftReg}");
+                        _sb.AppendLine($"JUMP {skipLabel}");
+                        _sb.AppendLine($"LOADC r{resReg} 0.0");
+                        _sb.AppendLine($"{skipLabel}:");
+                        return resReg;
+                    }
+                case ">=":
+                    {
+                        // a >= b -> b <= a
+                        string skipLabel = $"cmp_skip{_labelCounter++}";
+                        _sb.AppendLine($"LOADC r{resReg} 1.0");
+                        _sb.AppendLine($"LE 1 r{rightReg} r{leftReg}");
+                        _sb.AppendLine($"JUMP {skipLabel}");
+                        _sb.AppendLine($"LOADC r{resReg} 0.0");
+                        _sb.AppendLine($"{skipLabel}:");
+                        return resReg;
+                    }
+                case "==":
+                    {
+                        string skipLabel = $"cmp_skip{_labelCounter++}";
+                        _sb.AppendLine($"LOADC r{resReg} 1.0");
+                        _sb.AppendLine($"EQ 1 r{leftReg} r{rightReg}");
+                        _sb.AppendLine($"JUMP {skipLabel}");
+                        _sb.AppendLine($"LOADC r{resReg} 0.0");
+                        _sb.AppendLine($"{skipLabel}:");
+                        return resReg;
+                    }
+                case "!=":
+                    {
+                        string skipLabel = $"cmp_skip{_labelCounter++}";
+                        _sb.AppendLine($"LOADC r{resReg} 1.0");
+                        _sb.AppendLine($"EQ 0 r{leftReg} r{rightReg}");
+                        _sb.AppendLine($"JUMP {skipLabel}");
+                        _sb.AppendLine($"LOADC r{resReg} 0.0");
+                        _sb.AppendLine($"{skipLabel}:");
+                        return resReg;
+                    }
                 default:
                     _reporter.Report(
                         new Diagnostic(
@@ -2005,9 +2031,6 @@ namespace Raptor.Compiler
                     );
                     throw new EmitException();
             }
-
-            _sb.AppendLine($"{instruction} r{resReg} r{firstReg} r{secondReg}");
-            return resReg;
         }
 
         private void EmitCall(CallNode call, int returnReg)

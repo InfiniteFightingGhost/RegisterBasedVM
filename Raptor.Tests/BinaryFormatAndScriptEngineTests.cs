@@ -519,4 +519,23 @@ y = 20.0; // Undeclared variable assignment
         Assert.Equal(2, codes.Count);
         Assert.All(codes, code => Assert.Equal("E0018", code));
     }
+
+    [Fact]
+    public void ComplexExpressionEvaluationTest()
+    {
+        string raptorScript = @"var result = 8 | 4 ^ 2 & 10 == 5 << 1 && 3 || 9;";
+        var reporter = new Compiler.DiagnosticReporter();
+        string rasmCode = Raptor.Compiler.RaptorScriptCompiler.Compile(raptorScript, reporter: reporter);
+        Assert.False(reporter.HasErrors);
+
+        ScriptEngine engine = new ScriptEngine();
+        VMChunk chunk = engine.Compile(rasmCode);
+
+        VirtualMachine vm = new VirtualMachine();
+        vm.LoadProgram(chunk);
+        ExecutionResult res = vm.RunFast();
+        Assert.Equal(VMStatus.Halted, res.Status);
+        // r1 is var result
+        Assert.Equal(3.0, res.RegistersSnapshot[1]);
+    }
 }

@@ -286,9 +286,13 @@ namespace Raptor
                     );
                 }
             }
+            catch (VerificationException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
-                throw ex;
+                throw new Exception("Bytecode verifier encountered an error", innerException: ex);
             }
             finally
             {

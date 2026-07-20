@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Raptor.Attributes;
 
 namespace Raptor
@@ -936,15 +937,15 @@ namespace Raptor
         /// </summary>
         public class MethodDefinition
         {
-            public string Type { get; set; }
-            public string Signature { get; set; }
+            public string Type { get; set; } = null!;
+            public string Signature { get; set; } = null!;
             public string? Description { get; set; }
             public List<ParameterDefinition> Parameters { get; set; } = new();
         }
 
         public class ParameterDefinition
         {
-            public string Name { get; set; }
+            public string Name { get; set; } = null!;
             public string? Description { get; set; }
         }
 
