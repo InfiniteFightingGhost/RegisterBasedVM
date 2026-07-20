@@ -19,6 +19,7 @@ app.Configure(config =>
     config.AddCommand<RunCommand>("run");
     config.AddCommand<DocsCommand>("docs");
     config.AddCommand<BuildCommand>("build");
+    config.AddCommand<NewCommand>("new");
 });
 
 return app.Run(args);

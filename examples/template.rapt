@@ -1,0 +1,17 @@
+// template.rapt - RaptorScript Starter Template
+// Fast, zero-allocation register-based scripting language for game engines.
+
+// 1. Variable Declarations & Math Operations
+var radius = 5.0;
+var area = math.pi() * math.pow(radius, 2.0);
+
+// 2. Output result via Host FFI call
+peri.print(area);
+
+// 3. Conditional Logic & Control Flow Loop
+if (area > 50.0) {
+    for (var i = 0; i < 5; i++) {
+        var step = i * 10.0;
+        peri.print(step);
+    }
+}

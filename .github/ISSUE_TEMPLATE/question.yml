@@ -1,0 +1,25 @@
+name: Question / Usage Support
+description: Ask a question about using Raptor VM or embedding it in your game engine.
+title: "[Question]: "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### Questions & Usage Support
+        For general usage questions, feature discussions, and integration help, please consider opening a thread on [GitHub Discussions](https://github.com/InfiniteFightingGhost/Raptor/discussions).
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+      description: Brief summary of your question.
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Question Details
+      description: Provide details, code snippets, or architecture context for your question.
+      render: csharp
+    validations:
+      required: true

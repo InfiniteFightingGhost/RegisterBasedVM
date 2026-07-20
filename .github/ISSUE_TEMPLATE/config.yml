@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Ask a Question / General Support
+    url: https://github.com/InfiniteFightingGhost/Raptor/discussions
+    about: Ask questions about embedding Raptor, host engine FFI, or RaptorScript usage.
+  - name: Report a Security Vulnerability
+    url: https://github.com/InfiniteFightingGhost/Raptor/security/advisories/new
+    about: Privately report bytecode verification bypasses, out-of-bounds execution, or memory safety vulnerabilities.

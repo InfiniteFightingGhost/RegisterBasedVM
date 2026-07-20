@@ -58,5 +58,30 @@ namespace Raptor.Tests
                     File.Delete(tempScript);
             }
         }
+
+        [Fact]
+        public void NewCommandCreatesStarterScriptFile()
+        {
+            string tempScript = Path.Combine(Path.GetTempPath(), "cli_new_script.rapt");
+            if (File.Exists(tempScript))
+                File.Delete(tempScript);
+
+            try
+            {
+                var cmd = new NewCommand();
+                var settings = new NewCommand.Settings { ScriptPath = tempScript };
+                int exitCode = cmd.ExecuteForTesting(settings);
+
+                Assert.Equal(0, exitCode);
+                Assert.True(File.Exists(tempScript));
+                string content = File.ReadAllText(tempScript);
+                Assert.Contains("RaptorScript Starter Template", content);
+            }
+            finally
+            {
+                if (File.Exists(tempScript))
+                    File.Delete(tempScript);
+            }
+        }
     }
 }
