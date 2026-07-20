@@ -9,7 +9,23 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>raptor</ToolCommandName>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <PackageId>Raptor.Cli</PackageId>
+    <Version>1.0.0-preview1</Version>
+    <Authors>InfiniteFightingGhost</Authors>
+    <Description>Command-line toolchain for compiling, running, and managing Raptor VM scripts.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>raptor-icon.png</PackageIcon>
+    <RepositoryUrl>https://github.com/InfiniteFightingGhost/Raptor</RepositoryUrl>
+    <PackageTags>vm;scripting;cli;game-engine;compiler;bytecode;dotnet</PackageTags>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\raptor-icon.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.10" />

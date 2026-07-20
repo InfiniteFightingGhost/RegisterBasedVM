@@ -7,12 +7,13 @@ using System.Text;
 
 namespace Raptor
 {
-    ///<summary>
-    ///The engine that this whole project relies upon. This is place that all of the instructions are executed.
-    ///</summary>
-    ///<remarks>
-    ///My Sheilaaaaa.
-    ///</remarks>
+    /// <summary>
+    /// Core register-based virtual machine interpreter designed for zero garbage collection allocations,
+    /// stack-allocated register files, pinned bytecode arrays, and ultra-low latency FFI execution.
+    /// </summary>
+    /// <remarks>
+    /// The virtual machine operates on 256 virtual registers warm in L1 cache and dispatches 32-bit bit-packed instructions.
+    /// </remarks>
     public unsafe class VirtualMachine : IDisposable
     {
         private uint[] _instructions = null!;

@@ -12,7 +12,8 @@ namespace Raptor.Tests
         [Fact]
         public void BuildCommandCompilesScriptFile()
         {
-            string tempScript = Path.Combine(Path.GetTempPath(), "cli_test_script.rapt");
+            string tempScript = Path.Combine(Path.GetTempPath(), $"cli_test_{Guid.NewGuid():N}.rapt");
+            string rbcPath = Path.Combine("build", Path.GetFileNameWithoutExtension(tempScript) + ".rbc");
             File.WriteAllText(tempScript, "var x = 100;\nperi.print(x);");
             try
             {
@@ -25,20 +26,22 @@ namespace Raptor.Tests
                 int exitCode = cmd.ExecuteForTesting(settings);
 
                 Assert.Equal(0, exitCode);
-                string rbcPath = Path.Combine("build", Path.GetFileNameWithoutExtension(tempScript) + ".rbc");
                 Assert.True(File.Exists(rbcPath));
             }
             finally
             {
                 if (File.Exists(tempScript))
                     File.Delete(tempScript);
+                if (File.Exists(rbcPath))
+                    File.Delete(rbcPath);
             }
         }
 
         [Fact]
         public void RunCommandExecutesScriptFile()
         {
-            string tempScript = Path.Combine(Path.GetTempPath(), "cli_run_script.rapt");
+            string tempScript = Path.Combine(Path.GetTempPath(), $"cli_run_{Guid.NewGuid():N}.rapt");
+            string rbcPath = Path.Combine("build", Path.GetFileNameWithoutExtension(tempScript) + ".rbc");
             File.WriteAllText(tempScript, "var a = 5;\nvar b = 15;\nvar c = a + b;");
             try
             {
@@ -56,13 +59,15 @@ namespace Raptor.Tests
             {
                 if (File.Exists(tempScript))
                     File.Delete(tempScript);
+                if (File.Exists(rbcPath))
+                    File.Delete(rbcPath);
             }
         }
 
         [Fact]
         public void NewCommandCreatesStarterScriptFile()
         {
-            string tempScript = Path.Combine(Path.GetTempPath(), "cli_new_script.rapt");
+            string tempScript = Path.Combine(Path.GetTempPath(), $"cli_new_{Guid.NewGuid():N}.rapt");
             if (File.Exists(tempScript))
                 File.Delete(tempScript);
 

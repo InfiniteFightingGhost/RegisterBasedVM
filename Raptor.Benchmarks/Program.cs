@@ -352,45 +352,45 @@ public class Program
             Console.WriteLine("\n[VM Consolidated Benchmarks]");
             var vmBench = new VmBenchmarks();
             vmBench.Setup();
-            Console.SetOut(stdout);
+            Console.SetOut(TextWriter.Null);
 
             sw = Stopwatch.StartNew();
             for (int i = 0; i < 50; i++)
                 vmBench.Benchmark_Fibonacci();
             sw.Stop();
-            Console.WriteLine($"Fibonacci (50k):      {sw.Elapsed.TotalMilliseconds / 50.0:F4} ms");
+            stdout.WriteLine($"Fibonacci (50k):      {sw.Elapsed.TotalMilliseconds / 50.0:F4} ms");
 
             sw = Stopwatch.StartNew();
             for (int i = 0; i < 10; i++)
                 vmBench.Benchmark_MonteCarlo();
             sw.Stop();
-            Console.WriteLine($"Monte Carlo (100k):   {sw.Elapsed.TotalMilliseconds / 10.0:F4} ms");
+            stdout.WriteLine($"Monte Carlo (100k):   {sw.Elapsed.TotalMilliseconds / 10.0:F4} ms");
 
             sw = Stopwatch.StartNew();
             for (int i = 0; i < 50; i++)
                 vmBench.Benchmark_Perceptron();
             sw.Stop();
-            Console.WriteLine($"Perceptron (1k ep):   {sw.Elapsed.TotalMilliseconds / 50.0:F4} ms");
+            stdout.WriteLine($"Perceptron (1k ep):   {sw.Elapsed.TotalMilliseconds / 50.0:F4} ms");
 
             sw = Stopwatch.StartNew();
             for (int i = 0; i < 10; i++)
                 vmBench.Benchmark_RayTracerSingleFrame();
             sw.Stop();
-            Console.WriteLine($"RayTracer (32x32):    {sw.Elapsed.TotalMilliseconds / 10.0:F4} ms");
+            stdout.WriteLine($"RayTracer (32x32):    {sw.Elapsed.TotalMilliseconds / 10.0:F4} ms");
 
             sw = Stopwatch.StartNew();
             for (int i = 0; i < 50; i++)
                 vmBench.Benchmark_PhysicsMovement();
             sw.Stop();
-            Console.WriteLine($"Physics Movement:     {sw.Elapsed.TotalMilliseconds / 50.0:F4} ms");
+            stdout.WriteLine($"Physics Movement:     {sw.Elapsed.TotalMilliseconds / 50.0:F4} ms");
 
             sw = Stopwatch.StartNew();
             for (int i = 0; i < 50; i++)
                 vmBench.Benchmark_CombatDamage();
             sw.Stop();
-            Console.WriteLine($"Combat Damage:        {sw.Elapsed.TotalMilliseconds / 50.0:F4} ms");
+            stdout.WriteLine($"Combat Damage:        {sw.Elapsed.TotalMilliseconds / 50.0:F4} ms");
 
-            Console.WriteLine("=================================================");
+            stdout.WriteLine("=================================================");
             return;
         }
 

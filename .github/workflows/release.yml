@@ -42,8 +42,8 @@ jobs:
     - name: Run unit tests (.NET 10.0)
       run: dotnet test Raptor.Tests/Raptor.Tests.csproj -f net10.0 --configuration Release --no-build --verbosity normal
 
-    - name: Pack NuGet package
-      run: dotnet pack Raptor/Raptor.csproj --configuration Release --no-build --output ./artifacts
+    - name: Pack NuGet packages
+      run: dotnet pack Raptor.sln --configuration Release --no-build --output ./artifacts
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v3

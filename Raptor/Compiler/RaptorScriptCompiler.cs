@@ -4,14 +4,11 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-// TODO: Implement bitwise and logical operators. For logical operators touch up on the if\else so that
-//      the statement 'if(arr != null && arr[0] < 5)' evaluates the first statement first and if it's false
-//      jump to the else block or to the next instruction.
-//      Also implement true, false and null keywords.
-//      Better control flow via break and continue statements will be nice as well.
-//      Since the VM has array methods for singular bytes implementing string handling can be built with a little effort,
-//      User defined functions in order to finally have functions that one can call.
-//      High effort high value -> user defined structs
+/*
+ * RaptorScript Compiler Engine
+ * Translates high-level script syntax (.rapt) to optimized register bytecode assembly (.rasm / .rbc).
+ * Feature roadmap: User-defined functions, string primitives, structs, and short-circuit evaluation.
+ */
 
 namespace Raptor.Compiler
 {
