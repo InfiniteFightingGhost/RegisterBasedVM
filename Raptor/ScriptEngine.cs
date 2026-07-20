@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Raptor.Compiler;
 
 namespace Raptor
 {
@@ -17,7 +18,7 @@ namespace Raptor
     ///   </code>
     /// </examples>
     /// </summary>
-    public sealed class ScriptEngine
+    public sealed class ScriptEngine : IDisposable
     {
         private readonly VirtualMachine _vm;
         private readonly Dictionary<
@@ -90,9 +91,43 @@ namespace Raptor
         }
 
         /// <summary>
-        /// Compiles assembly source text into a verified VMChunk.
+        /// Compiles high-level RaptorScript source code (.rapt) into a verified VMChunk.
+        /// </summary>
+        public VMChunk CompileRaptorScript(string raptorScriptSource)
+        {
+            var reporter = new DiagnosticReporter();
+            string asm = RaptorScriptCompiler.Compile(raptorScriptSource, reporter: reporter);
+            if (reporter.HasErrors)
+            {
+                var firstErr = reporter.Diagnostics.FirstOrDefault();
+                string errMsg = firstErr != null ? firstErr.Message : "Syntax errors detected.";
+                throw new CompileException(errMsg);
+            }
+            return CompileAssembly(raptorScriptSource: asm);
+        }
+
+        /// <summary>
+        /// Compiles high-level RaptorScript source code (.rapt) and executes it in one call.
+        /// </summary>
+        public ExecutionResult RunRaptorScript(string raptorScriptSource)
+        {
+            var chunk = CompileRaptorScript(raptorScriptSource);
+            return Execute(chunk);
+        }
+
+        /// <summary>
+        /// Compiles source text (RaptorScript or Raptor Assembly) into a verified VMChunk.
         /// </summary>
         public VMChunk Compile(string sourceText)
+        {
+            if (IsRaptorScript(sourceText))
+            {
+                return CompileRaptorScript(sourceText);
+            }
+            return CompileAssembly(sourceText);
+        }
+
+        private VMChunk CompileAssembly(string raptorScriptSource)
         {
             var chunk = new VMChunk();
             var assembler = new Assembler(chunk);
@@ -102,9 +137,45 @@ namespace Raptor
                 assembler.RegisterHostMethod(name, index);
             }
 
-            assembler.Parse(sourceText.Split('\n').ToList());
+            assembler.Parse(raptorScriptSource.Split('\n').ToList());
             BytecodeVerifier.Verify(chunk, _heapSizeBytes);
             return chunk;
+        }
+
+        private static bool IsRaptorScript(string source)
+        {
+            if (string.IsNullOrWhiteSpace(source))
+                return false;
+
+            string[] lines = source.Split('\n');
+            foreach (var rawLine in lines)
+            {
+                string line = rawLine.Trim();
+                if (string.IsNullOrEmpty(line) || line.StartsWith(";") || line.StartsWith("//"))
+                    continue;
+
+                if (line.StartsWith("var ") || line.StartsWith("for") || line.StartsWith("while") ||
+                    line.StartsWith("if") || line.StartsWith("return") || line.Contains(";"))
+                {
+                    return true;
+                }
+
+                string token = line.Split(' ', '\t')[0].ToUpperInvariant();
+                if (Enum.TryParse<OpCode>(token, ignoreCase: true, out _))
+                {
+                    return false;
+                }
+                break;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Disposes underlying VirtualMachine resources and frees pinned GCHandles.
+        /// </summary>
+        public void Dispose()
+        {
+            _vm.Dispose();
         }
 
         /// <summary>

@@ -32,6 +32,11 @@ namespace Raptor.Cli
             _engine.RegisterHostTable(_hostTable);
         }
 
+        public int ExecuteForTesting(Settings settings)
+        {
+            return Execute(null!, settings, CancellationToken.None);
+        }
+
         protected override int Execute(
             CommandContext context,
             BuildCommand.Settings settings,
@@ -72,7 +77,7 @@ namespace Raptor.Cli
                 Path.GetFileNameWithoutExtension(settings.ScriptPath) + "-api.json"
             );
             File.WriteAllText(apiPath, _hostTable.GenerateAutocompleteDeclarations());
-            string targetPath = Path.Combine("build", settings.ScriptPath);
+            string targetPath = Path.Combine("build", Path.GetFileName(settings.ScriptPath));
             if (settings.OmitRaptorAssembly)
                 File.WriteAllText(Path.ChangeExtension(targetPath, "rasm"), asm);
             VMChunk compiledCode = _engine.Compile(asm);

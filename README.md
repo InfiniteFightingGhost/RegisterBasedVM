@@ -25,6 +25,22 @@
 
 By combining raw pointer arithmetic, stack-allocated registers, and live program reloading, Raptor runs scripts at **360 to 660+ MIPS** on standard consumer hardware. It is built specifically for **game engine scripting** where high execution speeds, low FFI latency, and zero garbage collection stutter are non-negotiable.
 
+## Installation
+
+### .NET (NuGet)
+Install the `Raptor.VM` package via .NET CLI:
+```bash
+dotnet add package Raptor.VM
+```
+
+### Unity (Package Manager)
+Open Unity's **Package Manager** (`Window -> Package Manager`), click **+**, select **Add package from git URL...**, and enter:
+```text
+https://github.com/InfiniteFightingGhost/Raptor.git?path=/Raptor
+```
+
+---
+
 ## Quickstart: Embed Raptor in C#
 
 Add `Raptor.VM` to your project and execute scripts in a few lines of C#:
@@ -33,15 +49,17 @@ Add `Raptor.VM` to your project and execute scripts in a few lines of C#:
 using Raptor;
 using Raptor.StdLib;
 
-// 1. Initialize engine and register standard math FFI module
-var engine = new ScriptEngine();
+// 1. Initialize engine and register standard FFI modules
+using var engine = new ScriptEngine();
 var table = new FFIHostTable();
-table.RegisterModule<RaptorMath>();
+table.RegisterModule(typeof(RaptorMath));
+table.RegisterModule(typeof(RaptorPeripherals));
 engine.RegisterHostTable(table);
+
 // 2. Compile high-level RaptorScript into an optimized VM chunk
-VMChunk chunk = engine.Compile(@"
+VMChunk chunk = engine.CompileRaptorScript(@"
     var radius = 5.0;
-    var area = math.pi * math.pow(radius, 2.0);
+    var area = math.pi() * math.pow(radius, 2.0);
     peri.print(area);
 ");
 

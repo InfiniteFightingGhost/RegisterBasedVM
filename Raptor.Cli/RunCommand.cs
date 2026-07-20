@@ -32,6 +32,11 @@ public class RunCommand : Command<RunCommand.Settings>
         _engine.RegisterHostTable(_hostTable);
     }
 
+    public int ExecuteForTesting(Settings settings)
+    {
+        return Execute(null!, settings, CancellationToken.None);
+    }
+
     protected override int Execute(
         CommandContext context,
         RunCommand.Settings settings,
@@ -78,7 +83,7 @@ public class RunCommand : Command<RunCommand.Settings>
                 Path.GetFileNameWithoutExtension(settings.ScriptPath) + "-api.json"
             );
             File.WriteAllText(apiPath, _hostTable.GenerateAutocompleteDeclarations());
-            string targetPath = Path.Combine("build", settings.ScriptPath);
+            string targetPath = Path.Combine("build", Path.GetFileName(settings.ScriptPath));
             if (settings.OmitRaptorAssembly)
                 File.WriteAllText(Path.ChangeExtension(targetPath, "rasm"), asm);
             VMChunk compiledCode = _engine.Compile(asm);
@@ -96,7 +101,7 @@ public class RunCommand : Command<RunCommand.Settings>
         }
         else
         {
-            string buildPath = Path.Combine("build", settings.ScriptPath);
+            string buildPath = Path.Combine("build", Path.GetFileName(settings.ScriptPath));
             buildPath = Path.ChangeExtension(buildPath, "rbc");
             if (!Path.Exists(buildPath))
             {

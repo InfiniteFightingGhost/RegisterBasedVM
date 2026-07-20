@@ -14,7 +14,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
     <PackageId>Raptor.VM</PackageId>
-    <Version>1.0.0-alpha</Version>
+    <Version>1.0.0-preview1</Version>
     <Authors>InfiniteFightingGhost</Authors>
     <Description>Fast, zero-allocation register-based VM and scripting engine for .NET.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>

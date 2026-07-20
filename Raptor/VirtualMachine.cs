@@ -13,7 +13,7 @@ namespace Raptor
     ///<remarks>
     ///My Sheilaaaaa.
     ///</remarks>
-    public unsafe class VirtualMachine
+    public unsafe class VirtualMachine : IDisposable
     {
         private uint[] _instructions = null!;
         private double[] _constants = null!;
@@ -59,6 +59,12 @@ namespace Raptor
                 _outBufferHandle.Free();
             if (_regHandle.IsAllocated)
                 _regHandle.Free();
+        }
+
+        public void Dispose()
+        {
+            FreeHandles();
+            GC.SuppressFinalize(this);
         }
 
         ~VirtualMachine()

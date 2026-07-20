@@ -26,6 +26,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Raptor\Raptor.csproj" />
+    <ProjectReference Include="..\Raptor.Cli\Raptor.Cli.csproj" />
   </ItemGroup>
 
 </Project>

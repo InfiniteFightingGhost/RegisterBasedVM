@@ -1,6 +1,6 @@
 {
     "name": "com.raptor.scripting",
-    "version": "1.0.0",
+    "version": "1.0.0-preview1",
     "displayName": "Raptor Scripting VM",
     "description": "High-performance, zero-allocation register-based scripting virtual machine and FFI compiler for game development.",
     "unity": "2021.3",
