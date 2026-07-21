@@ -2,9 +2,7 @@
 
 This document specifies the virtual machine's register layout, instruction encoding, parameter-passing conventions, and call stack representation.
 
----
-
-## 1. Bit-Packed Instruction Format
+## Bit-Packed Instruction Format
 
 The VM uses fixed-width **32-bit instructions** represented by the `Instruction` struct. These instructions are bit-packed into four main layouts to accommodate various operations: `ABC`, `ABx`, `AsBx`, and `sBx26`.
 
@@ -51,9 +49,7 @@ The VM uses fixed-width **32-bit instructions** represented by the `Instruction`
    ```
    - **sBx26 (26 bits):** Large signed branch offset, biased by `33,554,431`.
 
----
-
-## 2. Register/Constant Addressing (RC Operand Resolution)
+## Register/Constant Addressing (RC Operand Resolution)
 
 To avoid separate instruction variants for register-register and register-constant operations (e.g., `ADD_RR` vs. `ADD_RC`), the VM utilizes a **Register/Constant (RC)** addressing mechanism.
 
@@ -67,9 +63,7 @@ double valB = b < 256 ? Reg(state.RegPtr, b) : state.ConstPtr[b - 256];
 ```
 This design maximizes code density, permitting up to 256 registers and 256 active constants to be accessed directly within a single three-address instruction.
 
----
-
-## 3. Sliding Register Windows (Zero-Copy Method Calls)
+## Sliding Register Windows (Zero-Copy Method Calls)
 
 One of the VM's primary performance features is **sliding register windows**, which eliminates memory copies when passing arguments to methods.
 
@@ -123,9 +117,7 @@ public static unsafe bool ExecuteReturn(Instruction instruction, ref VMState sta
 }
 ```
 
----
-
-## 4. The Call Stack
+## The Call Stack
 
 The call stack is represented by a contiguous block of `StackFrame` structures, allocated directly on the thread stack.
 
@@ -150,9 +142,7 @@ public readonly unsafe struct StackFrame
 
 By keeping the call stack in stack-allocated memory (`stackalloc StackFrame[32]`), frame management operations compile to basic pointer dereferences and increments, bypassing C# heap allocation entirely.
 
----
-
-## 5. Bytecode Verification
+## Bytecode Verification
 
 To ensure safe sandboxed execution of untrusted user scripts, the compiled bytecode runs through a static analysis verifier (`BytecodeVerifier.cs`) before execution. The verifier performs three validation passes:
 
@@ -164,9 +154,7 @@ To ensure safe sandboxed execution of untrusted user scripts, the compiled bytec
    - Memory allocator allocations (`NEWARR`) have non-negative size parameters.
 3. **Pass 3: Terminal Control Check:** Asserts that the very last executable instruction in the bytecode chunk is a valid control flow terminator (`HALT`, `RETURN`, or `JUMP`), preventing the instruction pointer from executing past the end of the instruction block.
 
----
-
-## 6. The Assembler Pipeline (Overview)
+## The Assembler Pipeline (Overview)
 
 The textual assembly code is compiled into execution chunks (`VMChunk`) using a modular **three-pass assembler**:
 - **Pass 1 (Lexical & Macros):** Preprocesses strings, cleans whitespaces, strips comments, and expands symbol macros defined via the `DEFINE` syntax.

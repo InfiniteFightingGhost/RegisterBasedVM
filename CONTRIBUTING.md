@@ -2,9 +2,7 @@
 
 Thank you for your interest in contributing to **Raptor**! We welcome contributions, bug reports, performance enhancements, and documentation improvements from the community.
 
----
-
-## 1. Development Prerequisites & Setup
+## Development Prerequisites & Setup
 
 Raptor is built on **.NET 10.0**. Before contributing, ensure you have the following installed:
 
@@ -19,9 +17,7 @@ cd Raptor
 dotnet build Raptor.sln --configuration Release
 ```
 
----
-
-## 2. Running Tests & Benchmarks
+## Running Tests & Benchmarks
 
 ### Unit Tests
 Raptor maintains strict unit test coverage across the compiler, bytecode verifier, VM execution loop, and FFI system. All tests must pass before submitting a Pull Request.
@@ -59,9 +55,7 @@ When modifying hot interpreter paths ([VirtualMachine.cs](Raptor/VirtualMachine.
   dotnet run --configuration Release --project Raptor.Benchmarks
   ```
 
----
-
-## 3. How to Submit a Pull Request
+## How to Submit a Pull Request
 
 1. **Fork the Repository**: Create your feature branch off `main` (`git checkout -b feature/my-cool-feature`).
 2. **Commit Changes**: Keep commits atomic and messages descriptive.
@@ -70,17 +64,11 @@ When modifying hot interpreter paths ([VirtualMachine.cs](Raptor/VirtualMachine.
    - Run `dotnet format Raptor.sln --verify-no-changes` (zero formatting warnings).
 4. **Submit PR**: Open a Pull Request against the `main` branch using our PR template.
 
----
+## Coding & Performance Conventions
 
-## 4. Coding & Performance Conventions
+Keep hot interpreter execution loops entirely free of heap allocations (`new`). Use `stackalloc`, `Span<T>`, or fixed pointer buffers where appropriate to ensure zero garbage collection. Ensure any pointer arithmetic in `VirtualMachine.cs` strictly respects memory bounds and passes `BytecodeVerifier` checks. Finally, add standard XML doc comments (`/// <summary>`) to all public API additions.
 
-- **Zero Garbage Collection**: Hot interpreter execution loops and instruction handling must avoid heap allocations (`new`). Use `stackalloc`, `Span<T>`, or fixed pointer buffers where appropriate.
-- **Unsafe Code Safety**: Pointer arithmetic in `VirtualMachine.cs` must strictly respect memory bounds and pass `BytecodeVerifier` checks.
-- **Documentation**: Public API additions must include standard XML doc comments (`/// <summary>`).
-
----
-
-## 5. Community Guidelines
+## Community Guidelines
 
 Please note that this project is governed by the [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code.
 

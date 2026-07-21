@@ -7,23 +7,23 @@
 <h1 align="center">Raptor VM & Scripting Language</h1>
 
 <p align="center">
-  <strong>A screamingly fast, zero-allocation, register-based virtual machine and high-level scripting pipeline built for .NET 10.0 game engines and systems.</strong>
+  <strong>A high-throughput, zero-allocation, register-based virtual machine and scripting pipeline built for .NET 10.0 game engines and systems.</strong>
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/.NET-10.0-blueviolet?style=flat-square" alt=".NET 10.0">
   <img src="https://img.shields.io/badge/Performance-360--660_MIPS-brightgreen?style=flat-square" alt="Performance MIPS">
-  <img src="https://img.shields.io/badge/GC-Exactly_Zero_Allocations-blue?style=flat-square" alt="Zero GC">
-  <img src="https://img.shields.io/badge/FFI_Overhead-%3C_5ns-orange?style=flat-square" alt="FFI Overhead">
+  <img src="https://img.shields.io/badge/GC-Zero_Managed_Allocations-blue?style=flat-square" alt="Zero GC">
+  <img src="https://img.shields.io/badge/FFI_Overhead-%3C_5ns_Direct_Call-orange?style=flat-square" alt="FFI Overhead">
 </p>
 
 ---
 
 ## What is Raptor?
 
-**Raptor** is a complete, high-performance scripting pipeline consisting of **RaptorScript** (a high-level, JS/C#-like programming language), an optimizing compiler with source map debugging, a command-line toolchain (CLI), and an ultra-fast register-based virtual machine interpreter written in C# targeting **.NET 10.0**.
+**Raptor** is a complete scripting pipeline consisting of **RaptorScript** (a high-level programming language), an optimizing compiler with source map debugging, a command-line toolchain (CLI), and a register-based virtual machine interpreter written in C# targeting **.NET 10.0**.
 
-By combining raw pointer arithmetic, stack-allocated registers, and live program reloading, Raptor runs scripts at **360 to 660+ MIPS** on standard consumer hardware. It is built specifically for **game engine scripting** where high execution speeds, low FFI latency, and zero garbage collection stutter are non-negotiable.
+By combining raw pointer arithmetic, stack-allocated registers, and live program reloading, Raptor executes scripts at **360 to 660+ MIPS** on standard consumer hardware. It is built specifically for **game engine scripting** where high execution throughput, low FFI call latency, and zero garbage collection stutter are primary requirements.
 
 ## Installation
 
@@ -71,7 +71,7 @@ ExecutionResult result = engine.Execute(chunk);
 
 ## The Raptor Scripting Pipeline
 
-Raptor goes beyond simple bytecode execution by providing a modern scripting toolchain:
+Raptor includes a compiler, CLI toolchain, source-mapping error translator, and VM interpreter:
 
 ```mermaid
 graph TD
@@ -128,9 +128,9 @@ The FFI system automatically generates autocomplete JSON files (`-api.json`) lis
 
 ---
 
-## Why Raptor? (Embedded VM Comparison)
+## Architectural Trade-offs & Scope
 
-In game loops, scripting languages face a difficult trade-off between **raw execution speed**, **C#/VM marshalling boundary costs**, and **GC-induced stutters**:
+In game loops, scripting languages face a difficult trade-off between raw execution speed, C#/VM marshalling boundary costs, and GC-induced stutters:
 
 | Feature / Metric | MoonSharp | NLua | LuaJIT (Interpreter) | Raptor VM |
 | :--- | :--- | :--- | :--- | :--- |
@@ -138,23 +138,13 @@ In game loops, scripting languages face a difficult trade-off between **raw exec
 | **Runtime Environment** | Pure C# (Managed) | C# Bindings + Native C | Native C / Assembly | **Pure C# (Unsafe/Managed)** |
 | **Instruction Architecture** | Stack-based VM | Stack-based VM | Register-based VM | **Register-based VM** |
 | **Execution Performance** | ~10–15 MIPS | ~50–80 MIPS | ~100–150 MIPS (No JIT) | **360–660+ MIPS** |
-| **Garbage Collector (GC) pressure** | High (allocates per-instruction) | Low-to-Medium (native heap) | None (native heap) | **Exactly Zero GC Allocations** |
-| **FFI Call Overhead** | High (reflection/boxing) | Medium (~50–150 ns marshalling) | Low (~10-20 ns call cost) | **Ultra-Low (< 5 ns call overhead)** |
-| **AOT / IL2CPP Compatibility** | Excellent (Refsafe JIT limits) | Complex (requires native libs) | Broken on iOS/Consoles | **Perfect (runs natively anywhere .NET runs)** |
-| **Memory Locality** | Poor (managed heap objects) | Medium (C-structs) | High (C-structs) | **Maximum (L1 Stack-allocated registers)** |
+| **Garbage Collector (GC) pressure** | High (allocates per-instruction) | Low-to-Medium (native heap) | None (native heap) | **Zero Managed GC Allocations** |
+| **FFI Call Overhead** | High (reflection/boxing) | Medium (~50–150 ns marshalling) | Low (~10-20 ns call cost) | **Low (< 5 ns direct call cost)** |
+| **AOT / IL2CPP Compatibility** | Excellent (Refsafe JIT limits) | Complex (requires native libs) | Broken on iOS/Consoles | **Full (.NET native support)** |
+| **Memory Locality** | Managed heap objects | Medium (C-structs) | High (C-structs) | **High (L1 Stack-allocated registers)** |
 
-### Core Concept: Register vs. Stack Virtual Machines
-
-Most virtual machines (like the JVM, .NET CLR, or simple hobby runtimes) are **stack-based**. They push and pop operands on a virtual evaluation stack. Raptor is **register-based** (similar to Lua 5.0).
-
-Here is how both evaluate the statement `result = x + y`:
-
-| Stack-Based VM (JVM/CLR style) | Register-Based VM (Raptor style) |
-| :--- | :--- |
-| `LOAD x` (Push `x` to stack) <br> `LOAD y` (Push `y` to stack) <br> `ADD` (Pop `x` & `y`, add, push result) <br> `STORE result` (Pop result into variable) | `ADD r_result r_x r_y` (Direct register addition) |
-| **4 Instructions, 4 stack memory reads/writes** | **1 Instruction, 0 memory copies** |
-
-By using a register layout with 256 virtual registers, Raptor cuts instruction dispatch overhead by **30% to 50%** and keeps operands warm in CPU registers or L1 caches.
+> [!NOTE]
+> *Comparison context:* Unlike general-purpose Lua runtimes that manage dynamic table objects and metatables on the heap, Raptor restricts registers to 64-bit doubles to achieve zero-GC execution in hot game loops. By using a register layout with 256 virtual registers, Raptor cuts instruction dispatch overhead and keeps operands warm in CPU registers or L1 caches.
 
 ---
 
@@ -207,8 +197,9 @@ Bypasses standard .NET array boundary checks (`IndexOutOfRangeException`) in the
 
 ---
 
-## Visual Showcase: Embedded Raytracer
-The VM's mathematical throughput is showcased by a custom double-precision 3D raytracer implemented in pure assembly, rendering a camera viewport orbiting a reflective sphere in **8.2 microseconds** per frame.
+## Embedded Raytracer
+
+A custom double-precision 3D raytracer implemented in pure assembly, rendering a camera viewport orbiting a reflective sphere in 8.2 microseconds per frame.
 
 ![Orbit Animation](./orbit.gif)
 
@@ -218,22 +209,33 @@ The VM's mathematical throughput is showcased by a custom double-precision 3D ra
 
 Raptor includes a Spectre-based command-line interface (`Raptor.Cli`) to manage compile and run tasks.
 
-### 1. Run a Script
+### 1. Create a New Script
+Creates a new `.rapt` script file initialized with the starter template:
+```bash
+dotnet run -c Release --project Raptor.Cli -- new script.rapt
+```
+*Options:*
+- `-f | --force`: Overwrites the target `.rapt` file if it already exists.
+
+### 2. Run a Script
 Compiles, verifies, and runs a RaptorScript (`.rapt`) file:
 ```bash
 dotnet run -c Release --project Raptor.Cli -- run script.rapt
 ```
 *Options:*
 - `--no-build`: Bypasses compilation and runs a pre-compiled `.rbc` file directly from the `build/` folder.
-- `-a | --omit-assembly`: Avoids outputting the intermediate assembly `.rasm` file when building.
+- `-a | --omit-assembly`: Omits outputting the intermediate assembly `.rasm` file when building.
 
-### 2. Build / Compile a Script
+### 3. Build / Compile a Script
 Compiles high-level code to assembly (`.rasm`) and binary bytecode (`.rbc`), and generates an editor autocomplete metadata schema (`-api.json`):
 ```bash
 dotnet run -c Release --project Raptor.Cli -- build script.rapt
 ```
+*Options:*
+- `-a | --omit-assembly`: Omits outputting the intermediate assembly `.rasm` file.
+- `-p | --print-ast`: Prints the compiled abstract syntax tree to console.
 
-### 3. Browse Documentation
+### 4. Browse Documentation
 Opens the online documentation reference page directly in your browser:
 ```bash
 dotnet run -c Release --project Raptor.Cli -- docs
