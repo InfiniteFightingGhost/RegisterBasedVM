@@ -1,13 +1,8 @@
 # Security Policy
 
-## Supported Versions
+## Project Status & Security Updates
 
-Security updates and critical fixes are applied to the latest release on the `main` branch.
-
-| Version | Supported          |
-| ------- | ------------------ |
-| 1.0.x   | :white_check_mark: |
-| < 1.0   | :x:                |
+Raptor is in active development on the `main` branch. Security fixes, memory safety patches, and bytecode verifier updates are committed directly to `main`. Once stable releases begin, security backports will follow tagged release channels.
 
 ---
 

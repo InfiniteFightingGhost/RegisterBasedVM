@@ -1,75 +1,25 @@
-# Contributor Covenant Code of Conduct
+# Code of Conduct
 
-## Our Pledge
+We want **Raptor** to be a welcoming project focused on building high-performance systems software. We expect everyone participating in this repository to communicate directly, respectfully, and in good faith.
 
-We as members, contributors, and leaders pledge to make participation in our
-community a harassment-free experience for everyone, regardless of age, body
-size, visible or invisible disability, ethnicity, sex characteristics, gender
-identity and expression, level of experience, education, socio-economic status,
-nationality, personal appearance, race, caste, color, religion, or sexual
-identity and orientation.
+## Expected Behavior
 
-We pledge to act and interact in ways that contribute to an open, welcoming,
-diverse, inclusive, and healthy community.
+- **Focus on the engineering:** Frame discussions around technical merit, performance data, design tradeoffs, and code quality.
+- **Provide constructive feedback:** Critique the code and design choices, not the person. If suggesting a change or rejecting an idea, explain *why*.
+- **Accept feedback gracefully:** Code reviews exist to catch bugs and improve performance. Treat feedback as collaboration.
+- **Communicate clearly:** Keep issue descriptions, pull requests, and discussion comments focused and concise.
 
-## Our Standards
+## Unacceptable Behavior
 
-Examples of behavior that contributes to a positive environment for our
-community include:
+- Personal attacks, derogatory comments, or insulting language.
+- Harassment in any form, public or private.
+- Publishing private information of others without permission.
+- Spamming issues, PRs, or discussions with low-effort or disruptive content.
 
-* Demonstrating empathy and kindness toward other people
-* Being respectful of differing opinions, viewpoints, and experiences
-* Giving and gracefully accepting constructive feedback
-* Accepting responsibility and apologizing to those affected by our mistakes,
-  and learning from the experience
-* Focusing on what is best not just for us as individuals, but for the
-  overall community
+## Reporting & Enforcement
 
-Examples of unacceptable behavior include:
+If you experience or witness unacceptable behavior, please report it to maintainers:
+- **Private Advisory:** Open a [GitHub Security Advisory](https://github.com/InfiniteFightingGhost/Raptor/security/advisories/new) on the repository.
+- **Direct Contact:** Contact maintainer [@InfiniteFightingGhost](https://github.com/InfiniteFightingGhost).
 
-* The use of sexualized language or imagery, and unwelcome sexual attention or
-  advances
-* Trolling, insulting or derogatory comments, and personal or political attacks
-* Public or private harassment
-* Publishing others' private information, such as a physical or email
-  address, without their explicit permission
-* Other conduct which could reasonably be considered inappropriate in a
-  professional setting
-
-## Enforcement Responsibilities
-
-Community leaders are responsible for clarifying and enforcing our standards of
-acceptable behavior and will take appropriate and fair corrective action in
-response to any behavior that they deem inappropriate, threatening, offensive,
-or harmful.
-
-Community leaders have the right and responsibility to remove, edit, or reject
-comments, commits, code, wiki edits, issues, and other contributions that are
-not aligned to this Code of Conduct, and will communicate reasons for handling
-decisions when appropriate.
-
-## Scope
-
-This Code of Conduct applies within all community spaces, and also applies when
-an individual is officially representing the community in public spaces.
-Examples of representing our community include using an official e-mail address,
-posting via an official social media account, or acting as an appointed
-representative at an online or offline event.
-
-## Enforcement
-
-Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to the community maintainers via [@InfiniteFightingGhost](https://github.com/InfiniteFightingGhost) or by opening a private GitHub Security Advisory on [InfiniteFightingGhost/Raptor](https://github.com/InfiniteFightingGhost/Raptor/security/advisories/new).
-All complaints will be reviewed and investigated promptly and fairly.
-
-All community leaders are obligated to respect the privacy and security of the
-reporter of any incident.
-
-## Attribution
-
-This Code of Conduct is adapted from the [Contributor Covenant][homepage],
-version 2.1, available at
-[https://www.contributor-covenant.org/version/2/1/code_of_conduct.html][version].
-
-[homepage]: https://www.contributor-covenant.org
-[version]: https://www.contributor-covenant.org/version/2/1/code_of_conduct.html
+Maintainers will review reports promptly and take fair, appropriate action (ranging from guidance and content edits to temporary or permanent bans from repository spaces).

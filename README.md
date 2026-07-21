@@ -23,7 +23,7 @@
 
 **Raptor** is a complete scripting pipeline consisting of **RaptorScript** (a high-level programming language), an optimizing compiler with source map debugging, a command-line toolchain (CLI), and a register-based virtual machine interpreter written in C# targeting **.NET 10.0**.
 
-By combining raw pointer arithmetic, stack-allocated registers, and live program reloading, Raptor executes scripts at **360 to 660+ MIPS** on standard consumer hardware. It is built specifically for **game engine scripting** where high execution throughput, low FFI call latency, and zero garbage collection stutter are primary requirements.
+Raptor is built specifically for game engine hot loops where garbage collection pauses can ruin frame pacing. The register file lives directly on the thread stack via `stackalloc`, keeping 256 virtual registers warm inside CPU L1 cache. Restricting registers to 64-bit doubles is the deliberate design tradeoff that eliminates heap allocations during interpretation and achieves **360 to 660+ MIPS** on consumer hardware.
 
 ## Installation
 
@@ -307,11 +307,11 @@ These modules register using high-performance reflection via custom attributes (
 ## Roadmap
 
 Upcoming features and planned additions to the Raptor ecosystem:
-- [ ] **Gas Budgeting & Instruction Limits:** Thread lock guards to prevent runaway loops in user-facing scripts.
-- [ ] **Rust-Style Diagnostic Errors:** Colorful, context-rich compile errors pointing out exact character ranges and hints.
-- [ ] **Standard Library Expansion:** Vector mathematics, string manipulations, and basic collections.
-- [ ] **RaptorPure Handling:** Sandbox state execution isolating specific VMs from host environment changes.
-- [ ] **IDE Language Server Support:** Syntax highlighting and basic autocomplete via a custom VS Code extension.
+- [ ] **Gas Budgeting & Instruction Limits:** Essential for running untrusted user scripts or mods. An instruction counter guard prevents infinite loops from hanging the main game thread without needing multi-threaded OS process isolation.
+- [X] **Rust-Style Diagnostic Errors:** Current compiler errors output basic line numbers. Adding source-span spans with inline code snippets and fix hints will make debugging RaptorScript syntax errors significantly faster.
+- [ ] **Standard Library Expansion:** Adding native 2D/3D vector math structs (`vec2`, `vec3`), string operations, and fixed-capacity lists directly into the built-in FFI host table so game developers don't have to write custom bindings for common data structures.
+- [ ] **RaptorPure Handling:** Strict execution sandboxing that guarantees a script cannot trigger external host side-effects or mutate host state outside designated input/output buffers.
+- [ ] **IDE Language Server Support:** A Language Server Protocol (LSP) implementation providing real-time diagnostics, auto-complete for registered FFI methods (`-api.json`), and syntax highlighting in VS Code and other editors.
 
 ---
 

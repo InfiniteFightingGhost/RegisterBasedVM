@@ -66,7 +66,9 @@ When modifying hot interpreter paths ([VirtualMachine.cs](Raptor/VirtualMachine.
 
 ## Coding & Performance Conventions
 
-Keep hot interpreter execution loops entirely free of heap allocations (`new`). Use `stackalloc`, `Span<T>`, or fixed pointer buffers where appropriate to ensure zero garbage collection. Ensure any pointer arithmetic in `VirtualMachine.cs` strictly respects memory bounds and passes `BytecodeVerifier` checks. Finally, add standard XML doc comments (`/// <summary>`) to all public API additions.
+- **Zero Allocation in Hot Paths:** Keep interpreter execution loops in `VirtualMachine.cs` entirely free of heap allocations (`new`). Use `stackalloc`, `Span<T>`, or fixed pointer buffers to maintain zero-GC execution.
+- **Pointer & Memory Safety:** Any raw pointer arithmetic must strictly respect memory boundaries and pass all `BytecodeVerifier` static analysis checks.
+- **Public API Documentation:** Include standard XML doc comments (`/// <summary>`) for all new public classes, structs, methods, and FFI attributes.
 
 ## Community Guidelines
 
