@@ -45,16 +45,25 @@ jobs:
       run: dotnet format Raptor.sln --verify-no-changes --verbosity diagnostic
 
     - name: Build solution
-      run: dotnet build Raptor.sln --configuration Release --no-restore
+      run: dotnet build Raptor.sln --configuration Release --no-restore /p:TreatWarningsAsErrors=true
 
-    - name: Run unit tests (.NET 8.0)
-      run: dotnet test Raptor.Tests/Raptor.Tests.csproj -f net8.0 --configuration Release --no-build --verbosity normal --collect:"XPlat Code Coverage"
+    - name: Audit dependencies for vulnerabilities
+      if: matrix.os == 'ubuntu-latest'
+      run: dotnet list package --vulnerable --include-transitive
 
-    - name: Run unit tests (.NET 9.0)
-      run: dotnet test Raptor.Tests/Raptor.Tests.csproj -f net9.0 --configuration Release --no-build --verbosity normal --collect:"XPlat Code Coverage"
+    - name: Run unit tests with Coverage (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        dotnet test Raptor.Tests/Raptor.Tests.csproj -f net8.0 --configuration Release --no-build --verbosity normal --collect:"XPlat Code Coverage"
+        dotnet test Raptor.Tests/Raptor.Tests.csproj -f net9.0 --configuration Release --no-build --verbosity normal --collect:"XPlat Code Coverage"
+        dotnet test Raptor.Tests/Raptor.Tests.csproj -f net10.0 --configuration Release --no-build --verbosity normal --collect:"XPlat Code Coverage"
 
-    - name: Run unit tests (.NET 10.0)
-      run: dotnet test Raptor.Tests/Raptor.Tests.csproj -f net10.0 --configuration Release --no-build --verbosity normal --collect:"XPlat Code Coverage"
+    - name: Run unit tests (Windows & macOS)
+      if: matrix.os != 'ubuntu-latest'
+      run: |
+        dotnet test Raptor.Tests/Raptor.Tests.csproj -f net8.0 --configuration Release --no-build --verbosity normal
+        dotnet test Raptor.Tests/Raptor.Tests.csproj -f net9.0 --configuration Release --no-build --verbosity normal
+        dotnet test Raptor.Tests/Raptor.Tests.csproj -f net10.0 --configuration Release --no-build --verbosity normal
 
     - name: Generate Code Coverage Report
       if: matrix.os == 'ubuntu-latest'
@@ -62,11 +71,18 @@ jobs:
       with:
         reports: '**/coverage.cobertura.xml'
         targetdir: 'coveragereport'
-        reporttypes: 'MarkdownSummary'
+        reporttypes: 'HtmlInline;MarkdownSummary'
 
     - name: Publish Code Coverage Summary
       if: matrix.os == 'ubuntu-latest'
       run: cat coveragereport/Summary.md >> $GITHUB_STEP_SUMMARY
+
+    - name: Upload Code Coverage HTML Artifact
+      if: matrix.os == 'ubuntu-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: code-coverage-report
+        path: coveragereport/
 
     - name: Run fast benchmarks
       run: dotnet run --configuration Release --project Raptor.Benchmarks --no-build -- --fast
@@ -74,3 +90,4 @@ jobs:
     - name: Verify NuGet packaging
       if: matrix.os == 'ubuntu-latest'
       run: dotnet pack Raptor.sln --configuration Release --no-build
+
