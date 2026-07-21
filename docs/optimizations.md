@@ -1,76 +1,68 @@
 # Performance & Hardware-Level Optimizations
 
-To execute at speeds exceeding 450 MIPS in a managed environment, the VM utilizes low-level optimizations that align closely with CPU instruction pipelines and cache hierarchies.
+Raptor uses low-level execution techniques to sustain >450 MIPS throughput in managed C#.
 
 ## Table of Contents
 - [Managed Array Bounds Bypass via Pointers](#managed-array-bounds-bypass-via-pointers)
-  - [The Pointer Fix](#the-pointer-fix)
-- [Stack Allocation & L1 Cache Locality](#stack-allocation--l1-cache-locality)
-- [Switch Jump Table & Aggressive Inlining](#switch-jump-table--aggressive-inlining)
+- [Stack Allocation & L1 Cache Locality](#stack-allocation-l1-cache-locality)
+- [Switch Jump Table & Aggressive Inlining](#switch-jump-table-aggressive-inlining)
 - [Xorshift32 PRNG Optimization](#xorshift32-prng-optimization)
 - [Double-Precision Fast Inverse Square Root (FISR)](#double-precision-fast-inverse-square-root-fisr)
-- [The Compound `FOR` Super-Instruction](#the-compound-for-super-instruction)
-  - [The Problem with Loop Overhead](#the-problem-with-loop-overhead)
-  - [The Two-Word Instruction Solution](#the-two-word-instruction-solution)
-  - [Execution Flow](#execution-flow)
-- [Zero-GC Output Formatting (`OutBufferPtr`)](#zero-gc-output-formatting-outbufferptr)
-
----
+- [The Compound FOR Super-Instruction](#the-compound-for-super-instruction)
+- [Zero-GC Output Formatting](#zero-gc-output-formatting)
 
 ## Managed Array Bounds Bypass via Pointers
 
-In normal C#, array access like `instructions[pc]` forces the JIT compiler to insert boundary checks, which introduces conditional branches that pollute the CPU’s Branch Target Buffer (BTB) and cause instruction pipeline bubbles.
+To eliminate JIT bounds checking on array access, the VM pins managed arrays before entering the execution loop using `fixed`:
 
-### The Pointer Fix
-Before starting the hot execution loop, the VM pins all managed arrays using the `fixed` statement, obtaining raw pointers:
 ```csharp
 fixed (uint* instPtr = _instructions)
 fixed (double* constPtr = _constants)
 fixed (uint* methodTablePtr = _methods)
 fixed (byte* heapPtr = _heap)
 ```
-These raw pointers are stored inside a CPU-register-friendly `VMState` value-type struct. Instruction dispatch fetches the next opcode by directly dereferencing and post-incrementing the instruction pointer pointer (e.g., `*state.Ip++`), which compiles to straight-line assembly with **zero branch checks** or array lookup overhead, allowing the CPU to execute instructions in a tight linear flow.
+
+Raw pointers are held in a `VMState` value-type struct. Opcodes are fetched by direct dereference and post-increment (e.g., `*state.Ip++`), eliminating lookup overhead.
 
 ## Stack Allocation & L1 Cache Locality
 
-The VM's registers and call stack are allocated directly on the thread's local execution stack using `stackalloc`:
+Registers and call stack frames are allocated on the thread execution stack using `stackalloc`:
+
 ```csharp
 double* RegPtr = stackalloc double[256];
 StackFrame* framePtr = stackalloc StackFrame[32];
 ```
-This yields two major benefits:
-- **No GC Allocations:** Pointers are allocated on the stack and automatically cleaned up when the method exits. The garbage collector never runs during execution, avoiding GC pauses.
-- **L1 Cache Locality:** Thread stacks are constantly read and written, keeping the 256-register file and call frames pinned in the CPU’s **L1 Data Cache** (access latency of ~4 cycles, compared to ~60 cycles for main memory).
+
+Allocating the 256-register file and 32 call frames on the thread stack avoids GC allocation and targets L1 data cache locality (~4 cycles latency, compared to ~60 cycles for main memory).
 
 ## Switch Jump Table & Aggressive Inlining
 
-All instruction execution handlers are marked with `[MethodImpl(MethodImplOptions.AggressiveInlining)]`:
+Instruction handlers use aggressive inlining to eliminate call frame overhead:
+
 ```csharp
 [MethodImpl(MethodImplOptions.AggressiveInlining)]
 public static unsafe bool ExecuteAdd(Instruction instruction, ref VMState state) { ... }
 ```
-This forces the C# JIT compiler to eliminate the overhead of call frame setups and directly insert the handler code into the `switch` branches. 
 
-Because the `OpCode` enum is densely packed, the JIT compiler compiles the central dispatch switch into a native **Jump Table** (a register-relative indirect jump array in assembly). The CPU’s branch predictor quickly learns this jump table pattern, reducing the dispatch overhead to a few clock cycles.
+Because the `OpCode` enum is densely packed, the JIT compiler emits a native jump table for the central dispatch switch.
 
 ## Xorshift32 PRNG Optimization
 
-Standard random number generators like `System.Random` are slow, stateful classes that perform expensive divisions and heap lookups. 
+Random numbers are generated using a custom Xorshift32 algorithm stored as a `uint` (`state.RngState`) in thread state:
 
-For workloads like Monte Carlo simulations, the VM utilizes a custom **Xorshift32 Pseudo-Random Number Generator**. It maintains its state as a single `uint` in the thread state and computes the next random double using bitwise XORs and logical shifts:
 ```csharp
 state.RngState ^= state.RngState << 13;
 state.RngState ^= state.RngState >> 17;
 state.RngState ^= state.RngState << 5;
 double result = state.RngState * 2.3283064365386963e-10;
 ```
-The floating-point multiplier `2.3283064365386963e-10` is exactly $\frac{1}{2^{32}-1}$. Multiplying by this constant scales the 32-bit integer state to a double in the range `[0.0, 1.0]` in a single clock cycle, avoiding slow divisions.
+
+Multiplying by `2.3283064365386963e-10` ($\frac{1}{2^{32}-1}$) scales the 32-bit state to a double in the range `[0.0, 1.0]` without integer division.
 
 ## Double-Precision Fast Inverse Square Root (FISR)
 
-The `FISR` instruction implements the classic Quake 3 Fast Inverse Square Root algorithm, but adapted for **64-bit double precision**.
+The `FISR` opcode computes $\frac{1}{\sqrt{x}}$ in 64-bit double precision using floating-point bit manipulation:
 
-It computes $\frac{1}{\sqrt{x}}$ without division or square-root hardware operations, using IEEE 754 bit-level hacking:
 ```csharp
 x2 = valB * 0.5d;
 y = valB;
@@ -80,24 +72,15 @@ y = *(double*)&i;                    // Interpret long back as double
 y = y * (threehalfs - (x2 * y * y)); // 1st Newton-Raphson iteration
 y = y * (threehalfs - (x2 * y * y)); // 2nd Newton-Raphson iteration (for precision)
 ```
-By performing a bit shift and subtracting from the double-precision magic number `0x5fe6eb50c7b537a9`, the VM obtains an initial guess accurate to 1.5%. Two iterations of Newton-Raphson refinement bring it to full double-precision accuracy.
+
+Bit shifting and subtracting from the double-precision constant `0x5fe6eb50c7b537a9` yields an initial guess accurate to 1.5%. Two Newton-Raphson iterations refine the result to full double precision.
 
 > [!NOTE]
 > *Implementation Note:* While modern CPUs feature dedicated hardware instructions for reciprocal square roots (e.g., `vsqrtpd` / `rsqrt`), software FISR provides a fallback software bit-manipulation algorithm within the VM opcode set.
 
-## The Compound `FOR` Super-Instruction
+## The Compound FOR Super-Instruction
 
-To speed up loops, the VM features a custom compound `FOR` super-instruction. 
-
-### The Problem with Loop Overhead
-A normal loop requires three VM instructions per iteration:
-1. Increment index (`ADD`)
-2. Compare index with limit (`LT` or `LE`)
-3. Jump back to start if true (`JUMP`)
-This requires **three separate instruction fetches and dispatches** at the end of every loop iteration.
-
-### The Two-Word Instruction Solution
-The assembler compiles a `FOR` statement into **two contiguous 32-bit instructions**:
+The assembler compiles a `FOR` statement into two contiguous 32-bit instructions to reduce loop control dispatches:
 
 ```text
 Instruction 1 (ABC Format):
@@ -111,32 +94,18 @@ Instruction 2 (AsBx Format):
 +---------------------------------+---------+---------+
 ```
 
-### Execution Flow
-When the VM dispatches the first `FOR` word:
-1. It fetches the index, limit, and step values.
-2. It increments the index register: `valIndex += valStep;`.
-3. It fetches the second word from the instruction stream by directly dereferencing and advancing the Instruction Pointer: `secondInst = new Instruction(*state.Ip++);`.
-4. It reads the comparison operator (`comp`) from the second instruction and performs the condition check:
-   - `0` ($<$), `1` ($>$), `2` ($\le$), `3` ($\ge$).
-5. **If condition is met (loop continues):**
-   It updates the Instruction Pointer: `state.Ip += jumpOffset - 2` (jumping back to the start of the loop body).
-6. **If condition is not met (loop exits):**
-   The VM ignores the jump. Since the Instruction Pointer `state.Ip` was already advanced past the second word during the fetch on step 3, it naturally points to the instruction immediately following the `FOR` block, continuing linear execution.
+Execution flow:
+1. Fetch index, limit, and step values.
+2. Increment index register: `valIndex += valStep;`.
+3. Advance Instruction Pointer and fetch second word: `secondInst = new Instruction(*state.Ip++);`.
+4. Check comparison operator (`comp`): `0` ($<$), `1` ($>$), `2` ($\le$), `3` ($\ge$).
+5. **Condition met**: Update Instruction Pointer: `state.Ip += jumpOffset - 2` (branch back to loop body).
+6. **Condition not met**: Execution continues past the second instruction word.
 
-This fuses three dispatches into **one single instruction cycle**, cutting loop control overhead in half.
+## Zero-GC Output Formatting
 
-## Zero-GC Output Formatting (`OutBufferPtr`)
+Output formatting writes directly into a stack/pinned buffer (`_outBuffer = new char[256]`):
 
-Standard output interpret functions like `Console.WriteLine` formatting `double` values directly to text generate heap allocation garbage (specifically C# string objects and formatting buffers). In a high-frequency execution environment (like a game scripting loop), output formatting garbage will quickly trigger GC collection spikes and frame rate drops.
-
-To achieve complete zero-allocation output:
-1. The virtual machine maintains a raw output buffer on the stack or pinned heap (`_outBuffer = new char[256]`).
-2. The `VMState` struct holds pointers and metrics for this buffer:
-   - `char* OutBufferPtr`: Pointer to the start of the output buffer.
-   - `int OutBufferCapacity`: Maximum character capacity of the buffer (256 characters).
-   - `int OutBufferOffset`: Current offset of written characters.
-3. Instruction handlers like `ExecutePrint`, `ExecutePrintA`, and `ExecutePrintS` write directly to this buffer using `valB.TryFormat(span, out int charsWritten)` which formats the doubles into characters in-place without generating any C# string objects.
-4. When the buffer is nearly full (fewer than 48 characters remaining), or when the execution loop hits a `HALT` instruction, the buffer is flushed to standard output in a single batch operation using `Console.Out.Write(new ReadOnlySpan<char>(state.OutBufferPtr, state.OutBufferOffset))`, resetting the offset to `0`.
-
-This output buffer mechanism ensures that even print-heavy workloads generate exactly **zero bytes of garbage** on the C# managed heap during interpretation.
-
+1. `VMState` tracks buffer pointers and metrics: `char* OutBufferPtr`, `int OutBufferCapacity` (256), `int OutBufferOffset`.
+2. Handlers (`ExecutePrint`, `ExecutePrintA`, `ExecutePrintS`) format doubles via `valB.TryFormat(span, out int charsWritten)`.
+3. When remaining buffer capacity drops below 48 characters or a `HALT` instruction executes, the buffer flushes to standard output via `Console.Out.Write(new ReadOnlySpan<char>(state.OutBufferPtr, state.OutBufferOffset))` and resets `OutBufferOffset` to `0`.

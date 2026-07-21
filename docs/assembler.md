@@ -1,36 +1,31 @@
 # The Assembler Pipeline & Constant Pool
 
-The VM uses a text-based assembly syntax compiled into binary format via a structured **three-pass compiler pipeline** implemented in [Assembler.cs](../Raptor/Assembler.cs).
-
----
+The assembler in [Assembler.cs](../Raptor/Assembler.cs) compiles assembly text into bytecode using a three-pass pipeline.
 
 ## 1. Pass 1: Lexical Cleaning & Macro Substitution
 
-The first pass cleans raw text files, removes comments, and resolves variable/macro declarations.
+Pass 1 cleans raw text, removes comments, and expands macro definitions.
 
-1. **Scrubbing Whitespaces & Comments:**
-   Empty lines are dropped. Comments starting with `;` are removed. If a comment starts on an instruction line, the line is split at `;` and the comment is stripped.
+1. **Scrubbing Whitespace & Comments:**
+   Empty lines are dropped. Comments starting with `;` are removed. Inline comments (following `;`) are stripped.
 2. **`DEFINE` Macro Collection:**
-   Lines beginning with `DEFINE` (e.g. `DEFINE x1 r0` or `DEFINE epochs 10000`) are collected. The assembler extracts the name (key) and substitution string (value) and stores them in a symbol table dictionary. The `DEFINE` line is then removed from the text stream.
+   Lines starting with `DEFINE` (e.g. `DEFINE x1 r0` or `DEFINE epochs 10000`) populate a symbol table dictionary with key-value pairs. `DEFINE` lines are removed after extraction.
 3. **Macro Substitution:**
-   The assembler scans every word in the remaining instruction lines. If a word matches a key in the macro symbol table, it is replaced with its associated value. 
-   *Example:* `ADD x1 w1 w2` is replaced with `ADD r0 r2 r3`.
-
----
+   Words matching macro symbol keys are replaced with their values.
+   Example: `ADD x1 w1 w2` becomes `ADD r0 r2 r3`.
 
 ## 2. Pass 2: Label Resolution & Size Tracking
 
-The second pass maps labels and method headers to their absolute instruction index in the final compiled array, resolving jump targets.
+Pass 2 maps jump labels and method headers to instruction indices.
 
 1. **Symbol Identification:**
-   - Lines ending in `:` (e.g. `loop:`) are registered as jump labels.
-   - Lines ending in `()` (e.g. `perceive()`) are registered as method entry points.
+   - Lines ending in `:` (e.g. `loop:`) are jump labels.
+   - Lines ending in `()` (e.g. `perceive()`) are method entry points.
 2. **Instruction Address Tracking:**
-   The assembler maintains a `memoryAddress` offset counter. As it loops through lines:
-   - If a jump label is found, the current `memoryAddress` is recorded as the label's target, and the label line is removed from the instruction stream.
-   - If a method header is found, the current `memoryAddress` is recorded as the method's target in the global method table, and the method header is removed.
-   - **Instruction Expansion Adjustment:**
-     Most instructions expand to a single 32-bit word, incrementing `memoryAddress` by `1`. However, the compound `FOR` instruction compiles to **two contiguous 32-bit words**. To keep subsequent label offsets aligned, the assembler increments `memoryAddress` by **`2`** when encountering a `FOR` instruction:
+   Maintains a `memoryAddress` offset counter:
+   - Jump labels store `memoryAddress` as target and are removed from instructions.
+   - Method headers store `memoryAddress` in the global method table and are removed.
+   - Most instructions increment `memoryAddress` by 1 word. The compound `FOR` instruction occupies 2 contiguous words and increments `memoryAddress` by 2:
      ```csharp
      else if (lines[i].StartsWith("FOR "))
          memoryAddress += 2;
@@ -38,78 +33,66 @@ The second pass maps labels and method headers to their absolute instruction ind
          memoryAddress++;
      ```
 
----
-
 ## 3. Pass 3: Codegen & Bit-Packing
 
-The final pass loops through the cleaned assembly instructions, parses registers and immediate literals, and packs them into 32-bit words.
+Pass 3 parses registers and literals into packed 32-bit instructions.
 
 1. **Operand Resolution:**
-   - Register strings (e.g. `r0`, `r21`) are parsed to integer indices.
-   - Numeric literals (e.g. `128.0`, `1.5`) are added to the constant pool via `SetConstant` and resolved to constant index operands ($\ge 256$).
+   - Register strings (`r0`..`r255`) parse to integer indices.
+   - Numeric literals (`128.0`, `1.5`) pass to `SetConstant` and map to constant pool indices ($\ge 256$).
 2. **Relative Branch Offset Calculation:**
-   Jumps and loops are compiled using relative program counter offsets. The offset is calculated as:
    $$\text{jumpOffset} = \text{Address}_{\text{target}} - \text{PC}_{\text{current}}$$
 3. **Bit-Packing:**
-   The instruction opcode and operands are bit-shifted and combined using the `Instruction` struct:
    ```csharp
    instruction = Instruction.CreateABC(OpCode.ADD, destA, operandB, operandC);
    ```
 
----
-
 ## 4. Constant Pool Deduplication
 
-To prevent constant pool overflow, [VMChunk.cs](../Raptor/VMChunk.cs) implements **constant deduplication** inside `SetConstant`:
+Constant pool allocation in [VMChunk.cs](../Raptor/VMChunk.cs) deduplicates literals via `SetConstant`:
 
 ```csharp
 public uint SetConstant(double value)
 {
-    // Search the active constant pool first
     for (int i = 0; i < currUsedConstantsIndex; i++)
     {
         if (Constants[i] == value)
         {
-            return (uint)i; // Return existing index (sharing slot)
+            return (uint)i;
         }
     }
-    // Allocate new slot if unique
     Constants[currUsedConstantsIndex] = value;
     return currUsedConstantsIndex++;
 }
 ```
 
-### Why Deduplication is Crucial
-Because the bit-packed `ABC` instruction format dedicates **9 bits** for operand indexing, the VM can only address indices `0` to `511`. 
-- Indices `0–255` are reserved for registers.
-- Indices `256–511` are mapped to constant pool slots (giving a max limit of 256 constants).
+The 9-bit operand encoding field allows indexing up to 512 entries:
+- Indices `0–255` map to registers.
+- Indices `256–511` map to constant pool slots (maximum 256 active constants).
 
-If a program uses the same literal number multiple times (e.g. `0.0` or `1.0` in clamping blocks), deduplication ensures they share a single slot. Without deduplication, complex workloads like the raytracer would rapidly exceed 256 constants and trigger compiler crashes.
-
----
+Deduplication allows duplicate literal values in assembly source to share constant pool slots.
 
 ## 5. Source Maps (`#LINE` Directive)
 
-To support source-level debugging and accurate error reporting, the compiler emits `#LINE <number>` directives into generated assembly:
-- During **Pass 2**, `#LINE` directives are skipped for memory address calculation to preserve label index alignment.
-- During **Pass 3**, `#LINE` directives update the active source line mapping stored in `VMChunk.SourceMap`. When a runtime exception occurs, the VM translates the Instruction Pointer (`IP`) back to the exact source file line number.
-
----
+Assembly files may contain `#LINE <number>` directives for source mapping:
+- Pass 2: Directives are skipped during `memoryAddress` calculation to maintain alignment.
+- Pass 3: Directives update `VMChunk.SourceMap` to map runtime Instruction Pointer (`IP`) values to source line numbers for exception reporting.
 
 ## 6. Binary Bytecode Serialization (`.rbc` Format)
 
-Compiled `VMChunk` objects are serialized into binary `.rbc` files using `RaptorBinary.cs`:
+`VMChunk` objects serialize to `.rbc` binary files via `RaptorBinary.cs`.
 
 ### Binary Layout (Little-Endian)
 
-1. **Header (20 bytes):**
-   - `[0..3]` **Magic Signature** (4 bytes): `0x52415054` (`"RAPT"` in ASCII).
-   - `[4]` **Version Major** (1 byte): `1`.
-   - `[5]` **Version Minor** (1 byte): `0`.
-   - `[6..7]` **Reserved** (2 bytes): `0x0000`.
-   - `[8..11]` **Constants Count** (4 bytes, `uint32`).
-   - `[12..15]` **Method Table Count** (4 bytes, `uint32`).
-   - `[16..19]` **Instructions Count** (4 bytes, `uint32`).
-2. **Constants Section:** `Constants Count` × 8 bytes (IEEE 754 `double`).
-3. **Method Table Section:** `Method Table Count` × 4 bytes (`uint32` entry point offsets).
-4. **Instructions Section:** `Instructions Count` × 4 bytes (`uint32` packed opcode words).
+1. Header (20 bytes):
+   - `[0..3]` Magic Signature (4 bytes): `0x52415054` (`"RAPT"` in ASCII).
+   - `[4]` Version Major (1 byte): `1`.
+   - `[5]` Version Minor (1 byte): `0`.
+   - `[6..7]` Reserved (2 bytes): `0x0000`.
+   - `[8..11]` Constants Count (4 bytes, `uint32`).
+   - `[12..15]` Method Table Count (4 bytes, `uint32`).
+   - `[16..19]` Instructions Count (4 bytes, `uint32`).
+2. Constants Section: `Constants Count` × 8 bytes (IEEE 754 `double`).
+3. Method Table Section: `Method Table Count` × 4 bytes (`uint32` entry point offsets).
+4. Instructions Section: `Instructions Count` × 4 bytes (`uint32` packed opcode words).
+

@@ -6,9 +6,7 @@ This document specifies the virtual machine's register layout, instruction encod
 - [Bit-Packed Instruction Format](#bit-packed-instruction-format)
   - [Bit Allocation Layouts](#bit-allocation-layouts)
 - [Register/Constant Addressing (RC Operand Resolution)](#registerconstant-addressing-rc-operand-resolution)
-- [Sliding Register Windows (Zero-Copy Method Calls)](#sliding-register-windows-zero-copy-method-calls)
-  - [The Problem in Traditional VMs](#the-problem-in-traditional-vms)
-  - [The Zero-Copy Solution](#the-zero-copy-solution)
+- [Sliding Register Windows](#sliding-register-windows)
   - [Argument Passing](#argument-passing)
   - [Returning Values](#returning-values)
 - [The Call Stack](#the-call-stack)
@@ -16,35 +14,33 @@ This document specifies the virtual machine's register layout, instruction encod
 - [Bytecode Verification](#bytecode-verification)
 - [The Assembler Pipeline (Overview)](#the-assembler-pipeline-overview)
 
----
-
 ## Bit-Packed Instruction Format
 
-The VM uses fixed-width **32-bit instructions** represented by the `Instruction` struct. These instructions are bit-packed into four main layouts to accommodate various operations: `ABC`, `ABx`, `AsBx`, and `sBx26`.
+The VM uses fixed-width 32-bit instructions represented by the `Instruction` struct. Instructions are packed into four layouts: `ABC`, `ABx`, `AsBx`, and `sBx26`.
 
 ### Bit Allocation Layouts
 
-1. **ABC Format** (Three-register/constant operations like `ADD`, `SUB`, `MUL`, etc.):
+1. **ABC Format** (Three-register/constant operations like `ADD`, `SUB`, `MUL`):
    ```text
    +-----------------------+---------+---------+---------+
    |   C (9)   |   B (9)   |  A (8)  | Op (6)  | Bits
    +-----------------------+---------+---------+---------+
    31          22          13        5         0
    ```
-   - **OpCode (6 bits):** Opcodes `0` to `63`.
-   - **A (8 bits):** Destination register `0` to `255`.
-   - **B (9 bits):** First operand. If `< 256`, maps to register. If `>= 256`, maps to constant pool index `B - 256`.
-   - **C (9 bits):** Second operand. If `< 256`, maps to register. If `>= 256`, maps to constant pool index `C - 256`.
+   - OpCode (6 bits): Opcodes `0` to `63`.
+   - A (8 bits): Destination register `0` to `255`.
+   - B (9 bits): First operand. If `< 256`, maps to register. If `>= 256`, maps to constant pool index `B - 256`.
+   - C (9 bits): Second operand. If `< 256`, maps to register. If `>= 256`, maps to constant pool index `C - 256`.
 
-2. **ABx Format** (Two-operand operations with larger immediate constant pool indices like `LOADC`, `MOVE`, `CALL`, etc.):
+2. **ABx Format** (Two-operand operations with larger immediate constant pool indices like `LOADC`, `MOVE`, `CALL`):
    ```text
    +---------------------------------+---------+---------+
    |             Bx (18)             |  A (8)  | Op (6)  | Bits
    +---------------------------------+---------+---------+
    31                                13        5         0
    ```
-   - **A (8 bits):** Destination register `0` to `255`.
-   - **Bx (18 bits):** Unsigned index or immediate value (up to `262,143`).
+   - A (8 bits): Destination register `0` to `255`.
+   - Bx (18 bits): Unsigned index or immediate value (up to `262,143`).
 
 3. **AsBx Format** (Two-operand operations with signed immediate offsets like `FOR` second-half):
    ```text
@@ -53,8 +49,8 @@ The VM uses fixed-width **32-bit instructions** represented by the `Instruction`
    +---------------------------------+---------+---------+
    31                                13        5         0
    ```
-   - **A (8 bits):** Opcode modifier/operand (e.g. comparison condition).
-   - **sBx16 (16 bits):** Signed branch offset, biased by `32,767`.
+   - A (8 bits): Opcode modifier/operand (e.g. comparison condition).
+   - sBx16 (16 bits): Signed branch offset, biased by `32,767`.
 
 4. **sBx26 Format** (Single-operand branch operations like `JUMP`):
    ```text
@@ -63,37 +59,29 @@ The VM uses fixed-width **32-bit instructions** represented by the `Instruction`
    +-------------------------------------------+---------+
    31                                          5         0
    ```
-   - **sBx26 (26 bits):** Large signed branch offset, biased by `33,554,431`.
+   - sBx26 (26 bits): Large signed branch offset, biased by `33,554,431`.
 
 ## Register/Constant Addressing (RC Operand Resolution)
 
-To avoid separate instruction variants for register-register and register-constant operations (e.g., `ADD_RR` vs. `ADD_RC`), the VM utilizes a **Register/Constant (RC)** addressing mechanism.
+The VM uses Register/Constant (RC) addressing for 9-bit operands (fields `B` and `C` in `ABC` format, or `B` in `ABx` format when used as an operand):
+- If the value is less than 256, it references register `Registers[Index]` relative to active frame pointer `state.RegPtr`.
+- If the value is 256 or greater, it references global constant `Constants[Index - 256]`.
 
-For any 9-bit operand (fields `B` and `C` in `ABC` format, or `B` in `ABx` format when used as an operand):
-- If the encoded value is **less than 256**, it references register `Registers[Index]` relative to active frame pointer `state.RegPtr`.
-- If the encoded value is **greater than or equal to 256**, it references global constant `Constants[Index - 256]`.
-
-This logic is implemented in [VirtualMachine.cs](../Raptor/VirtualMachine.cs) as follows:
+Implementation in [VirtualMachine.cs](../Raptor/VirtualMachine.cs):
 ```csharp
 double valB = b < 256 ? Reg(state.RegPtr, b) : state.ConstPtr[b - 256];
 ```
-This design maximizes code density, permitting up to 256 registers and 256 active constants to be accessed directly within a single three-address instruction.
+This permits up to 256 registers and 256 active constants to be accessed directly within a single three-address instruction.
 
-## Sliding Register Windows (Zero-Copy Method Calls)
+## Sliding Register Windows
 
-One of the VM's primary performance features is **sliding register windows**, which eliminates memory copies when passing arguments to methods.
+The VM allocates a single continuous register array of 256 doubles on the thread stack. Frame pointer `state.RegPtr` shifts directly when calling methods, keeping access offsets zero-based in child frames.
 
-### The Problem in Traditional VMs
-In stack-based VMs or standard register VMs, calling a function requires copying arguments from the parent frame onto a call stack, or copying them into parameters registers for the callee. This copying wastes CPU cycles.
-
-### The Zero-Copy Solution
-The VM allocates a single continuous register file of 256 doubles on the thread stack. Instead of tracking an integer base pointer index, it shifts the active register file pointer (`state.RegPtr`) directly to keep access offsets zero-based in child frames.
-
-When a method is called via `CALL A B`:
-- `A` is the register index in the parent's frame where the callee's frame should start.
+When calling a method via `CALL A B`:
+- `A` is the register index in the parent's frame where the callee's frame starts.
 - `B` is the index of the callee method in the method table.
 
-The VM pushes the current Program Counter index (calculated via `state.Ip - state.InstPtr`) and the current register pointer (`state.RegPtr`) onto the call stack, and then advances `state.RegPtr` directly to slide the window forward:
+The VM pushes the current Program Counter index (`state.Ip - state.InstPtr`) and register pointer (`state.RegPtr`) to the call stack, then advances `state.RegPtr`:
 `RegPtr (callee) = RegPtr (parent) + A`
 
 ```csharp
@@ -106,12 +94,12 @@ state.Ip = state.InstPtr + (int)vm._methods[methodIndex];
 ```
 
 ### Argument Passing
-Because the callee's register frame begins exactly at `RegPtr_parent + A`, the parent can place arguments directly into registers starting at `R[A]` (relative to the parent). These arguments automatically become `R0`, `R1`, `R2`, etc. inside the callee, requiring **zero memory copies**.
+Because the callee register frame starts at `RegPtr (parent) + A`, arguments placed at `R[A]` by the parent are accessed as `R0`, `R1`, `R2`, etc. inside the callee without memory copies.
 
 ### Returning Values
-When returning via `RETURN A B` (returning values from callee's register range `[A, B]`):
-1. The return values are copied from the returning range `[A, B]` to the start of the callee's frame (`R0, R1, ...`).
-2. The VM pops the `StackFrame` off the stack and restores the parent's `RegPtr` and `Ip` (Instruction Pointer):
+When returning via `RETURN A B` (returning values from callee register range `[A, B]`):
+1. Return values are copied from range `[A, B]` to the start of the callee frame (`R0, R1, ...`).
+2. The VM pops `StackFrame` off the stack and restores parent `RegPtr` and `Ip`:
    `RegPtr (parent) = StackFrame.PreviousRegPtr`
 
 ```csharp
@@ -135,12 +123,12 @@ public static unsafe bool ExecuteReturn(Instruction instruction, ref VMState sta
 
 ## The Call Stack
 
-The call stack is represented by a contiguous block of `StackFrame` structures, allocated directly on the thread stack.
+The call stack consists of contiguous `StackFrame` structures allocated on the thread stack via `stackalloc StackFrame[32]`.
 
 ### StackFrame Structure
-Each stack frame is a lightweight 16-byte structure tracking:
-- `ReturnPC` (4 bytes): The program counter index (offset from the instructions array start) to jump back to in the parent.
-- `PreviousRegPtr` (8 bytes): The parent's register pointer (pointing directly into the stackalloc registers block).
+Each 16-byte `StackFrame` tracks:
+- `ReturnPC` (4 bytes): Instruction index offset from instructions array start to resume execution in parent.
+- `PreviousRegPtr` (8 bytes): Parent register pointer in the stack-allocated registers block.
 
 ```csharp
 public readonly unsafe struct StackFrame
@@ -156,25 +144,24 @@ public readonly unsafe struct StackFrame
 }
 ```
 
-By keeping the call stack in stack-allocated memory (`stackalloc StackFrame[32]`), frame management operations compile to basic pointer dereferences and increments, bypassing C# heap allocation entirely.
-
 ## Bytecode Verification
 
-To ensure safe sandboxed execution of untrusted user scripts, the compiled bytecode runs through a static analysis verifier (`BytecodeVerifier.cs`) before execution. The verifier performs three validation passes:
+Before execution, `BytecodeVerifier.cs` validates compiled bytecode in three passes:
 
-1. **Pass 1: Instruction Boundaries & Compound Scan:** Identifies the precise boundaries of all instructions. It scans the program to find two-word compound instructions (such as the `FOR` loop opcode pair) to mark invalid targets (e.g. the payload word), ensuring other branch instructions cannot jump into the middle of them.
-2. **Pass 2: Operand & Control Flow Validation:** Validates instruction fields to guarantee:
-   - All register indexes (`rA`, `rB`, `rC`) remain within the valid stack frame index limits (`[0, 255]`).
+1. **Pass 1: Instruction Boundaries & Compound Scan:** Identifies instruction boundaries. Scans for two-word instructions (such as `FOR`) and marks payload words as invalid jump targets.
+2. **Pass 2: Operand & Control Flow Validation:** Validates operand constraints:
+   - Register indices (`rA`, `rB`, `rC`) are within `[0, 255]`.
    - Constant pool indices are within range.
-   - Jumps and branch targets (such as in `JUMP`, `FOR`, `CALL`, and conditional skips `EQ`/`LT`/`LE`) point strictly to valid instruction starts and do not escape the program array boundaries.
-   - Memory allocator allocations (`NEWARR`) have non-negative size parameters.
-3. **Pass 3: Terminal Control Check:** Asserts that the very last executable instruction in the bytecode chunk is a valid control flow terminator (`HALT`, `RETURN`, or `JUMP`), preventing the instruction pointer from executing past the end of the instruction block.
+   - Jump targets (`JUMP`, `FOR`, `CALL`, `EQ`, `LT`, `LE`) point to instruction boundaries within program bounds.
+   - Array allocation (`NEWARR`) size parameters are non-negative.
+3. **Pass 3: Terminal Control Check:** Confirms the final instruction is a valid terminator (`HALT`, `RETURN`, or `JUMP`).
 
 ## The Assembler Pipeline (Overview)
 
-The textual assembly code is compiled into execution chunks (`VMChunk`) using a modular **three-pass assembler**:
-- **Pass 1 (Lexical & Macros):** Preprocesses strings, cleans whitespaces, strips comments, and expands symbol macros defined via the `DEFINE` syntax.
-- **Pass 2 (Jump & Method Mapping):** Maps labels (`label:`) and methods (`method()`) to bytecode indices. To keep relative offsets aligned, it increments the PC counter by `2` when encountering a two-word `FOR` instruction, and `1` for all other instructions.
-- **Pass 3 (Codegen):** Parses operands, performs constant pool allocation with deduplication, and packs instruction values into 32-bit words.
+The assembly compiler uses a three-pass pipeline:
+- **Pass 1 (Lexical & Macros):** Preprocesses text, strips comments, and expands `DEFINE` symbol macros.
+- **Pass 2 (Jump & Method Mapping):** Maps labels (`label:`) and methods (`method()`) to bytecode indices, incrementing PC by 2 for `FOR` instructions and 1 for others.
+- **Pass 3 (Codegen):** Parses operands, deduplicates constant pool entries, and packs 32-bit instructions.
 
-For a detailed specification of the compiler passes and constant table pooling, see the dedicated [Assembler Documentation](assembler.md).
+See [Assembler Documentation](assembler.md) for full details.
+

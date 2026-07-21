@@ -12,7 +12,7 @@ Provide a brief summary of the changes introduced in this PR and the problem/fea
 
 ## PR Checklist
 
-- [ ] I have read the [CONTRIBUTING.md](CONTRIBUTING.md) guide.
+- [ ] I have read the [CONTRIBUTING.md](../CONTRIBUTING.md) guide.
 - [ ] All unit tests pass cleanly (`dotnet test --configuration Release`).
 - [ ] Code formatting has been checked (`dotnet format Raptor.sln --verify-no-changes`).
 - [ ] If modifying hot VM execution paths, I ran the fast benchmark suite (`dotnet run -c Release --project Raptor.Benchmarks -- fast`).

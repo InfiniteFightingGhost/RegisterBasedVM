@@ -1,28 +1,26 @@
 # Heap Memory Management & Custom Allocator
 
-The VM manages dynamic memory through a custom allocator running on a single continuous block of 512KB heap memory (`byte[] _heap`). Rather than delegating allocations to the C# GC, the VM manages blocks directly using an **intrinsically linked list of free blocks** and raw pointer arithmetic.
+The VM manages dynamic memory through a custom allocator running on a single continuous 512KB heap buffer (`byte[] _heap`). Memory blocks are tracked via an intrinsically linked list of free blocks and raw pointer arithmetic.
 
 ## Table of Contents
-- [1. Heap Memory Layout](#1-heap-memory-layout)
+- [Heap Memory Layout](#heap-memory-layout)
   - [Allocated Block Layout](#allocated-block-layout)
-  - [Free Block Layout (Intrinsically Linked List)](#free-block-layout-intrinsically-linked-list)
-- [2. Allocation Algorithm (`NEWARR`)](#2-allocation-algorithm-newarr)
-  - [The Allocation Logic](#the-allocation-logic)
-- [3. Deallocation & Coalescing Algorithm (`FREEARR`)](#3-deallocation--coalescing-algorithm-freearr)
+  - [Free Block Layout](#free-block-layout)
+- [Allocation Algorithm (NEWARR)](#allocation-algorithm-newarr)
+  - [Allocation Logic](#allocation-logic)
+- [Deallocation & Coalescing Algorithm (FREEARR)](#deallocation-coalescing-algorithm-freearr)
   - [Step 1: Address Restoration](#step-1-address-restoration)
   - [Step 2: Sorted Insertion](#step-2-sorted-insertion)
   - [Step 3: Coalescing Neighbors](#step-3-coalescing-neighbors)
 
----
+## Heap Memory Layout
 
-## 1. Heap Memory Layout
-
-The heap buffer begins with a default size of 512KB (524,288 bytes). The memory allocator operates on two types of blocks inside this buffer: **Allocated Blocks** and **Free Blocks**.
+The heap buffer has a fixed capacity of 512KB (524,288 bytes). Memory operations manipulate two block types within this buffer: Allocated Blocks and Free Blocks.
 
 ### Allocated Block Layout
-When an array is allocated, the block consumed contains:
-- **Header (4 bytes):** Stores the size of the block's payload in bytes (represented as an unsigned 32-bit integer).
-- **Payload (`valSizeBytes` bytes):** The user data, accessed via array index offsets.
+Allocated blocks contain a 4-byte size header followed by payload data:
+- Header (4 bytes): Payload size in bytes (`valSizeBytes`, `uint32`).
+- Payload (`valSizeBytes` bytes): User array data accessed via element offsets.
 ```text
 +-----------------------+---------------------------------------+
 |  Size (4 bytes, uint) |       Payload (valSizeBytes bytes)    |
@@ -32,10 +30,10 @@ When an array is allocated, the block consumed contains:
 realAddress             userPointer (returned to VM registers)
 ```
 
-### Free Block Layout (Intrinsically Linked List)
-Free memory is structured as a singly linked list. Because the memory is unused, the metadata for the list is stored **directly inside the free memory slots themselves** (an intrinsic list):
-- **Next Offset (4 bytes):** The heap-relative byte address of the next free block. If it is the last block, it stores `0xFFFFFFFF`.
-- **Block Size (4 bytes):** The size of the free space available in this block in bytes.
+### Free Block Layout
+Free memory is structured as an intrinsic singly linked list stored inside free slots:
+- Next Offset (4 bytes): Heap-relative byte address of the next free block (`0xFFFFFFFF` if end of list).
+- Block Size (4 bytes): Available free space in bytes.
 ```text
 +-----------------------+-----------------------+---------------+
 |  Next Offset (4B)     |   Block Size (4B)     |  Free space   |
@@ -45,26 +43,23 @@ Free memory is structured as a singly linked list. Because the memory is unused,
 freeBlockAddress
 ```
 
-The head of this list is stored in the VM state as `state.FreeBlockHeaderPointer`.
-At startup, the entire 512KB heap starts as a single free block at address `0`:
-- Offset `0`: `0xFFFFFFFF` (next pointer)
-- Offset `4`: `524,288` (size)
+The list head is tracked by `state.FreeBlockHeaderPointer`. At startup, the heap initializes as a single 512KB free block at address `0`:
+- Offset 0: `0xFFFFFFFF` (next pointer)
+- Offset 4: `524,288` (size)
 - `state.FreeBlockHeaderPointer = 0`
 
----
+## Allocation Algorithm (`NEWARR`)
 
-## 2. Allocation Algorithm (`NEWARR`)
-
-The `NEWARR rDest size` instruction allocates an array of `size` elements on the heap.
+The `NEWARR rDest size` instruction allocates an array of `size` elements.
 
 > [!NOTE]
-> The VM automatically scales the `size` parameter by 8 bytes (`valSizeBytes = valSize * 8`) to allocate double-precision floating point elements, plus 4 header bytes.
+> The VM scales the `size` parameter by 8 bytes (`valSizeBytes = valSize * 8`) for double-precision floating-point elements, plus 4 header bytes.
 > - `NEWARR rA 10` allocates memory for 10 double elements (80 bytes payload + 4 header bytes).
-> - Arrays accessed via character opcodes (`SETARRA` / `GETARRA`) share the allocated byte payload block using 1-byte ASCII character offsets.
+> - Character instructions (`SETARRA` / `GETARRA`) access the byte payload using 1-byte ASCII offsets.
 
 ```text
-                               Allocation Flow
-                              
+                                Allocation Flow
+                               
    +--------------------+
    | Search Free List   | <---- Start at FreeBlockHeaderPointer
    +--------------------+
@@ -100,7 +95,7 @@ The `NEWARR rDest size` instruction allocates an array of `size` elements on the
          +---------------------------------------+
 ```
 
-### The Allocation Logic
+### Allocation Logic
 ```csharp
 if (blockSize > valSize)
 {
@@ -127,34 +122,28 @@ else
 }
 ```
 
----
+## Deallocation & Coalescing Algorithm (`FREEARR`)
 
-## 3. Deallocation & Coalescing Algorithm (`FREEARR`)
-
-The `FREEARR rPtr` instruction frees the array pointed to by `rPtr`. Because manual allocation quickly fragments memory, the deallocator performs **immediate coalescing (compaction)** with neighboring free blocks.
+The `FREEARR rPtr` instruction frees the array at `rPtr` and performs immediate coalescing with adjacent free blocks.
 
 ### Step 1: Address Restoration
-The pointer in the register (`vmPointer`) points to the payload. The real block address starts 4 bytes earlier:
+The pointer in the register (`vmPointer`) points to payload start. The block header begins 4 bytes prior:
 $$\text{realAddress} = \text{vmPointer} - 4$$
-The size of the block to free is read from the header:
+Block size is read from the header:
 $$\text{freedSize} = *\text{uint}*(\text{state.HeapPtr} + \text{realAddress})$$
 
 ### Step 2: Sorted Insertion
-To make coalescing possible, the free list is kept strictly sorted by memory address. The allocator traverses the free list to find the insertion point between `leftBlock` and `rightBlock` such that:
+The free list is maintained in ascending address order. The allocator traverses the list to locate insertion bounds `leftBlock` and `rightBlock`:
 $$\text{leftBlock} < \text{realAddress} < \text{rightBlock}$$
 
 ### Step 3: Coalescing Neighbors
-Once the insertion point is determined, the VM checks if the freed block is physically adjacent to its neighbors:
+If the freed block is contiguous with neighbor blocks, it is merged:
 
-1. **Right Coalesce:** If the freed block ends exactly where the `rightBlock` begins:
-   $$\text{realAddress} + \text{freedSize} = \text{rightBlock}$$
-   The two blocks are merged into one:
+1. Right Coalesce: If `realAddress + freedSize == rightBlock`:
    $$\text{freedSize}_{\text{new}} = \text{freedSize} + \text{rightBlock.Size}$$
    $$\text{freedBlock.Next} = \text{rightBlock.Next}$$
 
-2. **Left Coalesce:** If the `leftBlock` ends exactly where the freed block begins:
-   $$\text{leftBlock} + \text{leftBlock.Size} = \text{realAddress}$$
-   The two blocks are merged into one:
+2. Left Coalesce: If `leftBlock + leftBlock.Size == realAddress`:
    $$\text{leftBlock.Size}_{\text{new}} = \text{leftBlock.Size} + \text{freedSize}$$
    $$\text{leftBlock.Next} = \text{freedBlock.Next}$$
 
@@ -183,4 +172,3 @@ if (leftBlock != 0xFFFFFFFF)
 }
 ```
 
-This address-ordered coalescing prevents memory fragmentation, ensuring that adjacent free spaces are always combined into larger contiguous blocks for future allocations.

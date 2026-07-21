@@ -2,12 +2,10 @@
   <img src="./raptor-banner.svg" alt="Raptor VM & Scripting Language" width="100%">
 </p>
 
-
-
 <h1 align="center">Raptor VM & Scripting Language</h1>
 
 <p align="center">
-  <strong>A high-throughput, zero-allocation, register-based virtual machine and scripting pipeline built for .NET 10.0 game engines and systems.</strong>
+  A high-throughput, zero-allocation, register-based virtual machine and scripting pipeline built for .NET 10.0 game engines and systems.
 </p>
 
 <p align="center">
@@ -17,13 +15,11 @@
   <img src="https://img.shields.io/badge/FFI_Overhead-%3C_5ns_Direct_Call-orange?style=flat-square" alt="FFI Overhead">
 </p>
 
----
+## Overview
 
-## What is Raptor?
+Raptor is a register-based virtual machine and scripting engine for .NET 10.0, designed for game engine hot loops. It includes RaptorScript (a high-level language), an optimizing compiler with source maps, a CLI toolchain, and a C# VM interpreter.
 
-**Raptor** is a complete scripting pipeline consisting of **RaptorScript** (a high-level programming language), an optimizing compiler with source map debugging, a command-line toolchain (CLI), and a register-based virtual machine interpreter written in C# targeting **.NET 10.0**.
-
-Raptor is built specifically for game engine hot loops where garbage collection pauses can ruin frame pacing. The register file lives directly on the thread stack via `stackalloc`, keeping 256 virtual registers warm inside CPU L1 cache. Restricting registers to 64-bit doubles is the deliberate design tradeoff that eliminates heap allocations during interpretation and achieves **360 to 660+ MIPS** on consumer hardware.
+To avoid GC allocations during interpretation, registers are restricted to 64-bit doubles and allocated on the thread stack via `stackalloc` (256 virtual registers residing in CPU L1 cache). This architecture yields execution throughput between 360 and 660+ MIPS on consumer hardware.
 
 ## Installation
 
@@ -34,16 +30,14 @@ dotnet add package Raptor.VM
 ```
 
 ### Unity (Package Manager)
-Open Unity's **Package Manager** (`Window -> Package Manager`), click **+**, select **Add package from git URL...**, and enter:
+Open Unity's Package Manager (`Window -> Package Manager`), select `Add package from git URL...`, and enter:
 ```text
 https://github.com/InfiniteFightingGhost/Raptor.git?path=/Raptor
 ```
 
----
+## Quickstart
 
-## Quickstart: Embed Raptor in C#
-
-Add `Raptor.VM` to your project and execute scripts in a few lines of C#:
+Embed Raptor in C# by registering FFI modules and compiling scripts:
 
 ```csharp
 using Raptor;
@@ -67,9 +61,7 @@ VMChunk chunk = engine.CompileRaptorScript(@"
 ExecutionResult result = engine.Execute(chunk);
 ```
 
----
-
-## The Raptor Scripting Pipeline
+## Scripting Pipeline
 
 Raptor includes a compiler, CLI toolchain, source-mapping error translator, and VM interpreter:
 
@@ -82,8 +74,8 @@ graph TD
     D -->|Runtime Error IP| E
 ```
 
-### 1. High-Level RaptorScript Language (`.rapt`)
-Write scripts using a clean, standard syntax supporting variables, loops, branches, nested math, and bitwise logic:
+### 1. High-Level RaptorScript (`.rapt`)
+RaptorScript syntax:
 ```javascript
 // script.rapt
 var result = 8 | 4 ^ 2 & 10 == 5 << 1 && 3 || 9;
@@ -95,7 +87,7 @@ for(var i = 0; i < 10; i++) {
 ```
 
 #### Compiled Output (Raptor Assembly - `.rasm`)
-The compiler generates optimized, register-friendly assembly. For example, a simple conditional branch:
+Conditional branch translation example:
 
 ```javascript
 // RaptorScript (.rapt)
@@ -118,147 +110,132 @@ HALT                     ; Stop VM execution
 ```
 
 ### 2. Live Reloading (`ScriptWatcher`)
-Engineered for rapid game-design iteration. The thread-safe `ScriptWatcher` monitors script files on disk and automatically recompiles and swaps the execution `VMChunk` on the fly, updating gameplay mechanics, stats, or AI state **without halting the main execution thread or stopping the game loop**.
+The thread-safe `ScriptWatcher` monitors script files on disk and automatically recompiles and swaps the execution `VMChunk` on the fly, updating state without halting the execution thread.
 
 ### 3. Source Mapping & Diagnostics
-When a runtime exception occurs, Raptor uses compiler-generated **Source Maps** to translate the execution Instruction Pointer (IP) offset back to the exact line number and source snippet of the original high-level `.rapt` file.
+When a runtime exception occurs, Raptor uses compiler-generated source maps to translate the execution Instruction Pointer (IP) offset back to the exact line number and source snippet of the original high-level `.rapt` file.
 
 ### 4. Auto-Generated Editor Autocomplete
-The FFI system automatically generates autocomplete JSON files (`-api.json`) listing all registered host methods, descriptions, signatures, and constants, enabling easy integration with editor extensions and IDEs.
+The FFI system automatically generates autocomplete JSON files (`-api.json`) listing all registered host methods, descriptions, signatures, and constants, enabling integration with editor extensions and IDEs.
 
----
-
-## Architectural Trade-offs & Scope
-
-In game loops, scripting languages face a difficult trade-off between raw execution speed, C#/VM marshalling boundary costs, and GC-induced stutters:
+## Architectural Comparison
 
 | Feature / Metric | MoonSharp | NLua | LuaJIT (Interpreter) | Raptor VM |
 | :--- | :--- | :--- | :--- | :--- |
-| **Language** | Lua 5.2 | Lua 5.4 | Lua 5.1 | **RaptorScript / Assembly** |
-| **Runtime Environment** | Pure C# (Managed) | C# Bindings + Native C | Native C / Assembly | **Pure C# (Unsafe/Managed)** |
-| **Instruction Architecture** | Stack-based VM | Stack-based VM | Register-based VM | **Register-based VM** |
-| **Execution Performance** | ~10–15 MIPS | ~50–80 MIPS | ~100–150 MIPS (No JIT) | **360–660+ MIPS** |
-| **Garbage Collector (GC) pressure** | High (allocates per-instruction) | Low-to-Medium (native heap) | None (native heap) | **Zero Managed GC Allocations** |
-| **FFI Call Overhead** | High (reflection/boxing) | Medium (~50–150 ns marshalling) | Low (~10-20 ns call cost) | **Low (< 5 ns direct call cost)** |
-| **AOT / IL2CPP Compatibility** | Excellent (Refsafe JIT limits) | Complex (requires native libs) | Broken on iOS/Consoles | **Full (.NET native support)** |
-| **Memory Locality** | Managed heap objects | Medium (C-structs) | High (C-structs) | **High (L1 Stack-allocated registers)** |
+| Language | Lua 5.2 | Lua 5.4 | Lua 5.1 | RaptorScript / Assembly |
+| Runtime Environment | Pure C# (Managed) | C# Bindings + Native C | Native C / Assembly | Pure C# (Unsafe/Managed) |
+| Instruction Architecture | Stack-based VM | Stack-based VM | Register-based VM | Register-based VM |
+| Execution Performance | ~10–15 MIPS | ~50–80 MIPS | ~100–150 MIPS (No JIT) | 360–660+ MIPS |
+| Garbage Collector (GC) pressure | High (allocates per-instruction) | Low-to-Medium (native heap) | None (native heap) | Zero Managed GC Allocations |
+| FFI Call Overhead | High (reflection/boxing) | Medium (~50–150 ns marshalling) | Low (~10-20 ns call cost) | Low (< 5 ns direct call cost) |
+| AOT / IL2CPP Compatibility | Excellent (Refsafe JIT limits) | Complex (requires native libs) | Broken on iOS/Consoles | Full (.NET native support) |
+| Memory Locality | Managed heap objects | Medium (C-structs) | High (C-structs) | High (L1 Stack-allocated registers) |
 
 > [!NOTE]
-> *Comparison context:* Unlike general-purpose Lua runtimes that manage dynamic table objects and metatables on the heap, Raptor restricts registers to 64-bit doubles to achieve zero-GC execution in hot game loops. By using a register layout with 256 virtual registers, Raptor cuts instruction dispatch overhead and keeps operands warm in CPU registers or L1 caches.
-
----
+> Unlike general-purpose Lua runtimes that manage dynamic table objects and metatables on the heap, Raptor restricts registers to 64-bit doubles to achieve zero-GC execution in hot game loops. With 256 virtual registers, instruction dispatch overhead is reduced.
 
 ## Performance & Benchmarks
 
-*Captured on an AMD Ryzen 7 (Zen 4 Architecture) running .NET 10.0.1 on Arch Linux.*
+Captured on AMD Ryzen 7 (Zen 4 Architecture), .NET 10.0.1, Arch Linux.
 
-### 1. High-Frequency Gameplay Workloads
-Realistic game loops written in RaptorScript running inside the virtual machine:
+### High-Frequency Gameplay Workloads
 
 | Benchmark | Timing (μs) | Workload Details |
 | :--- | :--- | :--- |
-| **ECS Entity Update** | **20.79 μs** | Updates positions (`px`, `py`) using velocities and delta time for **1,000 entities** (20.79 ns per entity!). |
-| **BFS Grid Pathfinding** | **13.25 μs** | Executes a wavefront path search on a **16x16 grid** to locate the target node. |
-| **Dialogue Condition Tree** | **82.90 μs** | Evaluates a nested quest state and gold balance conditions **10,000 times** (8.29 ns per evaluation). |
-| **Inventory Rarity Sort** | **49.88 μs** | Performs an $O(N^2)$ Selection Sort sorting **100 inventory loot items** by rarity. |
+| ECS Entity Update | 20.79 μs | Updates positions (`px`, `py`) using velocities and delta time for 1,000 entities (20.79 ns per entity). |
+| BFS Grid Pathfinding | 13.25 μs | Executes a wavefront path search on a 16x16 grid to locate target node. |
+| Dialogue Condition Tree | 82.90 μs | Evaluates nested quest state and gold balance conditions 10,000 times (8.29 ns per evaluation). |
+| Inventory Rarity Sort | 49.88 μs | Selection Sort sorting 100 inventory loot items by rarity. |
 
-### 2. Instruction Latency
-Opcode execution latencies inside the hot interpreter loop:
+### Instruction Latency
+Opcode execution latencies inside the interpreter loop:
 
 | Instruction | Latency (ns) | Execution Notes |
 | :--- | :--- | :--- |
-| **LOADC** | 0.89 ns | Load constant into register |
-| **SUB** | 0.92 ns | Floating-point subtraction |
-| **MOVE** | 1.10 ns | Register-to-register copy |
-| **MUL** | 1.27 ns | Floating-point multiplication |
-| **DIV** | 1.45 ns | Floating-point division |
-| **SQRT** | 1.50 ns | Hardware-accelerated square root |
-| **ADD** | 1.52 ns | Floating-point addition |
-| **JUMP** | 1.53 ns | Unconditional PC offset branch |
-| **RAND** | 2.43 ns | Custom bit-shifted Xorshift32 PRNG |
-| **FISR** | 5.68 ns | Double-precision Fast Inverse Square Root |
+| LOADC | 0.89 ns | Load constant into register |
+| SUB | 0.92 ns | Floating-point subtraction |
+| MOVE | 1.10 ns | Register-to-register copy |
+| MUL | 1.27 ns | Floating-point multiplication |
+| DIV | 1.45 ns | Floating-point division |
+| SQRT | 1.50 ns | Hardware-accelerated square root |
+| ADD | 1.52 ns | Floating-point addition |
+| JUMP | 1.53 ns | Unconditional PC offset branch |
+| RAND | 2.43 ns | Custom bit-shifted Xorshift32 PRNG |
+| FISR | 5.68 ns | Double-precision Fast Inverse Square Root |
 
----
+## Architectural Features
 
-## Architectural Highlights
-
-### 1. Stack-Allocated Register Files & L1 Cache Locality
-Interpreter registers are allocated on the local stack using `stackalloc`:
+### Stack-Allocated Register File
+Interpreter registers are allocated on the thread stack:
 ```csharp
 double* RegPtr = stackalloc double[256];
 ```
-This forces the VM's register file to remain warm inside the CPU's **L1 Data Cache** (~4 cycle access latency), bypassing managed allocations.
+This keeps the register file in CPU L1 cache without allocating on the managed heap.
 
-### 2. Fused Loop Control (`FOR` Super-Instruction)
-Compiles loop increments, comparisons, and branches into a single two-word `FOR` super-instruction, reducing interpreter loop dispatch overhead by **50%**.
+### Fused Loop Control (`FOR` Super-Instruction)
+Compiles loop increments, comparisons, and branches into a single two-word `FOR` super-instruction, reducing interpreter loop dispatch overhead by 50%.
 
-### 3. Zero-Check Array Pointers
-Bypasses standard .NET array boundary checks (`IndexOutOfRangeException`) in the interpreter loop by pinning managed bytecode and constant blocks using `fixed` statements and resolving them via raw pointers.
-
----
+### Pointer Pinning
+Bypasses array boundary checks in the interpreter loop by pinning managed bytecode and constant blocks with `fixed` statements for direct pointer indexing.
 
 ## Embedded Raytracer
 
-A custom double-precision 3D raytracer implemented in pure assembly, rendering a camera viewport orbiting a reflective sphere in 8.2 microseconds per frame.
+A double-precision 3D raytracer implemented in assembly, rendering a camera viewport orbiting a reflective sphere in 8.2 μs per frame.
 
 ![Orbit Animation](./orbit.gif)
 
----
-
 ## CLI Reference
 
-Raptor includes a Spectre-based command-line interface (`Raptor.Cli`) to manage compile and run tasks.
+Raptor includes a CLI toolchain (`Raptor.Cli`) for compiling and running scripts.
 
-### 1. Create a New Script
-Creates a new `.rapt` script file initialized with the starter template:
+### Create a Script
+Creates a new `.rapt` script file with a starter template:
 ```bash
 dotnet run -c Release --project Raptor.Cli -- new script.rapt
 ```
-*Options:*
-- `-f | --force`: Overwrites the target `.rapt` file if it already exists.
+Options:
+- `-f | --force`: Overwrites target `.rapt` file if it exists.
 
-### 2. Run a Script
+### Run a Script
 Compiles, verifies, and runs a RaptorScript (`.rapt`) file:
 ```bash
 dotnet run -c Release --project Raptor.Cli -- run script.rapt
 ```
-*Options:*
-- `--no-build`: Bypasses compilation and runs a pre-compiled `.rbc` file directly from the `build/` folder.
-- `-a | --omit-assembly`: Omits outputting the intermediate assembly `.rasm` file when building.
+Options:
+- `--no-build`: Runs a pre-compiled `.rbc` file directly from `build/`.
+- `-a | --omit-assembly`: Omits generating the intermediate `.rasm` assembly file.
 
-### 3. Build / Compile a Script
-Compiles high-level code to assembly (`.rasm`) and binary bytecode (`.rbc`), and generates an editor autocomplete metadata schema (`-api.json`):
+### Build a Script
+Compiles code to assembly (`.rasm`) and binary bytecode (`.rbc`), generating `-api.json` metadata:
 ```bash
 dotnet run -c Release --project Raptor.Cli -- build script.rapt
 ```
-*Options:*
-- `-a | --omit-assembly`: Omits outputting the intermediate assembly `.rasm` file.
-- `-p | --print-ast`: Prints the compiled abstract syntax tree to console.
+Options:
+- `-a | --omit-assembly`: Omits intermediate `.rasm` file.
+- `-p | --print-ast`: Prints compiled AST to console.
 
-### 4. Browse Documentation
-Opens the online documentation reference page directly in your browser:
+### Browse Documentation
+Opens documentation reference in browser:
 ```bash
 dotnet run -c Release --project Raptor.Cli -- docs
 ```
 
----
+## Documentation & Project Structure
 
-## Technical Directory
+Documentation and example workloads:
 
-Detailed architectural layouts are located in the [docs/](docs/) and [examples/](examples/) directories:
-
-### Core Architecture & Memory
+### Core Architecture & Specifications
 - [Core Architecture & Calling Conventions](docs/architecture.md): Calling conventions, sliding windows, and instruction bit-packing.
-- [Instruction Set Architecture (ISA) Reference](docs/isa.md): A complete instruction table detailing operational codes and syntax.
-- [Assembler Pipeline & Constant Pool](docs/assembler.md): Constant pool deduplication and the two-pass assembly process.
+- [Instruction Set Architecture (ISA) Reference](docs/isa.md): Complete instruction table detailing operational codes and syntax.
+- [Assembler Pipeline & Constant Pool](docs/assembler.md): Constant pool deduplication and two-pass assembly process.
 - [Heap Memory Management & Custom Allocator](docs/memory.md): Free list allocator details, neighbor coalescing, and safety bounds.
-- [Performance & Hardware-Level Optimizations](docs/optimizations.md): Advanced explanations on pointer pinning, cache locality, and register unions.
-- [Performance & Benchmark Baselines](docs/benchmarks.md): Official version baseline history and instructions for regression testing.
+- [Performance & Hardware-Level Optimizations](docs/optimizations.md): Pointer pinning, cache locality, and register unions.
+- [Performance & Benchmark Baselines](docs/benchmarks.md): Baseline history and regression testing instructions.
 
-### Example Assembly Workloads
-- [Recursive & Linear Fibonacci](examples/fibonacci.md): Side-by-side analysis of recursion depth limits and flat arithmetic loops.
-- [Monte Carlo Pi Approximation](examples/monte_carlo.md): Explores how a 4x loop unrolling optimization achieves a **25.6% speedup**.
-- [Perceptron Machine Learning Model](examples/perceptron.md): Textual model training illustrating weight updates and FFI calling.
+### Example Workloads
+- [Recursive & Linear Fibonacci](examples/fibonacci.md): Analysis of recursion depth limits and flat arithmetic loops.
+- [Monte Carlo Pi Approximation](examples/monte_carlo.md): 4x loop unrolling optimization producing a 25.6% speedup.
+- [Perceptron Machine Learning Model](examples/perceptron.md): Model training illustrating weight updates and FFI calling.
 - [3D Raytracer Visual Render](examples/raytracer.md): Raytracer camera parameters, mathematical formulas, and PPM output formatting.
 
 ### Directory Structure
@@ -292,37 +269,27 @@ Raptor/
     └── FfiReflectionTests.cs # FFI method registration & call overhead tests
 ```
 
----
-
 ## Built-In Standard Library
 
-Raptor ships with core FFI modules exposed natively to RaptorScript:
-* **`math`:** Under `RaptorMath.cs` (contains `Sin`, `Cos`, `Tan`, `Pow`, `Sqrt`, `Min`, `Max`, `Abs`, `Floor`, `Ceiling`, `Atan2`, `Clamp`, `Pi`).
-* **`peri`:** Under `RaptorPeripherals.cs` (contains `Print` for console output).
+Raptor includes core FFI modules exposed natively to RaptorScript:
+- `math`: In `RaptorMath.cs` (contains `Sin`, `Cos`, `Tan`, `Pow`, `Sqrt`, `Min`, `Max`, `Abs`, `Floor`, `Ceiling`, `Atan2`, `Clamp`, `Pi`).
+- `peri`: In `RaptorPeripherals.cs` (contains `Print`).
 
-These modules register using high-performance reflection via custom attributes (`[RaptorModule]`, `[RaptorMethod]`, `[RaptorDescription]`, `[RaptorParam]`, `[RaptorPure]`).
-
----
+Modules register via reflection using custom attributes (`[RaptorModule]`, `[RaptorMethod]`, `[RaptorDescription]`, `[RaptorParam]`, `[RaptorPure]`).
 
 ## Roadmap
 
-Upcoming features and planned additions to the Raptor ecosystem:
-- [ ] **Gas Budgeting & Instruction Limits:** Essential for running untrusted user scripts or mods. An instruction counter guard prevents infinite loops from hanging the main game thread without needing multi-threaded OS process isolation.
-- [X] **Rust-Style Diagnostic Errors:** Current compiler errors output basic line numbers. Adding source-span spans with inline code snippets and fix hints will make debugging RaptorScript syntax errors significantly faster.
-- [ ] **Standard Library Expansion:** Adding native 2D/3D vector math structs (`vec2`, `vec3`), string operations, and fixed-capacity lists directly into the built-in FFI host table so game developers don't have to write custom bindings for common data structures.
-- [ ] **RaptorPure Handling:** Strict execution sandboxing that guarantees a script cannot trigger external host side-effects or mutate host state outside designated input/output buffers.
-- [ ] **IDE Language Server Support:** A Language Server Protocol (LSP) implementation providing real-time diagnostics, auto-complete for registered FFI methods (`-api.json`), and syntax highlighting in VS Code and other editors.
-
----
+- [ ] **Gas Budgeting & Instruction Limits**: Instruction counter guard to bound script execution time on hot threads.
+- [x] **Rust-Style Diagnostic Errors**: Source spans with inline code snippets and fix hints.
+- [ ] **Standard Library Expansion**: Native 2D/3D vector math structs (`vec2`, `vec3`), string operations, and fixed-capacity lists in the FFI host table.
+- [ ] **RaptorPure Handling**: Sandboxed execution preventing host side-effects or external mutations.
+- [ ] **IDE Language Server Support**: LSP server for real-time diagnostics, `-api.json` auto-complete, and syntax highlighting.
 
 ## Community & Support
 
-- **Questions & Discussions**: Ask questions, share engine integration ideas, or showcase projects on [GitHub Discussions](https://github.com/InfiniteFightingGhost/Raptor/discussions).
-- **Bug Reports & Feature Requests**: Open an issue using our structured [Issue Templates](https://github.com/InfiniteFightingGhost/Raptor/issues/new/choose).
-- **Security Disclosures**: Review our [Security Policy](SECURITY.md) to report vulnerabilities privately.
-
----
+- Ask questions and share ideas on [GitHub Discussions](https://github.com/InfiniteFightingGhost/Raptor/discussions).
+- Report bugs or request features using [Issue Templates](https://github.com/InfiniteFightingGhost/Raptor/issues/new/choose).
+- Report security issues via the [Security Policy](SECURITY.md).
 
 ## License
 Raptor is released under the [MIT License](LICENSE).
-
