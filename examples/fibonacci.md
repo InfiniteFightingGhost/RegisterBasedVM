@@ -43,13 +43,13 @@ math:
 - This creates overlapping register frames. Because we slide `BasePtr` by `1` or `2`, the arguments are already in place, achieving zero-copy calling.
 
 ### Stack safety analysis
-The VM uses stack allocation for both the call stack and register file:
+The VM uses stack allocation for the call stack and a pinned heap array for registers:
 - **Call Stack:** `stackalloc StackFrame[32]` (limit of 32 frames).
-- **Register File:** `stackalloc double[256]` (limit of 256 registers).
+- **Register File:** `new double[256]` pinned via `GCHandle` (limit of 256 registers).
 
 Because the recursive Fibonacci algorithm computes `Fib(N)` by recursively branching down to `Fib(1)`, the maximum depth of the call stack matches $N$.
 - For $N = 25$, the maximum call depth is 25. This uses 25 stack frames and the register base pointer reaches 25, which is safely within limits.
-- If $N \ge 32$, the execution exceeds the 32-frame `stackalloc` boundary. Because the VM runs in unsafe mode with no bounds checking on these pointers, this results in **silent stack overflow and memory corruption**, writing over the calling thread's native stack frame.
+- If $N \ge 32$, the execution exceeds the 32-frame `stackalloc` boundary. Because the VM has a call stack size check, if the call stack exceeds 32 stack frames the VM will throw a VMPanicException because of StackOverflow, allowing for method calls to be safe from memory corruption.
 
 ---
 

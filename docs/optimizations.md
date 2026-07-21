@@ -4,7 +4,7 @@ Raptor uses low-level execution techniques to sustain >450 MIPS throughput in ma
 
 ## Table of Contents
 - [Managed Array Bounds Bypass via Pointers](#managed-array-bounds-bypass-via-pointers)
-- [Stack Allocation & L1 Cache Locality](#stack-allocation-l1-cache-locality)
+- [GCHandle Pinning & Stack Allocation](#gchandle-pinning-stack-allocation)
 - [Switch Jump Table & Aggressive Inlining](#switch-jump-table-aggressive-inlining)
 - [Xorshift32 PRNG Optimization](#xorshift32-prng-optimization)
 - [Double-Precision Fast Inverse Square Root (FISR)](#double-precision-fast-inverse-square-root-fisr)
@@ -13,27 +13,36 @@ Raptor uses low-level execution techniques to sustain >450 MIPS throughput in ma
 
 ## Managed Array Bounds Bypass via Pointers
 
-To eliminate JIT bounds checking on array access, the VM pins managed arrays before entering the execution loop using `fixed`:
+To eliminate JIT bounds checking on array access, the VM pins managed arrays at initialization using `GCHandle.Alloc(..., Pinned)` and stores raw pointers as fields:
 
 ```csharp
-fixed (uint* instPtr = _instructions)
-fixed (double* constPtr = _constants)
-fixed (uint* methodTablePtr = _methods)
-fixed (byte* heapPtr = _heap)
+_instHandle = GCHandle.Alloc(_instructions, GCHandleType.Pinned);
+_constHandle = GCHandle.Alloc(_constants, GCHandleType.Pinned);
+_methodsHandle = GCHandle.Alloc(_methods, GCHandleType.Pinned);
+_heapHandle = GCHandle.Alloc(_heap, GCHandleType.Pinned);
+_regHandle = GCHandle.Alloc(_registers, GCHandleType.Pinned);
 ```
 
 Raw pointers are held in a `VMState` value-type struct. Opcodes are fetched by direct dereference and post-increment (e.g., `*state.Ip++`), eliminating lookup overhead.
 
-## Stack Allocation & L1 Cache Locality
+## GCHandle Pinning & Stack Allocation
 
-Registers and call stack frames are allocated on the thread execution stack using `stackalloc`:
+The 256-register file is heap-allocated and pinned via `GCHandle` at VM initialization, giving the interpreter a stable raw pointer for the VM's lifetime:
 
 ```csharp
-double* RegPtr = stackalloc double[256];
+private readonly double[] _registers = new double[256];
+// pinned at init:
+_regHandle = GCHandle.Alloc(_registers, GCHandleType.Pinned);
+_regPtr = (double*)_regHandle.AddrOfPinnedObject();
+```
+
+Call stack frames are allocated on the thread execution stack using `stackalloc`:
+
+```csharp
 StackFrame* framePtr = stackalloc StackFrame[32];
 ```
 
-Allocating the 256-register file and 32 call frames on the thread stack avoids GC allocation and targets L1 data cache locality (~4 cycles latency, compared to ~60 cycles for main memory).
+Pinning the register array avoids per-frame GC allocations, while stack-allocating the call frames keeps frame push/pop overhead minimal (~4 cycles L1 latency vs. ~60 cycles for main memory).
 
 ## Switch Jump Table & Aggressive Inlining
 

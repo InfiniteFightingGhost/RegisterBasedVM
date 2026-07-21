@@ -65,50 +65,55 @@ The `NEWARR rDest size` instruction allocates an array of `size` elements.
    +--------------------+
              |
              v
-   +--------------------------------------------------------+
-   | Find first block where BlockSize >= requested valSize  |
-   +--------------------------------------------------------+
+   +--------------------------------------------------------------+
+   | Find first block where BlockSize >= requiredBytes             |
+   | (requiredBytes = valSize * 8 + 4, includes header)            |
+   +--------------------------------------------------------------+
              |
              v
    +--------------------+       No
-   |    Block Found?    | ------------> Throw OutOfMemoryException
+   |    Block Found?    | ------------>  Throw OutOfMemoryException
    +--------------------+
              | Yes
              v
-   +---------------------------------------+
-   | Is BlockSize > requested valSize?     |
-   +---------------------------------------+
+   +-------------------------------------------+
+   | Is BlockSize >= requiredBytes + 8?        |
+   +-------------------------------------------+
      /                                   \ Yes
     / No                                  \
    v                                       v
 [Consume Block Entirely]               [Split Block]
-- Unlink from free list                - Shrink current block size
-- Write valSize at block start         - Write valSize at block start
-                                       - Re-link remaining free block
-                                         at currAddress + valSize + 4
-                                         with size (BlockSize - valSize)
+- Unlink from free list                - Write requiredBytes as header
+- Write blockSize as header            - Create remainder free block
+                                         at currAddress + requiredBytes
+                                         with size (BlockSize - requiredBytes)
              \                           /
               \                         /
                v                       v
-         +---------------------------------------+
-         | Write (currAddress + 4) to rDest      |
-         +---------------------------------------+
+         +-----------------------------------------------+
+         | Write absolute payload pointer to rDest       |
+         | (state.HeapPtr + currAddress + 4) as double   |
+         +-----------------------------------------------+
 ```
 
 ### Allocation Logic
 ```csharp
-if (blockSize > valSize)
+if (blockSize >= requiredBytes + 8)
 {
-    // If splitting the block, unlink the old block and link the remainder
-    if (prevAddress != 0xFFFFFFFF)
-        *(uint*)(state.HeapPtr + prevAddress) = nextAddress;
-    else
-        state.FreeBlockHeaderPointer = currAddress + valSize + 4;
+    // Split: create remainder free block after allocated region
+    uint remainingFreeAddress = currAddress + requiredBytes;
+    uint remainingFreeSize = blockSize - requiredBytes;
 
-    *(uint*)(state.HeapPtr + currAddress) = valSize; // Write header
-    *(uint*)(state.HeapPtr + currAddress + valSize) = nextAddress; // Remainder next ptr
-    *(uint*)(state.HeapPtr + currAddress + valSize + 4) = blockSize - valSize; // Remainder size
-    Reg(state.RegPtr, state.BasePtr, pointerAddress) = currAddress + 4; // User pointer
+    if (prevAddress != 0xFFFFFFFF)
+        *(uint*)(state.HeapPtr + prevAddress) = remainingFreeAddress;
+    else
+        state.FreeBlockHeaderPointer = remainingFreeAddress;
+
+    *(uint*)(state.HeapPtr + remainingFreeAddress) = nextAddress;          // Remainder next ptr
+    *(uint*)(state.HeapPtr + remainingFreeAddress + 4) = remainingFreeSize; // Remainder size
+
+    *(uint*)(state.HeapPtr + currAddress) = requiredBytes;                  // Write header
+    Reg(state.RegPtr, pointerAddress) = (double)(ulong)(state.HeapPtr + currAddress + 4);
 }
 else
 {
@@ -116,9 +121,10 @@ else
     if (prevAddress != 0xFFFFFFFF)
         *(uint*)(state.HeapPtr + prevAddress) = nextAddress;
     else
-        state.FreeBlockHeaderPointer = 0xFFFFFFFF;
-    *(uint*)(state.HeapPtr + currAddress) = valSize;
-    Reg(state.RegPtr, state.BasePtr, pointerAddress) = currAddress + 4;
+        state.FreeBlockHeaderPointer = nextAddress;
+
+    *(uint*)(state.HeapPtr + currAddress) = blockSize;                     // Write header
+    Reg(state.RegPtr, pointerAddress) = (double)(ulong)(state.HeapPtr + currAddress + 4);
 }
 ```
 

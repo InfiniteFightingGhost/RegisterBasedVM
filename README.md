@@ -19,7 +19,7 @@
 
 Raptor is a register-based virtual machine and scripting engine for .NET 10.0, designed for game engine hot loops. It includes RaptorScript (a high-level language), an optimizing compiler with source maps, a CLI toolchain, and a C# VM interpreter.
 
-To avoid GC allocations during interpretation, registers are restricted to 64-bit doubles and allocated on the thread stack via `stackalloc` (256 virtual registers residing in CPU L1 cache). This architecture yields execution throughput between 360 and 660+ MIPS on consumer hardware.
+To avoid GC allocations during interpretation, registers are restricted to 64-bit doubles and pinned via `GCHandle` (256 virtual registers accessed through raw pointers, bypassing bounds checks and GC pressure). This architecture yields execution throughput between 360 and 660+ MIPS on consumer hardware.
 
 ## Installation
 
@@ -69,8 +69,9 @@ Raptor includes a compiler, CLI toolchain, source-mapping error translator, and 
 graph TD
     A[RaptorScript .rapt] -->|Compiler| B[Raptor Assembly .rasm]
     A -->|Source Map| E[Error Translator]
+    A -->|ScriptWatcher| D[Virtual Machine RunFast]
     B -->|Assembler & Verifier| C[Raptor Bytecode .rbc]
-    C -->|ScriptWatcher| D[Virtual Machine RunFast]
+    C --> D
     D -->|Runtime Error IP| E
 ```
 
@@ -129,7 +130,7 @@ The FFI system automatically generates autocomplete JSON files (`-api.json`) lis
 | Garbage Collector (GC) pressure | High (allocates per-instruction) | Low-to-Medium (native heap) | None (native heap) | Zero Managed GC Allocations |
 | FFI Call Overhead | High (reflection/boxing) | Medium (~50–150 ns marshalling) | Low (~10-20 ns call cost) | Low (< 5 ns direct call cost) |
 | AOT / IL2CPP Compatibility | Excellent (Refsafe JIT limits) | Complex (requires native libs) | Broken on iOS/Consoles | Full (.NET native support) |
-| Memory Locality | Managed heap objects | Medium (C-structs) | High (C-structs) | High (L1 Stack-allocated registers) |
+| Memory Locality | Managed heap objects | Medium (C-structs) | High (C-structs) | High (GCHandle-pinned registers) |
 
 > [!NOTE]
 > Unlike general-purpose Lua runtimes that manage dynamic table objects and metatables on the heap, Raptor restricts registers to 64-bit doubles to achieve zero-GC execution in hot game loops. With 256 virtual registers, instruction dispatch overhead is reduced.
@@ -165,18 +166,21 @@ Opcode execution latencies inside the interpreter loop:
 
 ## Architectural Features
 
-### Stack-Allocated Register File
-Interpreter registers are allocated on the thread stack:
+### Pinned Register File
+The 256-register file is heap-allocated and pinned via `GCHandle` at VM initialization, giving the interpreter a stable raw pointer for the entire VM lifetime:
 ```csharp
-double* RegPtr = stackalloc double[256];
+private readonly double[] _registers = new double[256];
+// ...
+_regHandle = GCHandle.Alloc(_registers, GCHandleType.Pinned);
+_regPtr = (double*)_regHandle.AddrOfPinnedObject();
 ```
-This keeps the register file in CPU L1 cache without allocating on the managed heap.
+This avoids per-frame GC allocations and bypasses array bounds checks in the interpreter loop.
 
 ### Fused Loop Control (`FOR` Super-Instruction)
 Compiles loop increments, comparisons, and branches into a single two-word `FOR` super-instruction, reducing interpreter loop dispatch overhead by 50%.
 
-### Pointer Pinning
-Bypasses array boundary checks in the interpreter loop by pinning managed bytecode and constant blocks with `fixed` statements for direct pointer indexing.
+### GCHandle Pinning
+Bypasses array boundary checks in the interpreter loop by pinning managed bytecode, constants, heap, and register arrays via `GCHandle.Alloc(..., Pinned)` at initialization for direct pointer indexing throughout execution.
 
 ## Embedded Raytracer
 

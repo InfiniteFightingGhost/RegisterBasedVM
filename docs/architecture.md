@@ -75,7 +75,7 @@ This permits up to 256 registers and 256 active constants to be accessed directl
 
 ## Sliding Register Windows
 
-The VM allocates a single continuous register array of 256 doubles on the thread stack. Frame pointer `state.RegPtr` shifts directly when calling methods, keeping access offsets zero-based in child frames.
+The VM allocates a single continuous register array of 256 doubles, pinned via `GCHandle` at initialization. Frame pointer `state.RegPtr` shifts directly when calling methods, keeping access offsets zero-based in child frames.
 
 When calling a method via `CALL A B`:
 - `A` is the register index in the parent's frame where the callee's frame starts.
@@ -85,12 +85,13 @@ The VM pushes the current Program Counter index (`state.Ip - state.InstPtr`) and
 `RegPtr (callee) = RegPtr (parent) + A`
 
 ```csharp
-byte frameStart = instruction.A;
+byte start = instruction.A;
+ushort methodIndex = instruction.B;
 int currentPcIndex = (int)(state.Ip - state.InstPtr);
 StackFrame frame = new StackFrame(currentPcIndex, state.RegPtr);
 CallStackPush(ref state.CallStackPtr, frame);
-state.RegPtr += frameStart;
-state.Ip = state.InstPtr + (int)vm._methods[methodIndex];
+state.RegPtr += start;
+state.Ip = state.InstPtr + (int)state.MethodTablePtr[methodIndex];
 ```
 
 ### Argument Passing
