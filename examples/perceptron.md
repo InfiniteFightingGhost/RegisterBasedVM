@@ -111,8 +111,8 @@ This nested execution tests the VM's call stack push/pop speed. Because of zero-
 
 When run on the benchmark suite:
 - **Epochs:** 10,000,000 (representing 40,000,000 coordinate training runs).
-- **Correct Convergence:** The weights converge to $w_1 = 1$, $w_2 = 2$, and $b = -2$. (Wait! Since $w_1 x_1 + w_2 x_2 + b > 0$, inputs like $(1,1)$ yield $1(1) + 2(1) - 2 = 1 > 0 \implies 1$, while $(1,0)$ yields $1(1) + 0 - 2 = -1 \le 0 \implies 0$, perfectly separating the coordinates for an AND gate).
-- **Absolute Execution Time:** **2.68 seconds**
+- **Correct Convergence:** The weights converge to $w_1 = 1$, $w_2 = 2$, and $b = -2$.
+**Absolute Execution Time:** **2.68 seconds**
 - **Average Throughput:** **366 MIPS**
 
 ### Why is Perceptron MIPS lower than Monte Carlo?

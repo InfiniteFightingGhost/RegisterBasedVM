@@ -35,8 +35,8 @@ math:
 ```
 
 ### Analysis of the Function Call
-- When `CALL method() result` runs, the register window slides by `1` (since `result` is `r0`, but wait! The call arguments start at register `r0` and slides by the index of `result`? In `CALL method() result`, the assembler parses `result` which is `r0`, so the register window slides by `0`? No! Let's check `CALL method() result`. In C#, the instruction is generated with `A` as the register index, which is `r0` (index 0). So it slides by `0`? Wait! No:
-  `CALL method() r1` (line 21) -> slide window by 1.
+- When `CALL method() result` runs, the register window slides by `0`
+- `CALL method() r1` (line 21) -> slide window by 1.
   So `BasePtr` increments by 1. The parameter register for the callee (`r0`) corresponds to `r1` of the parent.
 - When `CALL method() r2` (line 23) runs -> slide window by 2.
   So `BasePtr` increments by 2. The parameter register for the callee (`r0`) corresponds to `r2` of the parent.
