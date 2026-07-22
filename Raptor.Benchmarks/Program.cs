@@ -390,7 +390,194 @@ public class Program
             sw.Stop();
             stdout.WriteLine($"Combat Damage:        {sw.Elapsed.TotalMilliseconds / 50.0:F4} ms");
 
+            if (args.Contains("--comparison"))
+            {
+                stdout.WriteLine("\n[Comparative Benchmarks: Raptor VM vs MoonSharp]");
+                stdout.WriteLine("-------------------------------------------------");
+                var comp = new MoonSharpComparisonBenchmark();
+                comp.Setup();
+
+                sw = Stopwatch.StartNew();
+                for (int i = 0; i < 50; i++)
+                    comp.Raptor_FFI_Overhead();
+                sw.Stop();
+                double rapFfi = sw.Elapsed.TotalMilliseconds / 50.0;
+
+                sw = Stopwatch.StartNew();
+                for (int i = 0; i < 50; i++)
+                    comp.MoonSharp_FFI_Overhead();
+                sw.Stop();
+                double moonFfi = sw.Elapsed.TotalMilliseconds / 50.0;
+                stdout.WriteLine($"FFI Call Overhead:   Raptor = {rapFfi:F4} ms | MoonSharp = {moonFfi:F4} ms (Raptor is {moonFfi / rapFfi:F1}x faster)");
+
+                sw = Stopwatch.StartNew();
+                for (int i = 0; i < 50; i++)
+                    comp.Raptor_Fibonacci();
+                sw.Stop();
+                double rapFib = sw.Elapsed.TotalMilliseconds / 50.0;
+
+                sw = Stopwatch.StartNew();
+                for (int i = 0; i < 50; i++)
+                    comp.MoonSharp_Fibonacci();
+                sw.Stop();
+                double moonFib = sw.Elapsed.TotalMilliseconds / 50.0;
+                stdout.WriteLine($"Fibonacci Loop:      Raptor = {rapFib:F4} ms | MoonSharp = {moonFib:F4} ms (Raptor is {moonFib / rapFib:F1}x faster)");
+
+                sw = Stopwatch.StartNew();
+                for (int i = 0; i < 50; i++)
+                    comp.Raptor_ArrayAccess();
+                sw.Stop();
+                double rapArr = sw.Elapsed.TotalMilliseconds / 50.0;
+
+                sw = Stopwatch.StartNew();
+                for (int i = 0; i < 50; i++)
+                    comp.MoonSharp_ArrayAccess();
+                sw.Stop();
+                double moonArr = sw.Elapsed.TotalMilliseconds / 50.0;
+                stdout.WriteLine($"Array Access:        Raptor = {rapArr:F4} ms | MoonSharp = {moonArr:F4} ms (Raptor is {moonArr / rapArr:F1}x faster)");
+
+                sw = Stopwatch.StartNew();
+                for (int i = 0; i < 50; i++)
+                    comp.Raptor_EcsUpdate();
+                sw.Stop();
+                double rapEcs = sw.Elapsed.TotalMilliseconds / 50.0;
+
+                sw = Stopwatch.StartNew();
+                for (int i = 0; i < 50; i++)
+                    comp.MoonSharp_EcsUpdate();
+                sw.Stop();
+                double moonEcs = sw.Elapsed.TotalMilliseconds / 50.0;
+                stdout.WriteLine($"ECS Update:          Raptor = {rapEcs:F4} ms | MoonSharp = {moonEcs:F4} ms (Raptor is {moonEcs / rapEcs:F1}x faster)");
+
+                stdout.WriteLine("\n[Comparative Benchmarks: Raptor VM vs Jint]");
+                stdout.WriteLine("-------------------------------------------------");
+                var jintComp = new JintComparisonBenchmark();
+                jintComp.Setup();
+
+                sw = Stopwatch.StartNew();
+                for (int i = 0; i < 50; i++)
+                    jintComp.Raptor_FFI_Overhead();
+                sw.Stop();
+                rapFfi = sw.Elapsed.TotalMilliseconds / 50.0;
+
+                sw = Stopwatch.StartNew();
+                for (int i = 0; i < 50; i++)
+                    jintComp.Jint_FFI_Overhead();
+                sw.Stop();
+                double jintFfi = sw.Elapsed.TotalMilliseconds / 50.0;
+                stdout.WriteLine($"FFI Call Overhead:   Raptor = {rapFfi:F4} ms | Jint = {jintFfi:F4} ms (Raptor is {jintFfi / rapFfi:F1}x faster)");
+
+                sw = Stopwatch.StartNew();
+                for (int i = 0; i < 50; i++)
+                    jintComp.Raptor_Fibonacci();
+                sw.Stop();
+                rapFib = sw.Elapsed.TotalMilliseconds / 50.0;
+
+                sw = Stopwatch.StartNew();
+                for (int i = 0; i < 50; i++)
+                    jintComp.Jint_Fibonacci();
+                sw.Stop();
+                double jintFib = sw.Elapsed.TotalMilliseconds / 50.0;
+                stdout.WriteLine($"Fibonacci Loop:      Raptor = {rapFib:F4} ms | Jint = {jintFib:F4} ms (Raptor is {jintFib / rapFib:F1}x faster)");
+
+                sw = Stopwatch.StartNew();
+                for (int i = 0; i < 50; i++)
+                    jintComp.Raptor_ArrayAccess();
+                sw.Stop();
+                rapArr = sw.Elapsed.TotalMilliseconds / 50.0;
+
+                sw = Stopwatch.StartNew();
+                for (int i = 0; i < 50; i++)
+                    jintComp.Jint_ArrayAccess();
+                sw.Stop();
+                double jintArr = sw.Elapsed.TotalMilliseconds / 50.0;
+                stdout.WriteLine($"Array Access:        Raptor = {rapArr:F4} ms | Jint = {jintArr:F4} ms (Raptor is {jintArr / rapArr:F1}x faster)");
+
+                sw = Stopwatch.StartNew();
+                for (int i = 0; i < 50; i++)
+                    jintComp.Raptor_EcsUpdate();
+                sw.Stop();
+                rapEcs = sw.Elapsed.TotalMilliseconds / 50.0;
+
+                sw = Stopwatch.StartNew();
+                for (int i = 0; i < 50; i++)
+                    jintComp.Jint_EcsUpdate();
+                sw.Stop();
+                double jintEcs = sw.Elapsed.TotalMilliseconds / 50.0;
+                stdout.WriteLine($"ECS Update:          Raptor = {rapEcs:F4} ms | Jint = {jintEcs:F4} ms (Raptor is {jintEcs / rapEcs:F1}x faster)");
+
+                stdout.WriteLine("\n[Comparative Benchmarks: Raptor VM vs NLua (Native C Lua 5.4)]");
+                stdout.WriteLine("-------------------------------------------------");
+                var nluaComp = new NLuaComparisonBenchmark();
+                nluaComp.Setup();
+
+                sw = Stopwatch.StartNew();
+                for (int i = 0; i < 50; i++)
+                    nluaComp.Raptor_FFI_Overhead();
+                sw.Stop();
+                rapFfi = sw.Elapsed.TotalMilliseconds / 50.0;
+
+                sw = Stopwatch.StartNew();
+                for (int i = 0; i < 50; i++)
+                    nluaComp.NLua_FFI_Overhead();
+                sw.Stop();
+                double nluaFfi = sw.Elapsed.TotalMilliseconds / 50.0;
+                stdout.WriteLine($"FFI Call Overhead:   Raptor = {rapFfi:F4} ms | NLua = {nluaFfi:F4} ms (Raptor is {nluaFfi / rapFfi:F1}x faster)");
+
+                sw = Stopwatch.StartNew();
+                for (int i = 0; i < 50; i++)
+                    nluaComp.Raptor_Fibonacci();
+                sw.Stop();
+                rapFib = sw.Elapsed.TotalMilliseconds / 50.0;
+
+                sw = Stopwatch.StartNew();
+                for (int i = 0; i < 50; i++)
+                    nluaComp.NLua_Fibonacci();
+                sw.Stop();
+                double nluaFib = sw.Elapsed.TotalMilliseconds / 50.0;
+                stdout.WriteLine($"Fibonacci Loop:      Raptor = {rapFib:F4} ms | NLua = {nluaFib:F4} ms (Raptor is {nluaFib / rapFib:F1}x faster)");
+
+                sw = Stopwatch.StartNew();
+                for (int i = 0; i < 50; i++)
+                    nluaComp.Raptor_ArrayAccess();
+                sw.Stop();
+                rapArr = sw.Elapsed.TotalMilliseconds / 50.0;
+
+                sw = Stopwatch.StartNew();
+                for (int i = 0; i < 50; i++)
+                    nluaComp.NLua_ArrayAccess();
+                sw.Stop();
+                double nluaArr = sw.Elapsed.TotalMilliseconds / 50.0;
+                stdout.WriteLine($"Array Access:        Raptor = {rapArr:F4} ms | NLua = {nluaArr:F4} ms (Raptor is {nluaArr / rapArr:F1}x faster)");
+
+                sw = Stopwatch.StartNew();
+                for (int i = 0; i < 50; i++)
+                    nluaComp.Raptor_EcsUpdate();
+                sw.Stop();
+                rapEcs = sw.Elapsed.TotalMilliseconds / 50.0;
+
+                sw = Stopwatch.StartNew();
+                for (int i = 0; i < 50; i++)
+                    nluaComp.NLua_EcsUpdate();
+                sw.Stop();
+                double nluaEcs = sw.Elapsed.TotalMilliseconds / 50.0;
+                stdout.WriteLine($"ECS Update:          Raptor = {rapEcs:F4} ms | NLua = {nluaEcs:F4} ms (Raptor is {nluaEcs / rapEcs:F1}x faster)");
+            }
+
             stdout.WriteLine("=================================================");
+            return;
+        }
+
+        if (args.Contains("--comparison"))
+        {
+            Console.WriteLine("[Raptor Comparative Benchmark - Raptor VM vs MoonSharp, Jint & NLua]");
+            var cleanArgs = args.Where(a => a != "--comparison").ToArray();
+            BenchmarkSwitcher.FromTypes(new[]
+            {
+                typeof(MoonSharpComparisonBenchmark),
+                typeof(JintComparisonBenchmark),
+                typeof(NLuaComparisonBenchmark)
+            }).Run(cleanArgs);
             return;
         }
 

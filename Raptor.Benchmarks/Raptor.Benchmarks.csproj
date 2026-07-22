@@ -13,6 +13,9 @@
 
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
+    <PackageReference Include="MoonSharp" Version="2.0.0" />
+    <PackageReference Include="Jint" Version="4.2.0" />
+    <PackageReference Include="NLua" Version="1.7.4" />
   </ItemGroup>
 
   <ItemGroup>
