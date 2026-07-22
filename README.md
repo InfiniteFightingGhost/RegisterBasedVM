@@ -1,19 +1,13 @@
-<p align="center">
-  <img src="./raptor-banner.svg" alt="Raptor VM & Scripting Language" width="100%">
-</p>
+![Raptor VM & Scripting Language](https://raw.githubusercontent.com/InfiniteFightingGhost/Raptor/main/raptor-banner.png)
 
-<h1 align="center">Raptor VM & Scripting Language</h1>
+# Raptor VM & Scripting Language
 
-<p align="center">
-  A high-throughput, zero-allocation, register-based virtual machine and scripting pipeline built for .NET 10.0 game engines and systems.
-</p>
+A high-throughput, zero-allocation, register-based virtual machine and scripting pipeline built for .NET 10.0 game engines and systems.
 
-<p align="center">
-  <img src="https://img.shields.io/badge/.NET-10.0-blueviolet?style=flat-square" alt=".NET 10.0">
-  <img src="https://img.shields.io/badge/Performance-360--660_MIPS-brightgreen?style=flat-square" alt="Performance MIPS">
-  <img src="https://img.shields.io/badge/GC-Zero_Managed_Allocations-blue?style=flat-square" alt="Zero GC">
-  <img src="https://img.shields.io/badge/FFI_Overhead-%3C_5ns_Direct_Call-orange?style=flat-square" alt="FFI Overhead">
-</p>
+![.NET 10.0](https://img.shields.io/badge/.NET-10.0-blueviolet?style=flat-square)
+![Performance MIPS](https://img.shields.io/badge/Performance-360--660_MIPS-brightgreen?style=flat-square)
+![Zero GC](https://img.shields.io/badge/GC-Zero_Managed_Allocations-blue?style=flat-square)
+![FFI Overhead](https://img.shields.io/badge/FFI_Overhead-%3C_5ns_Direct_Call-orange?style=flat-square)
 
 ## Overview
 
@@ -65,14 +59,14 @@ ExecutionResult result = engine.Execute(chunk);
 
 Raptor includes a compiler, CLI toolchain, source-mapping error translator, and VM interpreter:
 
-```mermaid
-graph TD
-    A[RaptorScript .rapt] -->|Compiler| B[Raptor Assembly .rasm]
-    A -->|Source Map| E[Error Translator]
-    A -->|ScriptWatcher| D[Virtual Machine RunFast]
-    B -->|Assembler & Verifier| C[Raptor Bytecode .rbc]
-    C --> D
-    D -->|Runtime Error IP| E
+```text
+  RaptorScript (.rapt)
+     │
+     ├──> [Compiler] ──────> Raptor Assembly (.rasm) ──> [Assembler & Verifier] ──> Bytecode (.rbc)
+     │                                                                                 │
+     └──> [Source Map] ───────────────────────────────────────────────────────────┐    │
+                                                                                  ▼    ▼
+  [Error Translator] <───────────────────────────── Runtime Error (IP) <── [Virtual Machine]
 ```
 
 ### 1. High-Level RaptorScript (`.rapt`)
@@ -132,8 +126,7 @@ The FFI system automatically generates autocomplete JSON files (`-api.json`) lis
 | AOT / IL2CPP Compatibility | Excellent (Refsafe JIT limits) | Complex (requires native libs) | Broken on iOS/Consoles | Full (.NET native support) |
 | Memory Locality | Managed heap objects | Medium (C-structs) | High (C-structs) | High (GCHandle-pinned registers) |
 
-> [!NOTE]
-> Unlike general-purpose Lua runtimes that manage dynamic table objects and metatables on the heap, Raptor restricts registers to 64-bit doubles to achieve zero-GC execution in hot game loops. With 256 virtual registers, instruction dispatch overhead is reduced.
+> **Note**: Unlike general-purpose Lua runtimes that manage dynamic table objects and metatables on the heap, Raptor restricts registers to 64-bit doubles to achieve zero-GC execution in hot game loops. With 256 virtual registers, instruction dispatch overhead is reduced.
 
 ## Performance & Benchmarks
 
@@ -186,7 +179,7 @@ Bypasses array boundary checks in the interpreter loop by pinning managed byteco
 
 A double-precision 3D raytracer implemented in assembly, rendering a camera viewport orbiting a reflective sphere in 8.2 μs per frame.
 
-![Orbit Animation](./orbit.gif)
+![Orbit Animation](https://raw.githubusercontent.com/InfiniteFightingGhost/Raptor/main/orbit.gif)
 
 ## CLI Reference
 
@@ -229,18 +222,18 @@ dotnet run -c Release --project Raptor.Cli -- docs
 Documentation and example workloads:
 
 ### Core Architecture & Specifications
-- [Core Architecture & Calling Conventions](docs/architecture.md): Calling conventions, sliding windows, and instruction bit-packing.
-- [Instruction Set Architecture (ISA) Reference](docs/isa.md): Complete instruction table detailing operational codes and syntax.
-- [Assembler Pipeline & Constant Pool](docs/assembler.md): Constant pool deduplication and two-pass assembly process.
-- [Heap Memory Management & Custom Allocator](docs/memory.md): Free list allocator details, neighbor coalescing, and safety bounds.
-- [Performance & Hardware-Level Optimizations](docs/optimizations.md): Pointer pinning, cache locality, and register unions.
-- [Performance & Benchmark Baselines](docs/benchmarks.md): Baseline history and regression testing instructions.
+- [Core Architecture & Calling Conventions](https://github.com/InfiniteFightingGhost/Raptor/blob/main/docs/architecture.md): Calling conventions, sliding windows, and instruction bit-packing.
+- [Instruction Set Architecture (ISA) Reference](https://github.com/InfiniteFightingGhost/Raptor/blob/main/docs/isa.md): Complete instruction table detailing operational codes and syntax.
+- [Assembler Pipeline & Constant Pool](https://github.com/InfiniteFightingGhost/Raptor/blob/main/docs/assembler.md): Constant pool deduplication and two-pass assembly process.
+- [Heap Memory Management & Custom Allocator](https://github.com/InfiniteFightingGhost/Raptor/blob/main/docs/memory.md): Free list allocator details, neighbor coalescing, and safety bounds.
+- [Performance & Hardware-Level Optimizations](https://github.com/InfiniteFightingGhost/Raptor/blob/main/docs/optimizations.md): Pointer pinning, cache locality, and register unions.
+- [Performance & Benchmark Baselines](https://github.com/InfiniteFightingGhost/Raptor/blob/main/docs/benchmarks.md): Baseline history and regression testing instructions.
 
 ### Example Workloads
-- [Recursive & Linear Fibonacci](examples/fibonacci.md): Analysis of recursion depth limits and flat arithmetic loops.
-- [Monte Carlo Pi Approximation](examples/monte_carlo.md): 4x loop unrolling optimization producing a 25.6% speedup.
-- [Perceptron Machine Learning Model](examples/perceptron.md): Model training illustrating weight updates and FFI calling.
-- [3D Raytracer Visual Render](examples/raytracer.md): Raytracer camera parameters, mathematical formulas, and PPM output formatting.
+- [Recursive & Linear Fibonacci](https://github.com/InfiniteFightingGhost/Raptor/blob/main/examples/fibonacci.md): Analysis of recursion depth limits and flat arithmetic loops.
+- [Monte Carlo Pi Approximation](https://github.com/InfiniteFightingGhost/Raptor/blob/main/examples/monte_carlo.md): 4x loop unrolling optimization producing a 25.6% speedup.
+- [Perceptron Machine Learning Model](https://github.com/InfiniteFightingGhost/Raptor/blob/main/examples/perceptron.md): Model training illustrating weight updates and FFI calling.
+- [3D Raytracer Visual Render](https://github.com/InfiniteFightingGhost/Raptor/blob/main/examples/raytracer.md): Raytracer camera parameters, mathematical formulas, and PPM output formatting.
 
 ### Directory Structure
 ```text
@@ -293,7 +286,7 @@ Modules register via reflection using custom attributes (`[RaptorModule]`, `[Rap
 
 - Ask questions and share ideas on [GitHub Discussions](https://github.com/InfiniteFightingGhost/Raptor/discussions).
 - Report bugs or request features using [Issue Templates](https://github.com/InfiniteFightingGhost/Raptor/issues/new/choose).
-- Report security issues via the [Security Policy](SECURITY.md).
+- Report security issues via the [Security Policy](https://github.com/InfiniteFightingGhost/Raptor/blob/main/SECURITY.md).
 
 ## License
-Raptor is released under the [MIT License](LICENSE).
+Raptor is released under the [MIT License](https://github.com/InfiniteFightingGhost/Raptor/blob/main/LICENSE).
