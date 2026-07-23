@@ -2,7 +2,7 @@ namespace Raptor.Compiler
 {
     public static class ASTOptimizer
     {
-        public static ASTNode OptimizeNode(ASTNode node, ASTNode? parent = null)
+        public static ASTNode OptimizeNode(ASTNode node)
         {
             return node switch
             {
@@ -10,20 +10,12 @@ namespace Raptor.Compiler
                 BinaryOpNode binNode => OptimizeBinaryOpNode(binNode),
                 LogicalOpNode logicalNode => OptimizeLogicalNode(logicalNode),
                 VarDeclNode declNode => OptimizeVarDeclNode(declNode),
-                IfNode ifNode => OptimizeIfNode(
-                    ifNode,
-                    (parent is not null)
-                        ? parent
-                        : throw new ArgumentException("If node expects parent as well.")
-                ),
                 _ => node,
             };
         }
 
         private static ASTNode OptimizeVarDeclNode(VarDeclNode declNode)
         {
-            var log = (LogicalOpNode)declNode.Initializer;
-            Console.WriteLine(log.Op);
             return new VarDeclNode(declNode.Name, OptimizeNode(declNode.Initializer))
             {
                 Line = declNode.Line,
@@ -93,8 +85,8 @@ namespace Raptor.Compiler
             {
                 double result = logicalNode.Op switch
                 {
-                    "||" => (numLeft.Value == 1) ? 1 : (numRight.Value),
-                    "&&" => (numLeft.Value == 0) ? 0 : (numRight.Value),
+                    "||" => (numLeft.Value != 0) ? numLeft.Value : (numRight.Value),
+                    "&&" => (numLeft.Value == 0) ? numLeft.Value : (numRight.Value),
                     _ => double.NaN,
                 };
                 if (!double.IsNaN(result))
@@ -110,103 +102,87 @@ namespace Raptor.Compiler
             return logicalNode;
         }
 
-        public static ASTNode OptimizeIfNode(IfNode ifNode, ASTNode parent)
+        public static IEnumerable<ASTNode> OptimizeIfNode(IfNode ifNode)
         {
-            var Condition = OptimizeNode(ifNode.Condition);
-            if (Condition is NumberNode { Value: 0.0 })
+            var condition = OptimizeNode(ifNode.Condition);
+            var thenBlock = OptimizeStatements(ifNode.ThenBlock);
+            var elseBlock = ifNode.ElseBlock != null ? OptimizeStatements(ifNode.ElseBlock) : null;
+
+            if (condition is NumberNode { Value: 0.0 })
             {
-                if (ifNode.ElseBlock is null)
-                    return null!; // TODO: Find out what will be the best thing to be returned here.
-                switch (parent)
+                return elseBlock ?? Enumerable.Empty<ASTNode>();
+            }
+            else if (condition is NumberNode { Value: 1.0 })
+            {
+                return thenBlock;
+            }
+            var optimizedIf = new IfNode(condition, thenBlock, elseBlock)
+            {
+                Line = ifNode.Line,
+                Column = ifNode.Column,
+                Length = ifNode.Length,
+            };
+            return new[] { optimizedIf };
+        }
+
+        public static IEnumerable<ASTNode> OptimizeForNode(ForNode forNode)
+        {
+            var init = forNode.Initializer != null ? OptimizeNode(forNode.Initializer) : null;
+            var cond = forNode.Condition != null ? OptimizeNode(forNode.Condition) : null;
+            var step = forNode.Increment != null ? OptimizeNode(forNode.Increment) : null;
+            var body = OptimizeStatements(forNode.Body);
+            if (cond is NumberNode { Value: 0.0 })
+                return Enumerable.Empty<ASTNode>();
+            var newForNode = new ForNode(init, cond, step, body)
+            {
+                Line = forNode.Line,
+                Column = forNode.Column,
+                Length = forNode.Length,
+            };
+            return new[] { newForNode };
+        }
+
+        public static IEnumerable<ASTNode> OptimizeWhileNode(WhileNode whileNode)
+        {
+            var cond = OptimizeNode(whileNode.Condition);
+            var body = OptimizeStatements(whileNode.Body);
+            if (cond is NumberNode { Value: 0.0 })
+                return Enumerable.Empty<ASTNode>();
+            var newWhileNode = new WhileNode(cond, body)
+            {
+                Line = whileNode.Line,
+                Column = whileNode.Column,
+                Length = whileNode.Length,
+            };
+            return new[] { newWhileNode };
+        }
+
+        private static List<ASTNode> OptimizeStatements(List<ASTNode> input)
+        {
+            var output = new List<ASTNode>(input.Count);
+            foreach (var node in input)
+            {
+                if (node is IfNode ifNode)
                 {
-                    case ProgramNode program:
-                        {
-                            int start = program.Statements.IndexOf(ifNode);
-                            for (int i = 0; i < ifNode.ElseBlock.Count; i++)
-                            {
-                                program.Statements.Insert(
-                                    start + i,
-                                    OptimizeNode(ifNode.ElseBlock[i])
-                                );
-                            }
-                            program.Statements.Remove(ifNode);
-                        }
-                        break;
-                    case ForNode forNode:
-                        {
-                            int start = forNode.Body.IndexOf(ifNode);
-                            for (int i = 0; i < ifNode.ElseBlock.Count; i++)
-                            {
-                                forNode.Body.Insert(start + i, OptimizeNode(ifNode.ElseBlock[i]));
-                            }
-                            forNode.Body.Remove(ifNode);
-                        }
-                        break;
-                    case WhileNode whileNode:
-                        {
-                            int start = whileNode.Body.IndexOf(ifNode);
-                            for (int i = 0; i < ifNode.ElseBlock.Count; i++)
-                            {
-                                whileNode.Body.Insert(start + i, OptimizeNode(ifNode.ElseBlock[i]));
-                            }
-                            whileNode.Body.Remove(ifNode);
-                        }
-                        break;
-                    default:
-                        break;
+                    output.AddRange(OptimizeIfNode(ifNode));
+                }
+                else if (node is ForNode forNode)
+                {
+                    output.AddRange(OptimizeForNode(forNode));
+                }
+                else
+                {
+                    output.Add(OptimizeNode(node));
                 }
             }
-            else if (Condition is NumberNode { Value: 1.0 })
-            {
-                switch (parent)
-                {
-                    case ProgramNode program:
-                        {
-                            Console.WriteLine($"I need to optmize {ifNode.ThenBlock.Count}");
-                            int start = program.Statements.IndexOf(ifNode);
-                            for (int i = 0; i < ifNode.ThenBlock.Count; i++)
-                            {
-                                program.Statements.Insert(
-                                    start + i,
-                                    OptimizeNode(ifNode.ThenBlock[i])
-                                );
-                            }
-                            program.Statements.Remove(ifNode);
-                        }
-                        break;
-                    case ForNode forNode:
-                        {
-                            int start = forNode.Body.IndexOf(ifNode);
-                            for (int i = 0; i < ifNode.ThenBlock.Count; i++)
-                            {
-                                forNode.Body.Insert(start + i, OptimizeNode(ifNode.ThenBlock[i]));
-                            }
-                            forNode.Body.Remove(ifNode);
-                        }
-                        break;
-                    case WhileNode whileNode:
-                        {
-                            int start = whileNode.Body.IndexOf(ifNode);
-                            for (int i = 0; i < ifNode.ThenBlock.Count; i++)
-                            {
-                                whileNode.Body.Insert(start + i, OptimizeNode(ifNode.ThenBlock[i]));
-                            }
-                            whileNode.Body.Remove(ifNode);
-                        }
-                        break;
-                    default:
-                        break;
-                }
-            }
-            return ifNode;
+            return output;
         }
 
         public static ProgramNode OptimizeProgram(ProgramNode program)
         {
-            for (int i = 0; i < program.Statements.Count; i++)
-            {
-                program.Statements[i] = OptimizeNode(program.Statements[i], program);
-            }
+            var optimized = OptimizeStatements(program.Statements);
+            program.Statements.Clear();
+            program.Statements.AddRange(optimized);
             return program;
         }
     }
