@@ -1,4 +1,6 @@
 var result = 8 | 4 ^ 2 & 10 == 5 << 1 && 3 || 9;
-var arr = [1,2,3,4,5];
 peri.print(result);
-peri.print(arr[2]);
+if(true)
+{
+    peri.print(123);
+}

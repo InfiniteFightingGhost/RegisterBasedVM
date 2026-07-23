@@ -276,12 +276,15 @@ Modules register via reflection using custom attributes (`[RaptorModule]`, `[Rap
 
 ## Roadmap
 
-- [ ] **Gas Budgeting & Instruction Limits**: Instruction counter guard to bound script execution time on hot threads.
+- [X] **Gas Budgeting & Instruction Limits**: Instruction counter guard to bound script execution time on hot threads.
 - [x] **Rust-Style Diagnostic Errors**: Source spans with inline code snippets and fix hints.
 - [ ] **Standard Library Expansion**: Native 2D/3D vector math structs (`vec2`, `vec3`), string operations, and fixed-capacity lists in the FFI host table.
 - [ ] **RaptorPure Handling**: Sandboxed execution preventing host side-effects or external mutations.
+- [ ] *RaptorConst Handling*: Dev specified constants handled at raptor script compile time.
+- [ ] *RaptorGas Handling*: Custom ffi host call gas used amount(default is 1).
+- [ ] *Raptor CLI REPL*: Ability to test out quick scripts in the console.
+- [ ] *Compiler optimization*: Add brains to the raptor script compiler.
 - [ ] **IDE Language Server Support**: LSP server for real-time diagnostics, `-api.json` auto-complete, and syntax highlighting.
-
 ## Community & Support
 
 - Ask questions and share ideas on [GitHub Discussions](https://github.com/InfiniteFightingGhost/Raptor/discussions).

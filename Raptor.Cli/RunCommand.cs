@@ -57,7 +57,11 @@ public class RunCommand : Command<RunCommand.Settings>
             string asm = string.Empty;
             try
             {
-                asm = RaptorScriptCompiler.Compile(code, reporter: reporter);
+                asm = RaptorScriptCompiler.Compile(
+                    code,
+                    reporter: reporter,
+                    printAst: settings.RunWithoutBuilding
+                );
             }
             catch (CompileException) { }
             finally

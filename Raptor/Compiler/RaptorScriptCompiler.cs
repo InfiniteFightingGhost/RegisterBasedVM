@@ -38,6 +38,7 @@ namespace Raptor.Compiler
             {
                 throw new CompileException("Syntax errors detected.");
             }
+            program = (ProgramNode)ASTOptimizer.OptimizeNode(program);
             if (printAst)
             {
                 Console.WriteLine("=== Abstract syntax tree ===");
