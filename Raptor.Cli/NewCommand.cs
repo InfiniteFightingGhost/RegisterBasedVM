@@ -19,17 +19,13 @@ public class NewCommand : Command<NewCommand.Settings>
         public bool Force { get; set; }
     }
 
-    private const string DefaultTemplateContent = @"// template.rapt - RaptorScript Starter Template
-// Fast, zero-allocation register-based scripting language for game engines.
-
-// 1. Variable Declarations & Math Operations
+    private const string DefaultTemplateContent =
+        @"// template.rapt - RaptorScript Starter Template
 var radius = 5.0;
 var area = math.pi() * math.pow(radius, 2.0);
 
-// 2. Output result via Host FFI call
 peri.print(area);
 
-// 3. Conditional Logic & Control Flow Loop
 if (area > 50.0) {
     for (var i = 0; i < 5; i++) {
         var step = i * 10.0;
@@ -57,7 +53,9 @@ if (area > 50.0) {
 
         if (File.Exists(targetPath) && !settings.Force)
         {
-            AnsiConsole.MarkupLine($"[red]Error:[/] File '{targetPath}' already exists. Use --force to overwrite.");
+            AnsiConsole.MarkupLine(
+                $"[red]Error:[/] File '{targetPath}' already exists. Use --force to overwrite."
+            );
             return 1;
         }
 
@@ -68,7 +66,9 @@ if (area > 50.0) {
         }
 
         File.WriteAllText(targetPath, DefaultTemplateContent);
-        AnsiConsole.MarkupLine($"[green]Success:[/] Created new RaptorScript starter template at [bold]{targetPath}[/]");
+        AnsiConsole.MarkupLine(
+            $"[green]Success:[/] Created new RaptorScript starter template at [bold]{targetPath}[/]"
+        );
         return 0;
     }
 }

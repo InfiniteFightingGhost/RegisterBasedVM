@@ -115,18 +115,20 @@ The FFI system automatically generates autocomplete JSON files (`-api.json`) lis
 
 ## Architectural Comparison
 
-| Feature / Metric | MoonSharp | NLua | LuaJIT (Interpreter) | Raptor VM |
-| :--- | :--- | :--- | :--- | :--- |
-| Language | Lua 5.2 | Lua 5.4 | Lua 5.1 | RaptorScript / Assembly |
-| Runtime Environment | Pure C# (Managed) | C# Bindings + Native C | Native C / Assembly | Pure C# (Unsafe/Managed) |
-| Instruction Architecture | Stack-based VM | Stack-based VM | Register-based VM | Register-based VM |
-| Execution Performance | ~10–15 MIPS | ~50–80 MIPS | ~100–150 MIPS (No JIT) | 360–660+ MIPS |
-| Garbage Collector (GC) pressure | High (allocates per-instruction) | Low-to-Medium (native heap) | None (native heap) | Zero Managed GC Allocations |
-| FFI Call Overhead | High (reflection/boxing) | Medium (~50–150 ns marshalling) | Low (~10-20 ns call cost) | Low (< 5 ns direct call cost) |
-| AOT / IL2CPP Compatibility | Excellent (Refsafe JIT limits) | Complex (requires native libs) | Broken on iOS/Consoles | Full (.NET native support) |
-| Memory Locality | Managed heap objects | Medium (C-structs) | High (C-structs) | High (GCHandle-pinned registers) |
+| Feature / Metric | MoonSharp | NLua | Jint | LuaJIT (Native Ref)* | Raptor VM |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| Language | Lua 5.2 | Lua 5.4 | JavaScript (ES6+) | Lua 5.1 | RaptorScript / Assembly |
+| Runtime Environment | Pure C# (Managed) | C# Bindings + Native C | Pure C# (Managed) | Native C / Assembly | Pure C# (Unsafe/Managed) |
+| Instruction Architecture | Register-based VM | Register-based VM | AST Interpreter / VM | Register-based VM | Register-based VM |
+| Execution Performance | ~15–35 MIPS | ~120–200 MIPS | ~10–25 MIPS | ~100–150 MIPS (No JIT) | 360–660+ MIPS |
+| Garbage Collector (GC) pressure | High (Tables / Closures) | Low (High on P/Invoke FFI) | High (AST / Heap Objects) | None (Native C Heap) | Zero Managed GC Allocations |
+| FFI Call Overhead | High (~200 ns call cost) | High (~570 ns P/Invoke) | High (~300 ns call cost) | Low (~10–20 ns in Native C) | Low (< 5 ns direct call cost) |
+| AOT / IL2CPP Compatibility | Excellent | Complex (Requires native libs) | Excellent | Restricted (W^X on iOS/Consoles) | Full (.NET native support) |
+| Memory Locality | Managed heap objects | Medium (C-structs) | Managed heap objects | High (C-structs) | High (GCHandle-pinned registers) |
 
-> **Note**: Unlike general-purpose Lua runtimes that manage dynamic table objects and metatables on the heap, Raptor restricts registers to 64-bit doubles to achieve zero-GC execution in hot game loops. With 256 virtual registers, instruction dispatch overhead is reduced.
+> **Note**: Benchmark comparisons for MoonSharp, NLua, and Jint are captured directly in `.NET 10.0` via `Raptor.Benchmarks`. Unlike general-purpose script engines that manage dynamic table objects and metatables on the heap, Raptor restricts registers to 64-bit doubles to achieve zero-GC execution in hot game loops.
+>
+> **\*LuaJIT Note**: LuaJIT is included as an external native C reference. While LuaJIT's Trace JIT compiler generates raw machine code for pure math loops in C environments, its JIT mode is restricted on iOS and console platforms due to OS W^X security policies.
 
 ## Performance & Benchmarks
 
@@ -256,6 +258,7 @@ Raptor/
 │   ├── VMState.cs            # CPU cache-friendly VM execution state struct
 │   └── package.json          # Unity Package Manager (UPM) manifest & asmdef integration
 ├── Raptor.Cli/               # Spectre.Console CLI toolchain
+│   ├── NewCommand.cs         # Scaffolds a new .rapt script with starter template
 │   ├── BuildCommand.cs       # Compiles .rapt -> .rasm / .rbc & exports editor API metadata
 │   ├── RunCommand.cs         # Compiles & executes scripts directly from terminal
 │   └── DocsCommand.cs        # Opens documentation reference in browser
@@ -282,7 +285,8 @@ Modules register via reflection using custom attributes (`[RaptorModule]`, `[Rap
 - [ ] **RaptorPure Handling**: Sandboxed execution preventing host side-effects or external mutations.
 - [ ] *RaptorConst Handling*: Dev specified constants handled at raptor script compile time.
 - [ ] *RaptorGas Handling*: Custom ffi host call gas used amount(default is 1).
-- [ ] *Raptor CLI REPL*: Ability to test out quick scripts in the console. [ ] *Compiler optimization*: Add brains to the raptor script compiler.
+- [ ] *Raptor CLI REPL*: Ability to test out quick scripts in the console.
+- [ ] *Compiler optimization*: Add brains to the raptor script compiler.
 - [ ] **IDE Language Server Support**: LSP server for real-time diagnostics, `-api.json` auto-complete, and syntax highlighting.
 ## Community & Support
 
